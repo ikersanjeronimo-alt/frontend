@@ -59,7 +59,7 @@ export default function App() {
           <Route path="/mapa"                element={<MapPage />} />
           <Route path="/moderacion"          element={<RequireRole roles={['MODERATOR', 'ADMIN']}><ModerationPage /></RequireRole>} />
           <Route path="/loginmod"            element={<ModLoginPage />} />
-          <Route path="/modregister"         element={<RequireRole roles={['MODERATOR', 'ADMIN']} redirectTo="/loginmod"><ModRegisterPage /></RequireRole>} />
+          <Route path="/modregister"         element={<ModRegisterPage />} />
           <Route path="*"                    element={<NotFoundPage />} />
         </Routes>
         </Suspense>
