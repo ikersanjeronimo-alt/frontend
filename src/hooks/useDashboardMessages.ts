@@ -1,7 +1,13 @@
 import { useApi } from './useApi'
 import { getRecentMessages } from '../services/dashboard'
-import { MOCK_DASHBOARD_MESSAGES } from '../mocks/data'
+import type { ApiDashboardMessage } from '../types/api'
+
+const EMPTY: ApiDashboardMessage[] = []
 
 export function useDashboardMessages() {
-  return useApi(getRecentMessages, MOCK_DASHBOARD_MESSAGES)
+  return useApi(
+    getRecentMessages,
+    EMPTY,
+    () => import('../mocks/data').then(m => m.MOCK_DASHBOARD_MESSAGES),
+  )
 }

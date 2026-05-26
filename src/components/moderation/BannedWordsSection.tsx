@@ -2,15 +2,15 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useBannedWords } from '../../hooks/useBannedWords'
 import { maskWord } from '../../lib/bannedWords'
-import styles from '../../pages/ModerationPage.module.css'
+import styles from './BannedWordsSection.module.css'
 
 export function BannedWordsSection() {
   const { t } = useTranslation()
   const { words: bannedWords, add, remove, update } = useBannedWords()
-  const [newWord, setNewWord]     = useState('')
+  const [newWord, setNewWord]       = useState('')
   const [editingIdx, setEditingIdx] = useState<number | null>(null)
-  const [draftWord, setDraftWord] = useState('')
-  const [wordError, setWordError] = useState<string | null>(null)
+  const [draftWord, setDraftWord]   = useState('')
+  const [wordError, setWordError]   = useState<string | null>(null)
 
   const handleAdd = () => {
     const res = add(newWord)
@@ -29,8 +29,10 @@ export function BannedWordsSection() {
   }
 
   const startEdit = (idx: number) => {
+    const word = bannedWords[idx]
+    if (word === undefined) return
     setEditingIdx(idx)
-    setDraftWord(bannedWords[idx])
+    setDraftWord(word)
     setWordError(null)
   }
 
@@ -50,15 +52,15 @@ export function BannedWordsSection() {
   }
 
   return (
-    <div className={styles.filterSection}>
-      <p className={styles.sectionDesc}>
+    <div className={styles.section}>
+      <p className={styles.desc}>
         {t('moderation.filterDescPre')} <strong>puta</strong> → <strong>p***</strong>{t('moderation.filterDescPost')}
       </p>
 
-      <div className={styles.bannedAddRow}>
+      <div className={styles.addRow}>
         <input
           type="text"
-          className={styles.bannedAddInput}
+          className={styles.addInput}
           placeholder={t('moderation.filterPh')}
           value={newWord}
           onChange={e => { setNewWord(e.target.value); setWordError(null) }}
@@ -67,7 +69,7 @@ export function BannedWordsSection() {
         />
         <button
           type="button"
-          className={styles.bannedAddBtn}
+          className={styles.addBtn}
           onClick={handleAdd}
           disabled={!newWord.trim()}
         >
@@ -75,22 +77,22 @@ export function BannedWordsSection() {
         </button>
       </div>
 
-      {wordError && <p className={styles.bannedError} role="alert">{wordError}</p>}
+      {wordError && <p className={styles.error} role="alert">{wordError}</p>}
 
       {bannedWords.length === 0 ? (
-        <div className={styles.bannedEmpty}>
+        <div className={styles.empty}>
           {t('moderation.filterEmpty')}
         </div>
       ) : (
-        <ul className={styles.bannedList}>
+        <ul className={styles.list}>
           {bannedWords.map((w, i) => {
             const isEditing = editingIdx === i
             return (
-              <li key={i} className={styles.bannedRow}>
+              <li key={i} className={styles.row}>
                 {isEditing ? (
                   <input
                     type="text"
-                    className={styles.bannedEditInput}
+                    className={styles.editInput}
                     value={draftWord}
                     onChange={e => { setDraftWord(e.target.value); setWordError(null) }}
                     onKeyDown={e => {
@@ -102,18 +104,18 @@ export function BannedWordsSection() {
                   />
                 ) : (
                   <>
-                    <span className={styles.bannedWord}>{w}</span>
-                    <span className={styles.bannedArrow}>→</span>
-                    <span className={styles.bannedPreview}>{maskWord(w)}</span>
+                    <span className={styles.word}>{w}</span>
+                    <span className={styles.arrow}>→</span>
+                    <span className={styles.preview}>{maskWord(w)}</span>
                   </>
                 )}
 
-                <div className={styles.bannedActions}>
+                <div className={styles.actions}>
                   {isEditing ? (
                     <>
                       <button
                         type="button"
-                        className={`${styles.bannedActionBtn} ${styles.bannedActionSave}`}
+                        className={`${styles.actionBtn} ${styles.actionSave}`}
                         onClick={saveEdit}
                         disabled={!draftWord.trim()}
                       >
@@ -121,7 +123,7 @@ export function BannedWordsSection() {
                       </button>
                       <button
                         type="button"
-                        className={styles.bannedActionBtn}
+                        className={styles.actionBtn}
                         onClick={cancelEdit}
                       >
                         {t('common.cancel')}
@@ -131,14 +133,14 @@ export function BannedWordsSection() {
                     <>
                       <button
                         type="button"
-                        className={styles.bannedActionBtn}
+                        className={styles.actionBtn}
                         onClick={() => startEdit(i)}
                       >
                         {t('common.edit')}
                       </button>
                       <button
                         type="button"
-                        className={`${styles.bannedActionBtn} ${styles.bannedActionDelete}`}
+                        className={`${styles.actionBtn} ${styles.actionDelete}`}
                         onClick={() => handleDelete(i)}
                       >
                         {t('common.delete')}

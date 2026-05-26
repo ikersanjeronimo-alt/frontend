@@ -1,7 +1,13 @@
 import { useApi } from './useApi'
 import { getModerationMembers } from '../services/moderation'
-import { MOCK_MOD_MEMBERS } from '../mocks/data'
+import type { ApiModerationMember } from '../types/api'
+
+const EMPTY: ApiModerationMember[] = []
 
 export function useModerationMembers() {
-  return useApi(getModerationMembers, MOCK_MOD_MEMBERS)
+  return useApi(
+    getModerationMembers,
+    EMPTY,
+    () => import('../mocks/data').then(m => m.MOCK_MOD_MEMBERS),
+  )
 }

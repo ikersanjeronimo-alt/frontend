@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
-import { useParams, useNavigate, NavLink } from 'react-router-dom'
+import { useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCommunities } from '../hooks/useCommunities'
 import { useCommunityChat } from '../hooks/useCommunityChat'
@@ -8,6 +8,10 @@ import { useBannedWords } from '../hooks/useBannedWords'
 import { maskBannedWords } from '../lib/bannedWords'
 import { SleepingCat } from '../components/ui/SleepingCat'
 import { catFor } from '../components/ui/catPalette'
+import {
+  ChatLayout, ChatSidebar, ChatSidebarItem, ChatSidebarExplore,
+  ChatMain, ChatHeader, ChatMessages, ChatBubble, ChatComposer, ChatPanel,
+} from '../components/chat/ChatLayout'
 import styles from './CommunityChatPage.module.css'
 
 export function CommunityChatPage() {
@@ -24,40 +28,21 @@ export function CommunityChatPage() {
   const [input, setInput]           = useState('')
   const [showPanel, setShowPanel]   = useState(false)
 
-  const messagesRef    = useRef<HTMLDivElement>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-
-  // Solo auto-scroll si el usuario ya estaba cerca del final, para no secuestrar
-  // su scroll mientras lee el historial.
-  useEffect(() => {
-    const el = messagesRef.current
-    if (!el) return
-    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120
-    if (nearBottom) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }
-  }, [messages])
+  const cat = catFor('/comunidades-chat')
 
   if (!community) {
     return (
-      <div className={styles.layout}>
-        <main className={styles.chat}>
-          <div className={styles.chatHeader}>
-            <button className={styles.backBtn} onClick={() => navigate('/comunidades')}>
-              ←
-            </button>
-            <div className={styles.chatHeaderInfo}>
-              <span className={styles.chatHeaderName}>{t('communities.notFoundTitle')}</span>
-            </div>
-          </div>
+      <ChatLayout>
+        <ChatMain>
+          <ChatHeader onBack={() => navigate('/comunidades')} name={t('communities.notFoundTitle')} />
           <div className={styles.notFound}>
             <p className={styles.notFoundMsg}>{t('communities.notFoundMsg')}</p>
-            <button className={styles.sendBtn} onClick={() => navigate('/comunidades')}>
+            <button type="button" className={styles.notFoundBtn} onClick={() => navigate('/comunidades')}>
               {t('communities.seeAll')}
             </button>
           </div>
-        </main>
-      </div>
+        </ChatMain>
+      </ChatLayout>
     )
   }
 
@@ -70,65 +55,42 @@ export function CommunityChatPage() {
     setInput('')
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
-
   const joinedCommunities = communities.filter(c => c.joined)
 
   return (
-    <div className={styles.layout}>
+    <ChatLayout>
 
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          <h2 className={styles.sidebarTitle}>{t('communities.sidebarTitle')}</h2>
+      <ChatSidebar
+        title={t('communities.sidebarTitle')}
+        topRight={
           <SleepingCat
-            color={catFor('/comunidades-chat').color}
-            seed={catFor('/comunidades-chat').seed}
+            color={cat.color}
+            seed={cat.seed}
             size={72}
             className={styles.sidebarCat}
           />
-        </div>
-        <nav className={styles.sidebarList}>
-          {joinedCommunities.map(c => (
-            <NavLink
-              key={c.id}
-              to={`/comunidades/${c.id}`}
-              className={({ isActive }) => `${styles.sidebarItem} ${isActive ? styles.sidebarItemActive : ''}`}
-            >
-              <div className={styles.sidebarInfo}>
-                <span className={styles.sidebarName}>{c.name}</span>
-                <span className={styles.sidebarOnline}>{c.online} {t('common.online')}</span>
-              </div>
-            </NavLink>
-          ))}
-          <NavLink to="/comunidades" className={styles.sidebarExplore}>
-            {t('communities.explore')}
-          </NavLink>
-        </nav>
-      </aside>
+        }
+      >
+        {joinedCommunities.map(c => (
+          <ChatSidebarItem
+            key={c.id}
+            to={`/comunidades/${c.id}`}
+            name={c.name}
+            meta={`${c.online} ${t('common.online')}`}
+          />
+        ))}
+        <ChatSidebarExplore to="/comunidades">{t('communities.explore')}</ChatSidebarExplore>
+      </ChatSidebar>
 
-      <main className={styles.chat}>
+      <ChatMain>
 
-        <div className={styles.chatHeader}>
-          <button className={styles.backBtn} onClick={() => navigate('/comunidades')}>
-            ←
-          </button>
-          <div className={styles.chatHeaderInfo}>
-            <span className={styles.chatHeaderName}>{community.name}</span>
-            <span className={styles.chatHeaderMeta}>{community.online} {t('common.online')} · {t('communities.modPrefix')} {community.mod}</span>
-          </div>
-          <button
-            className={styles.infoToggle}
-            onClick={() => setShowPanel(p => !p)}
-            title={t('communities.info')}
-          >
-            ⓘ
-          </button>
-        </div>
+        <ChatHeader
+          onBack={() => navigate('/comunidades')}
+          name={community.name}
+          meta={`${community.online} ${t('common.online')} · ${t('communities.modPrefix')} ${community.mod}`}
+          onInfoToggle={() => setShowPanel(p => !p)}
+          infoTitle={t('communities.info')}
+        />
 
         {pinned && (
           <div className={styles.pinnedNote}>
@@ -137,53 +99,35 @@ export function CommunityChatPage() {
           </div>
         )}
 
-        <div className={styles.messages} ref={messagesRef}>
+        <ChatMessages scrollDep={messages.length}>
           {messages.map((m, i) => {
-            const showUsername = !m.own && (i === 0 || messages[i - 1].username !== m.username || messages[i - 1].own)
+            const prev = messages[i - 1]
+            const showUsername = !m.own && (!prev || prev.username !== m.username || prev.own)
             const initials = m.username.slice(0, 2).toUpperCase()
             return (
-              <div key={m.id} className={`${styles.messageGroup} ${m.own ? styles.messageGroupOwn : ''}`}>
-                {!m.own && (
-                  <div className={styles.bubbleAvatar}>
-                    {showUsername ? initials : ''}
-                  </div>
-                )}
-                <div className={styles.bubbleCol}>
-                  {showUsername && !m.own && (
-                    <span className={styles.bubbleUsername}>{m.username}</span>
-                  )}
-                  <div className={`${styles.bubble} ${m.own ? styles.bubbleOwn : styles.bubbleOther}`}>
-                    {maskBannedWords(m.text, bannedWords)}
-                  </div>
-                  <span className={styles.bubbleTime}>{m.time}</span>
-                </div>
-              </div>
+              <ChatBubble
+                key={m.id}
+                side={m.own ? 'own' : 'other'}
+                avatar={!m.own ? (showUsername ? initials : '') : undefined}
+                username={showUsername && !m.own ? m.username : undefined}
+                time={m.time}
+              >
+                {maskBannedWords(m.text, bannedWords)}
+              </ChatBubble>
             )
           })}
-          <div ref={messagesEndRef} />
-        </div>
+        </ChatMessages>
 
-        <div className={styles.inputArea}>
-          <textarea
-            aria-label={t('communities.inputAria')}
-            className={styles.input}
-            placeholder={t('communities.inputPh')}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            rows={1}
-          />
-          <button
-            className={styles.sendBtn}
-            onClick={handleSend}
-            disabled={!input.trim()}
-          >
-            ➤
-          </button>
-        </div>
-      </main>
+        <ChatComposer
+          value={input}
+          onChange={setInput}
+          onSend={handleSend}
+          placeholder={t('communities.inputPh')}
+          ariaLabel={t('communities.inputAria')}
+        />
+      </ChatMain>
 
-      <aside className={`${styles.panel} ${showPanel ? styles.panelVisible : ''}`}>
+      <ChatPanel visible={showPanel}>
         <h3 className={styles.panelName}>{community.name}</h3>
         <p className={styles.panelDesc}>{community.desc}</p>
 
@@ -209,6 +153,7 @@ export function CommunityChatPage() {
         </div>
 
         <button
+          type="button"
           className={styles.panelContactBtn}
           onClick={() => navigate('/profesionales')}
         >
@@ -227,8 +172,8 @@ export function CommunityChatPage() {
             ))}
           </div>
         </div>
-      </aside>
+      </ChatPanel>
 
-    </div>
+    </ChatLayout>
   )
 }

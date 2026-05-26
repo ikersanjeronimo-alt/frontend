@@ -1,10 +1,9 @@
+import { themeStorage } from '../services/storage'
+
 export type Theme = 'light' | 'dark'
 
-const STORAGE_KEY = 'sys_theme'
-
 export function getStoredTheme(): Theme | null {
-  const v = localStorage.getItem(STORAGE_KEY)
-  return v === 'light' || v === 'dark' ? v : null
+  return themeStorage.get()
 }
 
 export function getSystemTheme(): Theme {
@@ -20,6 +19,6 @@ export function applyTheme(theme: Theme): void {
 }
 
 export function setTheme(theme: Theme): void {
-  localStorage.setItem(STORAGE_KEY, theme)
+  themeStorage.set(theme)
   applyTheme(theme)
 }

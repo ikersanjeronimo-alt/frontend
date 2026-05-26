@@ -1,0 +1,17 @@
+.section {
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 640px;
+}
+
+@media (min-width: 576px) { .section { padding: 32px; } }
+@media (min-width: 992px) { .section { padding: 40px 48px; } }
+
+.title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--dark);
+  margin: 0;
+}

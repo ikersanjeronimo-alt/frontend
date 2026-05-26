@@ -250,6 +250,25 @@
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
+.errorToast {
+  position: absolute;
+  bottom: 84px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 900;
+  background: #c0392b;
+  color: #fff;
+  border-radius: 20px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font);
+  box-shadow: var(--shadow-lg);
+  max-width: calc(100% - 32px);
+  text-align: center;
+  animation: fadeInUp 0.3s ease;
+}
+
 /* ── FAB button (bottom-right) ────────────────────────────── */
 
 .fab {

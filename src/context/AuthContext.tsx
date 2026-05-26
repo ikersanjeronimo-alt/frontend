@@ -4,6 +4,8 @@ import * as authService from '../services/auth'
 import { isNetworkError } from '../services/api'
 import { ALLOW_MOCK_FALLBACK } from '../lib/env'
 import { markDemoMode } from '../lib/demoMode'
+import { authBus } from '../lib/authBus'
+import { tokenStorage } from '../services/storage'
 import type { LoginModChallenge } from '../types/api'
 
 export type UserRole = 'ANON' | 'USER' | 'MODERATOR' | 'ADMIN'
@@ -30,8 +32,6 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-const TOKEN_KEY = 'sys_token'
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -45,14 +45,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const { token, user: u } = await authService.initAnonymous()
         if (cancelled) return
-        localStorage.setItem(TOKEN_KEY, token)
+        tokenStorage.set(token)
         setUser({ ...u, token })
       } catch {
         if (cancelled) return
         if (ALLOW_MOCK_FALLBACK) {
           markDemoMode()
           const mock = createMockAnonUser()
-          localStorage.setItem(TOKEN_KEY, mock.token)
+          tokenStorage.set(mock.token)
           setUser(mock)
         }
         // si no, user queda en null y las pantallas dependientes lo gestionan
@@ -64,9 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { cancelled = true }
   }, [])
 
-  // El apiFetch dispara este evento si el back devuelve 401 fuera del flujo de auth.
+  // El apiFetch dispara este evento si el back devuelve 401 fuera del flujo
+  // de auth. El bus tiene buffer, así que si el 401 llegó antes de que este
+  // effect montara, lo recibimos en el primer subscribe.
   useEffect(() => {
-    const onExpired = () => {
+    return authBus.onExpired(() => {
       if (!ALLOW_MOCK_FALLBACK) {
         // En modo no-demo: borramos sesión y dejamos null. La app reaccionará
         // (rutas protegidas redirigen, ANON queda sin acceso).
@@ -75,23 +77,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       markDemoMode()
       const mock = createMockAnonUser()
-      localStorage.setItem(TOKEN_KEY, mock.token)
+      tokenStorage.set(mock.token)
       setUser(mock)
-    }
-    window.addEventListener('auth:expired', onExpired)
-    return () => window.removeEventListener('auth:expired', onExpired)
+    })
   }, [])
 
   const login = useCallback(async (username: string, password: string) => {
     try {
       const { token, user: u } = await authService.login(username, password)
-      localStorage.setItem(TOKEN_KEY, token)
+      tokenStorage.set(token)
       setUser({ ...u, token })
     } catch (e) {
       if (!isNetworkError(e) || !ALLOW_MOCK_FALLBACK) throw e
       markDemoMode()
       const mock = createMockUserFromCredentials(username)
-      localStorage.setItem(TOKEN_KEY, mock.token)
+      tokenStorage.set(mock.token)
       setUser(mock)
     }
   }, [])
@@ -105,21 +105,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const verifyLoginAsMod = useCallback(async (challengeId: string, code: string) => {
     const { token, user: u } = await authService.verifyModLogin({ challengeId, code })
-    localStorage.setItem(TOKEN_KEY, token)
+    tokenStorage.set(token)
     setUser({ ...u, token })
   }, [])
 
   const register = useCallback(async (username: string, password: string) => {
     try {
-      const anonToken = localStorage.getItem(TOKEN_KEY)
+      const anonToken = tokenStorage.get()
       const { token, user: u } = await authService.register(username, password, anonToken)
-      localStorage.setItem(TOKEN_KEY, token)
+      tokenStorage.set(token)
       setUser({ ...u, token })
     } catch (e) {
       if (!isNetworkError(e) || !ALLOW_MOCK_FALLBACK) throw e
       markDemoMode()
       const mock = createMockUserFromCredentials(username)
-      localStorage.setItem(TOKEN_KEY, mock.token)
+      tokenStorage.set(mock.token)
       setUser(mock)
     }
   }, [])
@@ -139,18 +139,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user?.username])
 
   const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY)
+    tokenStorage.clear()
     // Re-iniciar sesión anónima en background.
     authService.initAnonymous()
       .then(({ token, user: u }) => {
-        localStorage.setItem(TOKEN_KEY, token)
+        tokenStorage.set(token)
         setUser({ ...u, token })
       })
       .catch(() => {
         if (!ALLOW_MOCK_FALLBACK) { setUser(null); return }
         markDemoMode()
         const mock = createMockAnonUser()
-        localStorage.setItem(TOKEN_KEY, mock.token)
+        tokenStorage.set(mock.token)
         setUser(mock)
       })
   }, [])

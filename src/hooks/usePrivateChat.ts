@@ -2,13 +2,15 @@ import { useCallback } from 'react'
 import { useApi } from './useApi'
 import { optimisticMutation } from '../lib/optimisticMutation'
 import { getPrivateChat, sendPrivateMessage } from '../services/chats'
-import { MOCK_PRIVATE_MESSAGES } from '../mocks/data'
 import type { ApiPrivateMessage } from '../types/api'
+
+const EMPTY: ApiPrivateMessage[] = []
 
 export function usePrivateChat(professionalId: string) {
   const { data: messages, setData: setMessages, loading, error } = useApi(
     () => getPrivateChat(professionalId),
-    MOCK_PRIVATE_MESSAGES,
+    EMPTY,
+    () => import('../mocks/data').then(m => m.buildMockPrivateMessages(professionalId)),
     [professionalId],
   )
 

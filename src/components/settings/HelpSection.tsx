@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next'
-import styles from '../../pages/SettingsPage.module.css'
+import { Section } from '../ui/Section'
+import { Card } from '../ui/Card'
+import styles from './HelpSection.module.css'
 
 export function HelpSection() {
   const { t } = useTranslation()
@@ -9,16 +11,15 @@ export function HelpSection() {
     { q: t('settings.faqQ3'), a: t('settings.faqA3') },
   ]
   return (
-    <div className={styles.section}>
-      <h2 className={styles.sectionTitle}>{t('settings.section_ayuda')}</h2>
-      <div className={styles.card}>
+    <Section title={t('settings.section_ayuda')}>
+      <Card>
         {FAQ.map(item => (
-          <div key={item.q} className={styles.faqItem}>
-            <p className={styles.faqQ}>{item.q}</p>
-            <p className={styles.faqA}>{item.a}</p>
+          <div key={item.q} className={styles.item}>
+            <p className={styles.question}>{item.q}</p>
+            <p className={styles.answer}>{item.a}</p>
           </div>
         ))}
-      </div>
-    </div>
+      </Card>
+    </Section>
   )
 }

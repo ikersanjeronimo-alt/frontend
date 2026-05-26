@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import styles from '../../pages/EventDetailPage.module.css'
+import styles from './EventFormSection.module.css'
 
 type FormKind = 'choice' | 'text'
 

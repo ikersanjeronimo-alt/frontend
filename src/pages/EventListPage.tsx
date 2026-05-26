@@ -1,9 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useEvents } from '../hooks/useEvents'
-import { useAuth } from '../context/AuthContext'
+import { useRole } from '../hooks/useRole'
 import { useEventInterests } from '../hooks/useEventInterests'
 import { markInterest } from '../services/events'
+import { silentMutation } from '../lib/silentMutation'
 import { PageState } from '../components/ui/PageState'
 import { IconHeart } from '../components/ui/Icons'
 import { SleepingCat } from '../components/ui/SleepingCat'
@@ -13,18 +14,18 @@ import styles from './EventListPage.module.css'
 export function EventListPage() {
   const { t } = useTranslation()
   const { data: events, loading, error } = useEvents()
-  const { user } = useAuth()
+  const { isMod } = useRole()
   const navigate = useNavigate()
   const { toggle, isInterested } = useEventInterests()
 
-  const isMod = user?.role === 'MODERATOR' || user?.role === 'ADMIN'
-
-  const toggleLike = (id: string, ev: React.MouseEvent) => {
+  const toggleLike = async (id: string, ev: React.MouseEvent) => {
     ev.preventDefault()
     ev.stopPropagation()
     const nowInterested = toggle(id)
-    // Best-effort hacia el back. En demo mode (network error) cae al banner.
-    void markInterest(id, nowInterested).catch(() => { /* silent — store local ya cambió */ })
+    // Si falla por servidor (no demo), revertimos el toggle local. silentMutation
+    // marca demo mode automáticamente en network error + flag.
+    const err = await silentMutation(markInterest(id, nowInterested))
+    if (err) toggle(id)
   }
 
   return (
@@ -70,7 +71,7 @@ export function EventListPage() {
 
               <button
                 className={`${styles.heartBtn} ${liked ? styles.heartBtnActive : ''}`}
-                onClick={ev => toggleLike(e.id, ev)}
+                onClick={ev => { void toggleLike(e.id, ev) }}
                 aria-label={liked ? t('events.liked') : t('events.notLiked')}
               >
                 <IconHeart filled={liked} size={18} />

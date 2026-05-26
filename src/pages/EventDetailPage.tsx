@@ -4,9 +4,10 @@ import { useTranslation } from 'react-i18next'
 import { useEvents } from '../hooks/useEvents'
 import { useEventInterests } from '../hooks/useEventInterests'
 import { markInterest } from '../services/events'
+import { silentMutation } from '../lib/silentMutation'
 import { PageState } from '../components/ui/PageState'
 import { EventFormSection } from '../components/events/EventFormSection'
-import { useAuth } from '../context/AuthContext'
+import { useRole } from '../hooks/useRole'
 import {
   IconShield, IconHand, IconLock, IconQuestion,
   IconCalendar, IconClock, IconUser, IconHeart,
@@ -18,7 +19,7 @@ import styles from './EventDetailPage.module.css'
 export function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>()
   const navigate    = useNavigate()
-  const { user }    = useAuth()
+  const { isMod }   = useRole()
   const { t }       = useTranslation()
 
   const EXPECTATIONS: { icon: ReactNode; text: string }[] = [
@@ -34,8 +35,6 @@ export function EventDetailPage() {
 
   const { toggle, isInterested } = useEventInterests()
   const liked = eventId ? isInterested(eventId) : false
-
-  const isMod = user?.role === 'MODERATOR' || user?.role === 'ADMIN'
 
   if (loading || error || notFound || !event) {
     return (
@@ -53,10 +52,11 @@ export function EventDetailPage() {
     )
   }
 
-  const handleToggleInterest = () => {
+  const handleToggleInterest = async () => {
     if (!eventId) return
     const nowInterested = toggle(eventId)
-    void markInterest(eventId, nowInterested).catch(() => { /* silent — store local ya cambió */ })
+    const err = await silentMutation(markInterest(eventId, nowInterested))
+    if (err) toggle(eventId)  // rollback en error de servidor
   }
 
   return (
@@ -143,7 +143,7 @@ export function EventDetailPage() {
 
             <button
               className={`${styles.heartBtnLarge} ${liked ? styles.heartBtnLargeActive : ''}`}
-              onClick={handleToggleInterest}
+              onClick={() => { void handleToggleInterest() }}
             >
               <IconHeart filled={liked} size={18} />
               <span>{liked ? t('events.interestedYes') : t('events.interestedNo')}</span>

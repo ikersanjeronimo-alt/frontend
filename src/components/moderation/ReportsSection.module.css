@@ -1,0 +1,204 @@
+/* Layout exterior — el padding lateral mantiene el rhythm con la página padre */
+.body {
+  padding: 0 20px;
+}
+
+@media (min-width: 576px) { .body { padding: 0 32px; } }
+@media (min-width: 992px) { .body { padding: 0 60px; } }
+@media (min-width: 1200px) { .body { padding: 0 100px; } }
+
+.reportList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Filter tabs ──────────────────────────────────────────── */
+
+.filterTabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-bottom: 4px;
+}
+
+.filterTab {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--mid);
+  font-family: var(--font);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.filterTab:hover { border-color: var(--primary-lt); color: var(--primary); }
+
+.filterTabActive {
+  background: var(--primary-vlt);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.filterBadge {
+  background: var(--primary);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ── Empty state ──────────────────────────────────────────── */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 20px;
+  color: var(--lite);
+}
+
+.empty p { font-size: 14px; margin: 0; }
+
+/* ── Report card ──────────────────────────────────────────── */
+
+.reportCard {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.reportCard:hover  { box-shadow: var(--shadow-sm); border-color: var(--primary-lt); }
+
+.reportCardSelected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(138,125,196,0.12); }
+
+/* status border accents */
+.status_pending   { border-left: 4px solid #f59e0b; }
+.status_resolved  { border-left: 4px solid #22c55e; }
+.status_dismissed { border-left: 4px solid var(--lite); opacity: 0.7; }
+
+/* ── Report top row ───────────────────────────────────────── */
+
+.reportTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.reportMeta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reportReason {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.reportCommunity {
+  font-size: 12px;
+  color: var(--lite);
+}
+
+/* ── Status pill ──────────────────────────────────────────── */
+
+.statusPill {
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 3px 10px;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.pill_pending   { background: #fff4e5; color: #b45309; }
+.pill_resolved  { background: var(--green-lt); color: #2d7d46; }
+.pill_dismissed { background: var(--bg); color: var(--lite); }
+
+:global([data-theme="dark"]) .pill_pending  { background: #3A2917; color: #F0B86B; }
+:global([data-theme="dark"]) .pill_resolved { color: #7ED9A1; }
+
+/* ── Report content ───────────────────────────────────────── */
+
+.reportContent {
+  font-size: 13px;
+  color: var(--mid);
+  line-height: 1.55;
+  margin: 0;
+  font-style: italic;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+/* ── Report footer ────────────────────────────────────────── */
+
+.reportFooter {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--lite);
+  flex-wrap: wrap;
+}
+
+.reportFooter strong { color: var(--dark); }
+
+/* ── Inline actions ───────────────────────────────────────── */
+
+.reportActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+@media (min-width: 576px) {
+  .reportActions { flex-direction: row; }
+}
+
+.actionBtn {
+  flex: 1;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.actionBtn:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+
+.actionBtnResolve  { background: var(--green-lt);    color: #2d7d46; }
+.actionBtnWarn     { background: #fff4e5;             color: #b45309; }
+.actionBtnDismiss  { background: var(--bg);           color: var(--mid); border: 1.5px solid var(--border); }
+
+:global([data-theme="dark"]) .actionBtnResolve { color: #7ED9A1; }
+:global([data-theme="dark"]) .actionBtnWarn    { background: #3A2917; color: #F0B86B; }

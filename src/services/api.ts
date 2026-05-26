@@ -1,8 +1,14 @@
+import { authBus } from '../lib/authBus'
+import { tokenStorage } from './storage'
+
 const BASE = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:8080'
-const TOKEN_KEY = 'sys_token'
+
+/** Timeout por defecto para evitar requests colgadas indefinidamente.
+ *  El caller puede sobrescribirlo o pasar su propio AbortSignal. */
+const DEFAULT_TIMEOUT_MS = 15000
 
 export interface ApiError extends Error {
-  /** Código HTTP, o 0 si fue error de red (back caído, CORS, timeout). */
+  /** Código HTTP, o 0 si fue error de red (back caído, CORS, timeout, abort). */
   status: number
 }
 
@@ -13,26 +19,56 @@ export function makeApiError(status: number, message: string): ApiError {
   return err
 }
 
-/** True si el error indica "backend inalcanzable" (red caída, CORS, DNS). */
+/** True si el error indica "backend inalcanzable" (red caída, CORS, DNS, timeout). */
 export function isNetworkError(e: unknown): e is ApiError {
   return e instanceof Error && (e as ApiError).status === 0
 }
 
-export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = localStorage.getItem(TOKEN_KEY)
+export interface ApiFetchOptions extends RequestInit {
+  /** Timeout en ms; por defecto 15s. Pasa 0 (o un signal externo) para desactivarlo. */
+  timeoutMs?: number
+}
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
+export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
+  const { timeoutMs = DEFAULT_TIMEOUT_MS, signal: callerSignal, ...rest } = options
+  const token = tokenStorage.get()
+
+  // Solo añadimos Content-Type si hay body — evita preflights CORS innecesarios
+  // en GETs y peticiones sin payload.
+  const headers: Record<string, string> = { ...(rest.headers as Record<string, string>) }
+  if (rest.body) headers['Content-Type'] = 'application/json'
+  if (token)     headers['Authorization'] = `Bearer ${token}`
+
+  // AbortController interno para implementar el timeout. Si el caller también
+  // pasa signal, "encadenamos" ambos: cuando cualquiera aborta, el interno lo
+  // hace también. AbortSignal.any() es lo cleanest, pero solo Chrome 116+/FF
+  // 124+ — fallback con addEventListener.
+  const internal = new AbortController()
+  const timer = timeoutMs > 0
+    ? window.setTimeout(() => internal.abort(makeApiError(0, 'La petición ha tardado demasiado.')), timeoutMs)
+    : null
+
+  if (callerSignal) {
+    if (callerSignal.aborted) internal.abort(callerSignal.reason)
+    else callerSignal.addEventListener('abort', () => internal.abort(callerSignal.reason), { once: true })
   }
-  if (token) headers['Authorization'] = `Bearer ${token}`
 
   let res: Response
   try {
-    res = await fetch(`${BASE}${path}`, { ...options, headers })
-  } catch {
-    // fetch() rechaza con TypeError cuando hay error de red, CORS o DNS.
+    res = await fetch(`${BASE}${path}`, { ...rest, headers, signal: internal.signal })
+  } catch (cause) {
+    // El caller canceló explícitamente: re-lanzar el AbortError tal cual para
+    // que el consumidor pueda distinguirlo (ej. el `cancelled` de useApi).
+    if (callerSignal?.aborted) throw cause
+    // Timeout interno (abort por nuestro setTimeout): el reason ya es un ApiError.
+    if (internal.signal.aborted && internal.signal.reason instanceof Error
+        && (internal.signal.reason as ApiError).status === 0) {
+      throw internal.signal.reason
+    }
+    // Resto: TypeError de fetch (red caída, CORS, DNS).
     throw makeApiError(0, 'No se pudo conectar con el servidor.')
+  } finally {
+    if (timer !== null) window.clearTimeout(timer)
   }
 
   if (res.status === 401) {
@@ -40,10 +76,10 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     // no sesión expirada. El componente que llamó debe mostrar el mensaje.
     const isAuthFlow = path.startsWith('/api/auth/')
     if (!isAuthFlow) {
-      localStorage.removeItem(TOKEN_KEY)
-      // Notificar al AuthProvider via custom event en vez de window.location
-      // para no perder el estado de la SPA.
-      window.dispatchEvent(new CustomEvent('auth:expired'))
+      tokenStorage.clear()
+      // Notificar al AuthProvider via bus singleton — resistente a race
+      // conditions del orden de mount (ver lib/authBus.ts).
+      authBus.fireExpired()
     }
     throw makeApiError(401, isAuthFlow ? 'Credenciales incorrectas.' : 'Sesión expirada.')
   }

@@ -1,18 +1,17 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useAuth } from '../../context/AuthContext'
+import { useRole } from '../../hooks/useRole'
 import { IconUser } from '../ui/Icons'
 import styles from './Navbar.module.css'
 
 export function Navbar() {
-  const { user, updateUsername } = useAuth()
+  const { user, isMod, isLoggedIn } = useRole()
   const navigate = useNavigate()
   const { t } = useTranslation()
 
   // Links según rol: los mods/admins ven panel + lo justo para moderar;
   // anon/users mantienen el catálogo completo de features de bienestar.
-  const isMod = user?.role === 'MODERATOR' || user?.role === 'ADMIN'
   const NAV_LINKS = isMod
     ? [
         { to: '/moderacion',         label: t('nav.moderacion') },
@@ -29,55 +28,16 @@ export function Navbar() {
         { to: '/maquina-del-tiempo', label: t('nav.timeMachine') },
       ]
 
-  const isLoggedIn = !!user && user.role !== 'ANON'
-
-  const [menuOpen, setMenuOpen]     = useState(false)
-  const [editingUsername, setEditingUsername] = useState(false)
-  const [usernameDraft, setUsernameDraft]   = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const handleUsernameClick = () => {
-    setUsernameDraft(user?.username ?? '')
-    setEditingUsername(true)
-    // setTimeout 0 para esperar a que el input se monte antes de seleccionar
-    setTimeout(() => inputRef.current?.select(), 0)
-  }
-
-  const handleUsernameSave = () => {
-    const trimmed = usernameDraft.trim()
-    if (trimmed && trimmed !== user?.username) updateUsername(trimmed)
-    setEditingUsername(false)
-  }
-
-  const handleUsernameKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter')  handleUsernameSave()
-    if (e.key === 'Escape') setEditingUsername(false)
-  }
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const closeMenu = () => setMenuOpen(false)
 
-  const goToDashboard = () => {
-    navigate('/dashboard')
-    closeMenu()
-  }
+  const goToDashboard = () => { navigate('/dashboard'); closeMenu() }
+  const goToSettings  = () => { navigate('/configuracion'); closeMenu() }
 
-  const goToSettings = () => {
-    navigate('/configuracion')
-    closeMenu()
-  }
-
-  const usernameChipProps = {
-    username: user?.username,
-    editing: editingUsername,
-    draft: usernameDraft,
-    inputRef,
-    onChipClick:   handleUsernameClick,
-    onDraftChange: setUsernameDraft,
-    onBlur:        handleUsernameSave,
-    onKeyDown:     handleUsernameKeyDown,
-  }
-
-  const userSection = isLoggedIn ? (
+  // Mismo bloque para ANON y USER/MOD/ADMIN: engranaje → ajustes, username → dashboard.
+  // La edición del username vive solo en /configuracion > Cuenta (fuente única).
+  const userSection = user ? (
     <>
       <button
         className={styles.dashboardBtn}
@@ -92,12 +52,10 @@ export function Navbar() {
         onClick={goToDashboard}
         title={t('nav.dashboard')}
       >
-        {user?.username ?? '...'}
+        {user.username}
       </button>
     </>
-  ) : (
-    <UsernameChip {...usernameChipProps} />
-  )
+  ) : null
 
   return (
     <header className={styles.header}>
@@ -166,40 +124,5 @@ export function Navbar() {
         </div>
       </div>
     </header>
-  )
-}
-
-interface UsernameChipProps {
-  username:          string | undefined
-  editing:       boolean
-  draft:         string
-  inputRef:      React.RefObject<HTMLInputElement | null>
-  onChipClick:   () => void
-  onDraftChange: (v: string) => void
-  onBlur:        () => void
-  onKeyDown:     (e: React.KeyboardEvent) => void
-}
-
-function UsernameChip({ username, editing, draft, inputRef, onChipClick, onDraftChange, onBlur, onKeyDown }: UsernameChipProps) {
-  const { t } = useTranslation()
-  if (editing) {
-    return (
-      <input
-        ref={inputRef}
-        className={styles.usernameInput}
-        value={draft}
-        onChange={e => onDraftChange(e.target.value)}
-        onBlur={onBlur}
-        onKeyDown={onKeyDown}
-        maxLength={32}
-        autoFocus
-      />
-    )
-  }
-  return (
-    <button className={styles.usernameChip} onClick={onChipClick} title={t('nav.editUsername')}>
-      <span>{username ?? '...'}</span>
-      <span className={styles.editIcon}>✎</span>
-    </button>
   )
 }

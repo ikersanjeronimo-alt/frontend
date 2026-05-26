@@ -1,4 +1,5 @@
 import * as OTPAuth from 'otpauth'
+import { modAccountStorage } from '../services/storage'
 
 /**
  * Helpers de TOTP para el flujo de moderadores/administradores.
@@ -17,7 +18,6 @@ import * as OTPAuth from 'otpauth'
  */
 
 const ISSUER = 'ShareYourStory'
-const ACCOUNT_PREFIX = 'sys_mod_account_'
 
 export type StoredModRole = 'MODERATOR' | 'ADMIN'
 
@@ -28,8 +28,13 @@ interface StoredAccount {
   secret: string
 }
 
-function accountKey(email: string): string {
-  return ACCOUNT_PREFIX + email.toLowerCase()
+function isStoredAccount(v: unknown): v is StoredAccount {
+  if (!v || typeof v !== 'object') return false
+  const a = v as Record<string, unknown>
+  return typeof a.id === 'string'
+      && typeof a.username === 'string'
+      && (a.role === 'MODERATOR' || a.role === 'ADMIN')
+      && typeof a.secret === 'string'
 }
 
 function buildTotp(email: string, secret: OTPAuth.Secret): OTPAuth.TOTP {
@@ -62,7 +67,7 @@ export function generateMockEnrollment(
     role,
     secret: rawSecret.base32,
   }
-  localStorage.setItem(accountKey(email), JSON.stringify(account))
+  modAccountStorage.set(email, account)
 
   return { secret: rawSecret.base32, otpauthUri: totp.toString() }
 }
@@ -81,13 +86,7 @@ export function verifyMockCode(email: string, code: string): boolean {
 }
 
 export function getMockAccount(email: string): StoredAccount | null {
-  const raw = localStorage.getItem(accountKey(email))
-  if (!raw) return null
-  try {
-    return JSON.parse(raw) as StoredAccount
-  } catch {
-    return null
-  }
+  return modAccountStorage.get(email, isStoredAccount)
 }
 
 export function hasMockAccount(email: string): boolean {

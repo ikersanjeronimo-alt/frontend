@@ -11,7 +11,6 @@ import { submitMood } from '../services/profile'
 import { isNetworkError } from '../services/api'
 import { ALLOW_MOCK_FALLBACK } from '../lib/env'
 import { markDemoMode } from '../lib/demoMode'
-import { MOOD_OPTIONS } from '../mocks/data'
 import {
   IconMoodVeryBad,
   IconMoodBad,
@@ -22,6 +21,15 @@ import {
   IconHourglass,
   IconMap,
 } from '../components/ui/Icons'
+
+// Config del selector de mood. Vivía en mocks/data.ts pero no es mock — es UI.
+const MOOD_OPTIONS = [
+  { value: 1, label: 'Muy mal' },
+  { value: 2, label: 'Mal' },
+  { value: 3, label: 'Regular' },
+  { value: 4, label: 'Bien' },
+  { value: 5, label: 'Muy bien' },
+] as const
 import { SleepingCat } from '../components/ui/SleepingCat'
 import { catFor } from '../components/ui/catPalette'
 import styles from './DashboardPage.module.css'

@@ -1,7 +1,13 @@
 import { useApi } from './useApi'
 import { getEvents } from '../services/events'
-import { MOCK_EVENTS } from '../mocks/data'
+import type { ApiEvent } from '../types/api'
+
+const EMPTY: ApiEvent[] = []
 
 export function useEvents() {
-  return useApi(getEvents, MOCK_EVENTS)
+  return useApi(
+    getEvents,
+    EMPTY,
+    () => import('../mocks/data').then(m => m.MOCK_EVENTS),
+  )
 }

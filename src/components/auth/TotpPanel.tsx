@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import QRCode from 'qrcode'
-import loginStyles from '../../pages/LoginPage.module.css'
 import styles from './TotpPanel.module.css'
 
 interface EnrollData {
@@ -31,8 +30,6 @@ export function TotpPanel({ enroll, onVerify, onCancel, submitLabel, cancelLabel
 
   // Render del QR a data URL para meter en <img>. El componente qrcode trabaja
   // sobre canvas/dataURL; con dataURL evitamos tener que tocar el DOM imperativo.
-  // Si no hay enroll, no hace falta limpiar el state porque la sección del QR
-  // se condiciona con `enroll && (...)` y `qrDataUrl` solo se lee dentro de ella.
   useEffect(() => {
     if (!enroll) return
     let cancelled = false
@@ -66,7 +63,7 @@ export function TotpPanel({ enroll, onVerify, onCancel, submitLabel, cancelLabel
   }
 
   return (
-    <form className={loginStyles.form} onSubmit={handleSubmit} noValidate>
+    <form className={styles.form} onSubmit={handleSubmit} noValidate>
 
       {enroll && (
         <>
@@ -95,11 +92,11 @@ export function TotpPanel({ enroll, onVerify, onCancel, submitLabel, cancelLabel
         </>
       )}
 
-      <div className={loginStyles.field}>
-        <label className={loginStyles.label}>{t('totp.codeLbl')}</label>
+      <div className={styles.field}>
+        <label className={styles.label}>{t('totp.codeLbl')}</label>
         <input
           ref={inputRef}
-          className={`${loginStyles.input} ${styles.codeInput}`}
+          className={`${styles.input} ${styles.codeInput}`}
           type="text"
           inputMode="numeric"
           autoComplete="one-time-code"
@@ -111,11 +108,11 @@ export function TotpPanel({ enroll, onVerify, onCancel, submitLabel, cancelLabel
         />
       </div>
 
-      {error && <p className={loginStyles.error}>{error}</p>}
+      {error && <p className={styles.error}>{error}</p>}
 
       <button
         type="submit"
-        className={`${loginStyles.submitBtn} hover-lift`}
+        className={`${styles.submitBtn} hover-lift`}
         disabled={loading || code.length !== 6}
       >
         {loading ? t('totp.verifying') : (submitLabel ?? t('totp.verify'))}
@@ -124,7 +121,7 @@ export function TotpPanel({ enroll, onVerify, onCancel, submitLabel, cancelLabel
       {onCancel && (
         <button
           type="button"
-          className={`${loginStyles.forgotBtn} ${loginStyles.backBtnBlock}`}
+          className={styles.cancelBtn}
           onClick={onCancel}
           disabled={loading}
         >

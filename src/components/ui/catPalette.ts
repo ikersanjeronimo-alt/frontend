@@ -42,7 +42,11 @@ const ROUTE_CATS: Record<string, { color: CatColorKey; seed: number }> = {
   '/404':                { color: 'lilac',      seed: 18 },
 }
 
+// Fallback duro: la ruta '/' siempre existe en ROUTE_CATS, pero con
+// noUncheckedIndexedAccess el compilador no lo sabe. Lo materializamos.
+const DEFAULT_CAT: { color: CatColorKey; seed: number } = { color: 'lavender', seed: 0 }
+
 export function catFor(key: keyof typeof ROUTE_CATS): { color: string; seed: number } {
-  const entry = ROUTE_CATS[key] ?? ROUTE_CATS['/']
+  const entry = ROUTE_CATS[key] ?? DEFAULT_CAT
   return { color: CAT_PALETTE[entry.color], seed: entry.seed }
 }

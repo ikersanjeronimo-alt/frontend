@@ -3,9 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../context/AuthContext'
 import { updateModProfile } from '../../services/profile'
 import { useSavedFlash } from '../../hooks/useSavedFlash'
-import { MOCK_MOD_PROFILE } from '../../mocks/data'
+import { Section } from '../ui/Section'
+import { Card } from '../ui/Card'
+import { Input } from '../ui/Input'
+import { FormField } from '../ui/FormField'
+import { SaveButton } from '../ui/SaveButton'
+import { Feedback } from '../ui/Feedback'
 import type { ApiModProfile } from '../../types/api'
-import styles from '../../pages/SettingsPage.module.css'
+import styles from './ModProfileSection.module.css'
 
 export function ModProfileSection() {
   const { user } = useAuth()
@@ -21,10 +26,18 @@ export function ModProfileSection() {
   const COMPANY_FIELD = { key: 'company' as const, label: t('settings.modCompany'), placeholder: t('settings.modCompanyPh') }
   const FIELDS = isAdmin ? BASE_FIELDS : [...BASE_FIELDS, COMPANY_FIELD]
 
-  // TODO: cuando exista GET /api/users/me/mod-profile, sustituir el seed por useApi.
-  const [profile, setProfile] = useState<ApiModProfile>(MOCK_MOD_PROFILE)
-  const [error, setError]     = useState('')
-  const [saved, flash]        = useSavedFlash()
+  // Seed derivado del user actual: cada moderador ve SU username, no el de
+  // un mock global. El resto de campos los rellena al ser la primera vez,
+  // y a partir de ahí se persiste vía updateModProfile (cuando el back exista).
+  // TODO: cuando exista GET /api/users/me/mod-profile, sustituir todo esto por useApi.
+  const [profile, setProfile] = useState<ApiModProfile>(() => ({
+    name: '',
+    lastName: '',
+    username: user?.username ?? '',
+    email: '',
+  }))
+  const [error, setError] = useState('')
+  const [saved, flash]    = useSavedFlash()
 
   const handleSave = async () => {
     setError('')
@@ -45,33 +58,27 @@ export function ModProfileSection() {
   }
 
   return (
-    <div className={styles.section}>
-      <h2 className={styles.sectionTitle}>{t('settings.section_perfil')}</h2>
-
-      <div className={styles.card}>
+    <Section title={t('settings.section_perfil')}>
+      <Card>
         {FIELDS.map(f => (
-          <div key={f.key} className={styles.field ?? styles.card}>
-            <label className={styles.cardTitle} htmlFor={`mod-${f.key}`}>{f.label}</label>
-            <input
+          <FormField key={f.key} label={f.label} htmlFor={`mod-${f.key}`}>
+            <Input
               id={`mod-${f.key}`}
-              className={styles.input}
               value={profile[f.key] ?? ''}
               onChange={e => setProfile(prev => ({ ...prev, [f.key]: e.target.value }))}
               placeholder={f.placeholder}
               type={f.key === 'email' ? 'email' : 'text'}
               maxLength={f.key === 'username' ? 32 : 100}
             />
-          </div>
+          </FormField>
         ))}
 
-        {error && <p className={styles.fieldError} role="alert">{error}</p>}
+        {error && <Feedback variant="error">{error}</Feedback>}
 
-        <div className={styles.inputRow + ' ' + styles.inputRowSpaced}>
-          <button className={styles.saveBtn} onClick={handleSave}>
-            {saved ? t('common.saved') : t('settings.modSave')}
-          </button>
+        <div className={styles.actions}>
+          <SaveButton onClick={handleSave} saved={saved} label={t('settings.modSave')} />
         </div>
-      </div>
-    </div>
+      </Card>
+    </Section>
   )
 }

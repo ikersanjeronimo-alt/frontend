@@ -27,13 +27,13 @@ export function ModRegisterPage() {
   const [phase, setPhase]       = useState<Phase>('form')
   const [enrollment, setEnrollment] = useState<RegisterModEnrollment | null>(null)
 
-  const [nombre, setNombre]     = useState('')
-  const [apellido, setApellido] = useState('')
+  const [firstName, setFirstName]     = useState('')
+  const [lastName, setLastName] = useState('')
   const [username, setUsername] = useState('')
   const [email, setEmail]       = useState('')
-  const [empresa, setEmpresa]   = useState('')
-  const [profesion, setProfesion]           = useState<Profession | ''>('')
-  const [especializacion, setEspecializacion] = useState<Specialization | ''>('')
+  const [company, setCompany]   = useState('')
+  const [profession, setProfession]           = useState<Profession | ''>('')
+  const [specialization, setSpecialization] = useState<Specialization | ''>('')
   const [password, setPassword] = useState('')
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
@@ -42,13 +42,13 @@ export function ModRegisterPage() {
   const switchMode = (m: Mode) => { setMode(m); setError('') }
 
   const resetForm = () => {
-    setNombre('')
-    setApellido('')
+    setFirstName('')
+    setLastName('')
     setUsername('')
     setEmail('')
-    setEmpresa('')
-    setProfesion('')
-    setEspecializacion('')
+    setCompany('')
+    setProfession('')
+    setSpecialization('')
     setPassword('')
   }
 
@@ -56,9 +56,9 @@ export function ModRegisterPage() {
     e.preventDefault()
     setError('')
 
-    const baseFilled = nombre.trim() && apellido.trim() && username.trim() && email.trim() && password.trim()
-    const empresaRequired = mode === 'moderador'
-    if (!baseFilled || (empresaRequired && !empresa.trim())) {
+    const baseFilled = firstName.trim() && lastName.trim() && username.trim() && email.trim() && password.trim()
+    const companyRequired = mode === 'moderador'
+    if (!baseFilled || (companyRequired && !company.trim())) {
       setError(t('modRegister.errFields'))
       return
     }
@@ -80,16 +80,16 @@ export function ModRegisterPage() {
     setLoading(true)
     try {
       const result = await registerMod({
-        name: nombre.trim(),
-        lastName: apellido.trim(),
+        name: firstName.trim(),
+        lastName: lastName.trim(),
         username: username.trim(),
         email: email.trim(),
         password: password.trim(),
         role,
         ...(mode === 'moderador' ? {
-          company: empresa.trim(),
-          ...(profesion       ? { profession: profesion }            : {}),
-          ...(especializacion ? { specialization: especializacion } : {}),
+          company: company.trim(),
+          ...(profession       ? { profession: profession }            : {}),
+          ...(specialization ? { specialization: specialization } : {}),
         } : {}),
       })
       setEnrollment(result)
@@ -196,8 +196,8 @@ export function ModRegisterPage() {
                 className={styles.input}
                 type="text"
                 placeholder={t('modRegister.namePh')}
-                value={nombre}
-                onChange={e => setNombre(e.target.value)}
+                value={firstName}
+                onChange={e => setFirstName(e.target.value)}
                 maxLength={64}
                 autoFocus
               />
@@ -209,8 +209,8 @@ export function ModRegisterPage() {
                 className={styles.input}
                 type="text"
                 placeholder={t('modRegister.lastNamePh')}
-                value={apellido}
-                onChange={e => setApellido(e.target.value)}
+                value={lastName}
+                onChange={e => setLastName(e.target.value)}
                 maxLength={64}
               />
             </div>
@@ -246,8 +246,8 @@ export function ModRegisterPage() {
                     className={styles.input}
                     type="text"
                     placeholder={t('modRegister.companyPh')}
-                    value={empresa}
-                    onChange={e => setEmpresa(e.target.value)}
+                    value={company}
+                    onChange={e => setCompany(e.target.value)}
                     maxLength={128}
                   />
                 </div>
@@ -255,8 +255,8 @@ export function ModRegisterPage() {
                 <div className={styles.field}>
                   <label className={styles.label}>{t('modRegister.professionLbl')}</label>
                   <Select<Profession>
-                    value={profesion}
-                    onChange={setProfesion}
+                    value={profession}
+                    onChange={setProfession}
                     options={PROFESSION_OPTIONS}
                     ariaLabel={t('modRegister.professionLbl')}
                   />
@@ -265,8 +265,8 @@ export function ModRegisterPage() {
                 <div className={styles.field}>
                   <label className={styles.label}>{t('modRegister.specLbl')}</label>
                   <Select<Specialization>
-                    value={especializacion}
-                    onChange={setEspecializacion}
+                    value={specialization}
+                    onChange={setSpecialization}
                     options={SPECIALIZATION_OPTIONS}
                     ariaLabel={t('modRegister.specLbl')}
                   />

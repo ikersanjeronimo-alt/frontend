@@ -1,7 +1,14 @@
 import { useApi } from './useApi'
 import { getActiveMembers } from '../services/communities'
-import { MOCK_CHAT_MEMBERS } from '../mocks/data'
+import type { ApiChatMember } from '../types/api'
+
+const EMPTY: ApiChatMember[] = []
 
 export function useCommunityMembers(communityId: string) {
-  return useApi(() => getActiveMembers(communityId), MOCK_CHAT_MEMBERS, [communityId])
+  return useApi(
+    () => getActiveMembers(communityId),
+    EMPTY,
+    () => import('../mocks/data').then(m => m.MOCK_CHAT_MEMBERS),
+    [communityId],
+  )
 }

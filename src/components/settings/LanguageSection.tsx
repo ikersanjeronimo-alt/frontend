@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { setLang as setI18nLang, getLang, SUPPORTED_LANGS } from '../../lib/i18n'
 import type { Lang } from '../../lib/i18n'
-import styles from '../../pages/SettingsPage.module.css'
+import { Section } from '../ui/Section'
+import { Card } from '../ui/Card'
+import styles from './LanguageSection.module.css'
 
 const LABEL_KEY: Record<Lang, string> = {
   es: 'langOptionEs',
@@ -20,20 +22,20 @@ export function LanguageSection() {
   }
 
   return (
-    <div className={styles.section}>
-      <h2 className={styles.sectionTitle}>{t('settings.langPickerTitle')}</h2>
-      <div className={styles.card}>
+    <Section title={t('settings.langPickerTitle')}>
+      <Card>
         {(SUPPORTED_LANGS as readonly Lang[]).map(l => (
           <button
             key={l}
-            className={`${styles.langRow} ${lang === l ? styles.langRowActive : ''}`}
+            type="button"
+            className={`${styles.row} ${lang === l ? styles.rowActive : ''}`}
             onClick={() => handleChange(l)}
           >
             <span>{t(`settings.${LABEL_KEY[l]}`)}</span>
-            {lang === l && <span className={styles.langCheck}>✓</span>}
+            {lang === l && <span className={styles.check}>✓</span>}
           </button>
         ))}
-      </div>
-    </div>
+      </Card>
+    </Section>
   )
 }

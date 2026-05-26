@@ -1,4 +1,5 @@
 import { apiFetch, isNetworkError } from './api'
+import { tokenStorage } from './storage'
 import { ALLOW_MOCK_FALLBACK } from '../lib/env'
 import { markDemoMode } from '../lib/demoMode'
 import {
@@ -17,8 +18,6 @@ import type {
   VerifyTotpPayload,
   VerifyLoginPayload,
 } from '../types/api'
-
-const TOKEN_KEY = 'sys_token'
 
 // ── Mapping de roles backend ↔ frontend ─────────────────────
 // El backend conoce PROFESSIONAL/ADMINISTRATOR (moderación). Para usuarios
@@ -60,7 +59,7 @@ function adaptAuthResponse(r: BackendAuthResponse): AuthResponse {
 // ── Endpoints ──────────────────────────────────────────────
 
 export async function initAnonymous(): Promise<AuthResponse> {
-  const savedToken = localStorage.getItem(TOKEN_KEY)
+  const savedToken = tokenStorage.get()
   const r = await apiFetch<BackendAuthResponse>('/api/auth/anonymous', {
     method: 'POST',
     body: JSON.stringify({ anonToken: savedToken ?? null }),

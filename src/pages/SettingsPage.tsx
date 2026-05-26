@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
+import { useRole } from '../hooks/useRole'
 
 import { AccountSection }       from '../components/settings/AccountSection'
 import { ModProfileSection }    from '../components/settings/ModProfileSection'
@@ -18,11 +19,10 @@ import { catFor } from '../components/ui/catPalette'
 import styles from './SettingsPage.module.css'
 
 export function SettingsPage() {
-  const { user, logout } = useAuth()
+  const { logout } = useAuth()
+  const { isMod } = useRole()
   const navigate = useNavigate()
   const { t } = useTranslation()
-
-  const isMod = user?.role === 'MODERATOR' || user?.role === 'ADMIN'
 
   const SECTIONS = [
     { id: 'cuenta',          label: t('settings.section_cuenta') },

@@ -1,25 +1,32 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from './useApi'
 import { optimisticMutation } from '../lib/optimisticMutation'
 import { getMessages, sendMessage as apiSendMessage } from '../services/communities'
-import { MOCK_MESSAGES } from '../mocks/data'
 import type { ApiMessage } from '../types/api'
+
+const EMPTY: ApiMessage[] = []
 
 export function useCommunityChat(communityId: string) {
   const { user } = useAuth()
   const username = user?.username ?? 'tú'
 
-  // Atribuimos los mensajes "propios" del mock al usuario actual.
-  const fallback = useMemo<ApiMessage[]>(
-    () => MOCK_MESSAGES.map(m => (m.own ? { ...m, username } : m)),
-    [username],
+  // Si caemos al mock, atribuimos los mensajes "propios" del seed al user actual.
+  // Cada comunidad tiene un hilo distinto via buildMockMessages(id).
+  // Dynamic import: solo se descarga en modo demo cuando el back está caído.
+  const mockFallback = useCallback(
+    async () => {
+      const { buildMockMessages } = await import('../mocks/data')
+      return buildMockMessages(communityId).map(m => (m.own ? { ...m, username } : m))
+    },
+    [communityId, username],
   )
 
   const { data: messages, setData: setMessages, loading, error } = useApi(
     () => getMessages(communityId),
-    fallback,
-    [communityId, fallback],
+    EMPTY,
+    mockFallback,
+    [communityId, username],
   )
 
   const sendMessage = useCallback(async (text: string) => {

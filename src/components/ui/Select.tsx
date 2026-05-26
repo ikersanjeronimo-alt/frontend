@@ -75,8 +75,12 @@ export function Select<T extends string>({
       setHighlight(h => (h - 1 + total) % total)
     } else if (e.key === 'Enter') {
       e.preventDefault()
-      if (highlight <= 0) select('')
-      else select(options[highlight - 1])
+      if (highlight <= 0) {
+        select('')
+      } else {
+        const opt = options[highlight - 1]
+        if (opt !== undefined) select(opt)
+      }
     }
   }
 

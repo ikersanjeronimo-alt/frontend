@@ -3,29 +3,15 @@
  * Cuando exista el back, sincronizar con POST/DELETE /api/events/:id/interest
  * y reemplazar el count optimista por el del servidor.
  */
-const STORAGE_KEY = 'sys_event_interests'
+import { eventInterestsStorage } from '../services/storage'
 
 type Listener = (ids: ReadonlySet<string>) => void
 
 const listeners = new Set<Listener>()
-let interests: Set<string> = loadFromStorage()
-
-function loadFromStorage(): Set<string> {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return new Set()
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed) && parsed.every(x => typeof x === 'string')) {
-      return new Set(parsed)
-    }
-  } catch { /* JSON inválido */ }
-  return new Set()
-}
+let interests: Set<string> = new Set(eventInterestsStorage.get() ?? [])
 
 function persist(): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...interests]))
-  } catch { /* quota / modo privado */ }
+  eventInterestsStorage.set([...interests])
 }
 
 function notify(): void {

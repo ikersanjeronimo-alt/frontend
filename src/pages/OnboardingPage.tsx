@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { saveOnboarding } from '../services/profile'
+import { silentMutation } from '../lib/silentMutation'
 import { SleepingCat } from '../components/ui/SleepingCat'
 import { catFor } from '../components/ui/catPalette'
 import styles from './OnboardingPage.module.css'
@@ -33,12 +34,18 @@ export function OnboardingPage() {
     if (animating) return
 
     if (step === 1 && usernameDraft.trim() && usernameDraft.trim() !== user?.username) {
-      await updateUsername(usernameDraft.trim()).catch(() => {/* ignorar error de red en onboarding */})
+      // En onboarding no bloqueamos al usuario con un error si el server falla
+      // — silentMutation marca demo en network errors y devuelve el mensaje
+      // si fue 4xx/5xx. Aquí lo ignoramos a propósito: el username se puede
+      // re-intentar desde Configuración después.
+      await silentMutation(updateUsername(usernameDraft.trim()))
     }
 
     if (isLast) {
       if (selected.size > 0) {
-        void saveOnboarding([...selected]).catch(() => { /* best-effort */ })
+        // Mismo razonamiento: si el endpoint falla, la sesión sigue funcionando
+        // — los temas elegidos se pueden volver a editar desde Configuración.
+        void silentMutation(saveOnboarding([...selected]))
       }
       navigate('/dashboard')
       return
@@ -85,8 +92,8 @@ export function OnboardingPage() {
         </div>
 
         <div className={styles.stepContent}>
-          <h1 className={styles.stepTitle}>{current.title}</h1>
-          <p className={styles.stepSubtitle}>{current.subtitle}</p>
+          <h1 className={styles.stepTitle}>{current?.title}</h1>
+          <p className={styles.stepSubtitle}>{current?.subtitle}</p>
 
           {step === 0 && (
             <div className={styles.welcomeItems}>

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -19,7 +18,7 @@ const ACTIVITY_ICON: Record<string, ReactNode> = {
 }
 
 export function ProfilePage() {
-  const { user, updateUsername } = useAuth()
+  const { user } = useAuth()
   const { data: profile, loading, error } = useProfile()
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -31,21 +30,12 @@ export function ProfilePage() {
     ADMIN:     t('common.administrator'),
   }
 
-  const [editingUsername, setEditingUsername] = useState(false)
-  const [usernameDraft, setUsernameDraft]     = useState(user?.username ?? '')
-
   if (loading || error) {
     return (
       <div className={styles.page}>
         <PageState loading={loading} error={error} />
       </div>
     )
-  }
-
-  const handleSaveUsername = () => {
-    const t = usernameDraft.trim()
-    if (t && t !== user?.username) updateUsername(t)
-    setEditingUsername(false)
   }
 
   const initials = (user?.username ?? 'US').slice(0, 2).toUpperCase()
@@ -79,27 +69,14 @@ export function ProfilePage() {
 
       <div className={styles.main}>
         <div className={styles.usernameRow}>
-          {editingUsername ? (
-            <div className={styles.usernameEditRow}>
-              <input
-                className={styles.usernameInput}
-                value={usernameDraft}
-                onChange={e => setUsernameDraft(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleSaveUsername(); if (e.key === 'Escape') setEditingUsername(false) }}
-                maxLength={32}
-                autoFocus
-              />
-              <button className={styles.usernameSaveBtn} onClick={handleSaveUsername}>Guardar</button>
-              <button className={styles.usernameCancelBtn} onClick={() => setEditingUsername(false)}>✕</button>
-            </div>
-          ) : (
-            <div className={styles.usernameDisplay}>
-              <h1 className={styles.username}>{user?.username}</h1>
-              <button className={styles.editUsernameBtn} onClick={() => { setUsernameDraft(user?.username ?? ''); setEditingUsername(true) }}>
-                {t('profile.editUsername')}
-              </button>
-            </div>
-          )}
+          <div className={styles.usernameDisplay}>
+            <h1 className={styles.username}>{user?.username}</h1>
+            {/* La edición vive solo en /configuracion > Cuenta. Aquí es solo
+                un atajo — la fuente única evita triplicar UI y race conditions. */}
+            <button className={styles.editUsernameBtn} onClick={() => navigate('/configuracion')}>
+              {t('profile.editUsername')}
+            </button>
+          </div>
         </div>
 
         <div className={styles.metaRow}>

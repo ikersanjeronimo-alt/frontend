@@ -2,7 +2,12 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { changePassword } from '../../services/profile'
-import styles from '../../pages/SettingsPage.module.css'
+import { Section } from '../ui/Section'
+import { Card } from '../ui/Card'
+import { Input } from '../ui/Input'
+import { SaveButton } from '../ui/SaveButton'
+import { Feedback } from '../ui/Feedback'
+import styles from './SecuritySection.module.css'
 
 interface SecuritySectionProps {
   isMod: boolean
@@ -41,58 +46,50 @@ export function SecuritySection({ isMod }: SecuritySectionProps) {
     }
   }
 
+  if (!isMod) {
+    return (
+      <Section title={t('settings.section_seguridad')}>
+        <Card body={t('settings.secUserBody')}>
+          <SaveButton onClick={() => navigate('/login')} label={t('settings.secGoLogin')} />
+        </Card>
+      </Section>
+    )
+  }
+
   return (
-    <div className={styles.section}>
-      <h2 className={styles.sectionTitle}>{t('settings.section_seguridad')}</h2>
-
-      {isMod ? (
-        <div className={styles.card}>
-          <h3 className={styles.cardTitle}>{t('settings.secChangePass')}</h3>
-
-          <div className={styles.passFields}>
-            <input
-              aria-label={t('settings.secCurrentPh')}
-              className={styles.input}
-              type="password"
-              placeholder={t('settings.secCurrentPh')}
-              value={currentPass}
-              onChange={e => setCurrentPass(e.target.value)}
-            />
-            <input
-              aria-label={t('settings.secNewPh')}
-              className={styles.input}
-              type="password"
-              placeholder={t('settings.secNewPh')}
-              value={newPass}
-              onChange={e => setNewPass(e.target.value)}
-            />
-            <input
-              aria-label={t('settings.secConfirmPh')}
-              className={styles.input}
-              type="password"
-              placeholder={t('settings.secConfirmPh')}
-              value={confirmPass}
-              onChange={e => setConfirmPass(e.target.value)}
-            />
-          </div>
-
-          {error && <p className={styles.fieldError} role="alert">{error}</p>}
-          {msg   && <p className={styles.fieldSuccess}>{msg}</p>}
-
-          <div className={styles.inputRow + ' ' + styles.inputRowSpacedSm}>
-            <button className={styles.saveBtn} onClick={handleChangePassword}>
-              {t('settings.secSubmit')}
-            </button>
-          </div>
+    <Section title={t('settings.section_seguridad')}>
+      <Card title={t('settings.secChangePass')}>
+        <div className={styles.fields}>
+          <Input
+            aria-label={t('settings.secCurrentPh')}
+            type="password"
+            placeholder={t('settings.secCurrentPh')}
+            value={currentPass}
+            onChange={e => setCurrentPass(e.target.value)}
+          />
+          <Input
+            aria-label={t('settings.secNewPh')}
+            type="password"
+            placeholder={t('settings.secNewPh')}
+            value={newPass}
+            onChange={e => setNewPass(e.target.value)}
+          />
+          <Input
+            aria-label={t('settings.secConfirmPh')}
+            type="password"
+            placeholder={t('settings.secConfirmPh')}
+            value={confirmPass}
+            onChange={e => setConfirmPass(e.target.value)}
+          />
         </div>
-      ) : (
-        <div className={styles.card}>
-          <p className={styles.cardBody}>{t('settings.secUserBody')}</p>
-          <button className={styles.saveBtn} onClick={() => navigate('/login')}>
-            {t('settings.secGoLogin')}
-          </button>
+
+        {error && <Feedback variant="error">{error}</Feedback>}
+        {msg   && <Feedback variant="success">{msg}</Feedback>}
+
+        <div className={styles.actions}>
+          <SaveButton onClick={handleChangePassword} label={t('settings.secSubmit')} />
         </div>
-      )}
-    </div>
+      </Card>
+    </Section>
   )
 }

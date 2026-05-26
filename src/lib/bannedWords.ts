@@ -10,30 +10,17 @@
  *    el render del cliente puede dejar de mapear (o conservarlo como red de
  *    seguridad).
  */
-const STORAGE_KEY = 'sys_banned_words'
+import { bannedWordsStorage } from '../services/storage'
+
 const INITIAL: readonly string[] = ['puta', 'idiota', 'imbécil', 'tonto']
 
 type Listener = (words: string[]) => void
 
 const listeners = new Set<Listener>()
-let words: string[] = loadFromStorage()
-
-function loadFromStorage(): string[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return [...INITIAL]
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed) && parsed.every(w => typeof w === 'string')) {
-      return parsed
-    }
-  } catch { /* JSON inválido */ }
-  return [...INITIAL]
-}
+let words: string[] = bannedWordsStorage.get() ?? [...INITIAL]
 
 function persist(): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(words))
-  } catch { /* quota, modo privado, etc. — best-effort */ }
+  bannedWordsStorage.set(words)
 }
 
 function notify(): void {

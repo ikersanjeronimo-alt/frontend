@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getInitialTheme, setTheme } from '../../lib/theme'
-import { Toggle } from './Toggle'
-import styles from '../../pages/SettingsPage.module.css'
+import { Section } from '../ui/Section'
+import { Card } from '../ui/Card'
+import { ToggleRow } from '../ui/ToggleRow'
 
 export function AppearanceSection() {
   const { t } = useTranslation()
@@ -14,17 +15,15 @@ export function AppearanceSection() {
   }
 
   return (
-    <div className={styles.section}>
-      <h2 className={styles.sectionTitle}>{t('settings.section_apariencia')}</h2>
-      <div className={styles.card}>
-        <div className={styles.toggleRow}>
-          <div>
-            <p className={styles.toggleLabel}>{t('settings.darkMode')}</p>
-            <p className={styles.toggleSub}>{t('settings.darkModeSub')}</p>
-          </div>
-          <Toggle on={darkMode} ariaLabel={t('settings.darkMode')} onChange={handleToggle} />
-        </div>
-      </div>
-    </div>
+    <Section title={t('settings.section_apariencia')}>
+      <Card>
+        <ToggleRow
+          label={t('settings.darkMode')}
+          sub={t('settings.darkModeSub')}
+          on={darkMode}
+          onChange={handleToggle}
+        />
+      </Card>
+    </Section>
   )
 }

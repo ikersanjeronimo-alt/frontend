@@ -1,5 +1,6 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
+import { langStorage } from '../services/storage'
 
 /**
  * Configuración i18n con Español (default), English y Euskera.
@@ -13,13 +14,12 @@ import { initReactI18next } from 'react-i18next'
  * Cobertura: todas las pantallas de la app (Sprint 3). Cuando añadas una
  * pantalla nueva, añade las keys aquí.
  */
-const STORAGE_KEY = 'sys_lang'
 const DEFAULT_LANG = 'es'
 const SUPPORTED = ['es', 'en', 'eu'] as const
 export type Lang = typeof SUPPORTED[number]
 
 function getInitialLang(): Lang {
-  const stored = localStorage.getItem(STORAGE_KEY)
+  const stored = langStorage.get()
   if (stored && (SUPPORTED as readonly string[]).includes(stored)) {
     return stored as Lang
   }
@@ -66,7 +66,6 @@ const resources = {
         entrar:        'Entrar',
         ajustes:       'Configuración',
         dashboard:     'Ir a tu dashboard',
-        editUsername:  'Haz clic para cambiar tu username',
       },
       footer: {
         ayuda:    'Cómo conseguir ayuda profesional',
@@ -525,7 +524,6 @@ const resources = {
         moderacion: 'Moderation', comunidades: 'Communities', profesionales: 'Professional help',
         eventos: 'Events', mapa: 'Map', botella: 'Bottle', timeMachine: 'Time machine',
         entrar: 'Sign in', ajustes: 'Settings', dashboard: 'Go to your dashboard',
-        editUsername: 'Click to change your username',
       },
       footer: {
         ayuda: 'How to get professional help',
@@ -849,7 +847,6 @@ const resources = {
         eventos: 'Ekitaldiak', mapa: 'Mapa', botella: 'Botila',
         timeMachine: 'Denbora-makina', entrar: 'Sartu', ajustes: 'Ezarpenak',
         dashboard: 'Joan zure panelara',
-        editUsername: 'Egin klik zure erabiltzaile-izena aldatzeko',
       },
       footer: {
         ayuda: 'Nola lortu laguntza profesionala',
@@ -1186,7 +1183,7 @@ i18n
   })
 
 export function setLang(lang: Lang): void {
-  localStorage.setItem(STORAGE_KEY, lang)
+  langStorage.set(lang)
   i18n.changeLanguage(lang)
 }
 

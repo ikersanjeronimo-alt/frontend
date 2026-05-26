@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
@@ -18,6 +18,12 @@ export function EventCreatePage() {
   const [duration, setDuration] = useState('')
   const [host,     setHost]     = useState(user?.username ?? '')
   const [done,     setDone]     = useState(false)
+  const redirectTimer = useRef<number | null>(null)
+
+  // Limpiar el timer al desmontar para evitar navegar después del unmount.
+  useEffect(() => () => {
+    if (redirectTimer.current !== null) window.clearTimeout(redirectTimer.current)
+  }, [])
 
   if (done) {
     return (
@@ -38,7 +44,11 @@ export function EventCreatePage() {
     // const payload = { title, desc, date, time, duration, host, spots: 20, total: 20, tags: [] }
     // createEvent(payload).then(e => navigate(`/eventos/${e.id}`))
     setDone(true)
-    setTimeout(() => navigate('/eventos'), 1800)
+    if (redirectTimer.current !== null) window.clearTimeout(redirectTimer.current)
+    redirectTimer.current = window.setTimeout(() => {
+      redirectTimer.current = null
+      navigate('/eventos')
+    }, 1800)
   }
 
   return (

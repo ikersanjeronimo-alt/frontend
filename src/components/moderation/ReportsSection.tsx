@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useModerationReports } from '../../hooks/useModerationReports'
 import { updateReport } from '../../services/moderation'
 import { PageState } from '../ui/PageState'
-import styles from '../../pages/ModerationPage.module.css'
+import styles from './ReportsSection.module.css'
 
 export function ReportsSection() {
   const { t } = useTranslation()
@@ -37,14 +37,15 @@ export function ReportsSection() {
     <div className={styles.body}>
       <div className={styles.reportList}>
         <div className={styles.filterTabs}>
-          {FILTER_TABS.map(t => (
+          {FILTER_TABS.map(tab => (
             <button
-              key={t.id}
-              className={`${styles.filterTab} ${filter === t.id ? styles.filterTabActive : ''}`}
-              onClick={() => setFilter(t.id)}
+              type="button"
+              key={tab.id}
+              className={`${styles.filterTab} ${filter === tab.id ? styles.filterTabActive : ''}`}
+              onClick={() => setFilter(tab.id)}
             >
-              {t.label}
-              {t.id === 'pending' && pendingCount > 0 && (
+              {tab.label}
+              {tab.id === 'pending' && pendingCount > 0 && (
                 <span className={styles.filterBadge}>{pendingCount}</span>
               )}
             </button>
@@ -58,6 +59,7 @@ export function ReportsSection() {
         ) : (
           filtered.map(r => (
             <button
+              type="button"
               key={r.id}
               className={`${styles.reportCard} ${selected === r.id ? styles.reportCardSelected : ''} ${styles[`status_${r.status}`]}`}
               onClick={() => setSelected(selected === r.id ? null : r.id)}
@@ -82,18 +84,21 @@ export function ReportsSection() {
               {selected === r.id && r.status === 'pending' && (
                 <div className={styles.reportActions} onClick={e => e.stopPropagation()}>
                   <button
+                    type="button"
                     className={`${styles.actionBtn} ${styles.actionBtnResolve}`}
                     onClick={() => updateStatus(r.id, 'resolved')}
                   >
                     {t('moderation.resolve')}
                   </button>
                   <button
+                    type="button"
                     className={`${styles.actionBtn} ${styles.actionBtnWarn}`}
                     onClick={() => updateStatus(r.id, 'resolved')}
                   >
                     {t('moderation.warn')}
                   </button>
                   <button
+                    type="button"
                     className={`${styles.actionBtn} ${styles.actionBtnDismiss}`}
                     onClick={() => updateStatus(r.id, 'dismissed')}
                   >

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -10,6 +10,7 @@ import { useMapStories } from '../hooks/useMapStories'
 import { useBannedWords } from '../hooks/useBannedWords'
 import { maskBannedWords } from '../lib/bannedWords'
 import { createStory } from '../services/stories'
+import { silentMutation } from '../lib/silentMutation'
 import { SleepingCat } from '../components/ui/SleepingCat'
 import { catFor } from '../components/ui/catPalette'
 import styles from './MapPage.module.css'
@@ -24,7 +25,7 @@ const HTML_ESCAPE: Record<string, string> = {
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
 }
 function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, c => HTML_ESCAPE[c])
+  return s.replace(/[&<>"']/g, c => HTML_ESCAPE[c] ?? c)
 }
 
 function makeIcon(emoji: string, bg: string, size = 20) {
@@ -84,16 +85,25 @@ export function MapPage() {
   const [pending, setPending]       = useState<{ lat: number; lng: number } | null>(null)
   const [draft, setDraft]           = useState('')
   const [submitted, setSubmitted]   = useState(false)
+  const resetTimer = useRef<number | null>(null)
 
-  const handleMapClick = useCallback((lat: number, lng: number) => {
+  // Limpiar el timer al desmontar para evitar setState sobre componente desmontado.
+  useEffect(() => () => {
+    if (resetTimer.current !== null) window.clearTimeout(resetTimer.current)
+  }, [])
+
+  const handleMapClick = (lat: number, lng: number) => {
     setPending({ lat, lng })
     setAddingMode(false)
     setDraft('')
     setSubmitted(false)
-  }, [])
+  }
 
-  const handleSubmit = () => {
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  const handleSubmit = async () => {
     if (!pending || !draft.trim()) return
+    setSubmitError(null)
     const optimistic: Story = {
       id:    `local_${Date.now()}`,
       lat:   pending.lat,
@@ -104,17 +114,29 @@ export function MapPage() {
       own:   true,
     }
     setLocalStories(prev => [...prev, optimistic])
-    createStory(pending.lat, pending.lng, draft.trim(), '')
-      .then(saved => {
-        setLocalStories(prev => prev.filter(s => s.id !== optimistic.id))
-        setRemoteStories(prev => [...prev, saved])
-      })
-      .catch(() => { /* mantener local si falla */ })
     setSubmitted(true)
-    setTimeout(() => {
+    if (resetTimer.current !== null) window.clearTimeout(resetTimer.current)
+    resetTimer.current = window.setTimeout(() => {
       setPending(null)
       setSubmitted(false)
+      resetTimer.current = null
     }, 2000)
+
+    try {
+      const saved = await createStory(pending.lat, pending.lng, draft.trim(), '')
+      // Reemplaza el local por el persistido del server (con id real).
+      setLocalStories(prev => prev.filter(s => s.id !== optimistic.id))
+      setRemoteStories(prev => [...prev, saved])
+    } catch (e) {
+      const err = await silentMutation(Promise.reject(e))
+      if (err) {
+        // Error de servidor: borramos el optimista y avisamos.
+        setLocalStories(prev => prev.filter(s => s.id !== optimistic.id))
+        setSubmitError(err)
+        setSubmitted(false)
+      }
+      // Si fue network error + flag, mantenemos el local (silentMutation marcó demo).
+    }
   }
 
   const cancelAdd = () => {
@@ -195,7 +217,7 @@ export function MapPage() {
             <span className={styles.writeCount}>{draft.length}/300</span>
             <button
               className={styles.writeSubmit}
-              onClick={handleSubmit}
+              onClick={() => { void handleSubmit() }}
               disabled={draft.trim().length < 10}
             >
               {t('map.anchor')}
@@ -206,6 +228,10 @@ export function MapPage() {
 
       {submitted && (
         <div className={styles.successToast}>{t('map.success')}</div>
+      )}
+
+      {submitError && (
+        <div className={styles.errorToast} role="alert">{submitError}</div>
       )}
 
       {!addingMode && !pending && (

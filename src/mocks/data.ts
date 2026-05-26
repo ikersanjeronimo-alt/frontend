@@ -29,15 +29,40 @@ export const MOCK_COMMUNITIES: ApiCommunity[] = [
 ]
 
 // ── Mensajes de chat de comunidad ──────────────────────────
-export const MOCK_MESSAGES: ApiMessage[] = [
-  { id: '1', username: 'LunaSerena12', text: 'Hola a todos. Hoy ha sido un día difícil pero estoy aquí.',                  time: '18:42', own: false },
-  { id: '2', username: 'MarOscuro44',  text: 'Ánimo Luna, ya el hecho de estar aquí cuenta muchísimo.',                    time: '18:44', own: false },
-  { id: '3', username: 'anonimo7831',  text: 'Exacto. Yo también llevo unos días complicados.',                            time: '18:45', own: true  },
-  { id: '4', username: 'RayoVerde99',  text: '¿Qué os ha ayudado a vosotros cuando todo se acumula?',                      time: '18:47', own: false },
-  { id: '5', username: 'LunaSerena12', text: 'A mí salir a caminar aunque solo sean 10 minutos. Despeja mucho la cabeza.', time: '18:49', own: false },
-  { id: '6', username: 'MarOscuro44',  text: 'La música. Siempre la música.',                                              time: '18:50', own: false },
-  { id: '7', username: 'anonimo7831',  text: 'Gracias chicos, me alegra no estar solo en esto.',                           time: '18:51', own: true  },
+// 3 plantillas de hilo, una por temática general. El communityId se mapea por
+// índice para que cada comunidad muestre un hilo distinto en demo — antes
+// todas las comunidades veían el MISMO chat, rompiendo la inmersión.
+const MESSAGE_THREADS: ApiMessage[][] = [
+  [
+    { id: '1', username: 'LunaSerena12', text: 'Hola a todos. Hoy ha sido un día difícil pero estoy aquí.',                  time: '18:42', own: false },
+    { id: '2', username: 'MarOscuro44',  text: 'Ánimo Luna, ya el hecho de estar aquí cuenta muchísimo.',                    time: '18:44', own: false },
+    { id: '3', username: 'anonimo7831',  text: 'Exacto. Yo también llevo unos días complicados.',                            time: '18:45', own: true  },
+    { id: '4', username: 'RayoVerde99',  text: '¿Qué os ha ayudado a vosotros cuando todo se acumula?',                      time: '18:47', own: false },
+    { id: '5', username: 'LunaSerena12', text: 'A mí salir a caminar aunque solo sean 10 minutos. Despeja mucho la cabeza.', time: '18:49', own: false },
+    { id: '6', username: 'MarOscuro44',  text: 'La música. Siempre la música.',                                              time: '18:50', own: false },
+    { id: '7', username: 'anonimo7831',  text: 'Gracias chicos, me alegra no estar solo en esto.',                           time: '18:51', own: true  },
+  ],
+  [
+    { id: '1', username: 'CieloAzul23', text: 'Llevo toda la semana intentando dormir antes de las 2 y no lo consigo.',        time: '23:14', own: false },
+    { id: '2', username: 'VientoSur77', text: 'Te entiendo. ¿Has probado a dejar el móvil en otra habitación?',                time: '23:16', own: false },
+    { id: '3', username: 'anonimo7831', text: 'A mí me ayudó leer en papel un rato antes de apagar la luz.',                   time: '23:18', own: true  },
+    { id: '4', username: 'CieloAzul23', text: 'Lo del móvil aún no. Lo intento esta noche.',                                   time: '23:19', own: false },
+    { id: '5', username: 'VientoSur77', text: 'Cuéntanos qué tal mañana ✊',                                                    time: '23:20', own: false },
+  ],
+  [
+    { id: '1', username: 'RayoVerde99', text: 'Pregunta para el grupo: ¿cómo gestionáis cuando alguien os pide perdón mal?',    time: '12:05', own: false },
+    { id: '2', username: 'LunaSerena12', text: 'Yo pido que reformule. "Siento que te haya dolido" no es lo mismo que "lo siento".', time: '12:08', own: false },
+    { id: '3', username: 'anonimo7831', text: 'Justo eso. Cuesta verlo pero hace mucha diferencia.',                            time: '12:10', own: true  },
+    { id: '4', username: 'MarOscuro44', text: 'Y darte permiso a no aceptar el perdón si no lo sientes auténtico.',             time: '12:12', own: false },
+    { id: '5', username: 'RayoVerde99', text: 'Gracias. Lo necesitaba leer.',                                                   time: '12:13', own: false },
+  ],
 ]
+
+export function buildMockMessages(communityId: string): ApiMessage[] {
+  const n = parseInt(communityId, 10)
+  const idx = (Number.isFinite(n) ? n : 0) % MESSAGE_THREADS.length
+  return MESSAGE_THREADS[idx] ?? MESSAGE_THREADS[0]!
+}
 
 // Miembros activos visibles en el panel lateral del chat
 export const MOCK_CHAT_MEMBERS: ApiChatMember[] = [
@@ -147,13 +172,32 @@ export const MOCK_BOTTLE_STORIES: ApiBottleStory[] = [
 ]
 
 // ── Chat 1 a 1 con profesional ─────────────────────────────
-// Mock genérico — la implementación real cargará por professionalId.
-export const MOCK_PRIVATE_MESSAGES: ApiPrivateMessage[] = [
-  { id: '1', from: 'professional', text: 'Hola. Soy tu profesional asignado. Aquí puedes contarme lo que sientas; este es un espacio seguro y confidencial.', time: 'hace 2 horas' },
-  { id: '2', from: 'user',         text: 'Gracias. Llevo unas semanas con bastante ansiedad y no sé bien por dónde empezar.',                                  time: 'hace 1 hora'  },
-  { id: '3', from: 'professional', text: 'Entiendo. ¿Recuerdas cuándo notas que se intensifica más?',                                                            time: 'hace 50 min'  },
-  { id: '4', from: 'user',         text: 'Sobre todo por las noches, cuando intento dormir.',                                                                    time: 'hace 45 min'  },
+// 3 hilos distintos rotando por professionalId — antes todos los profesionales
+// mostraban el mismo hilo genérico, lo que rompía la sensación de "1 a 1".
+const PRIVATE_THREADS: ApiPrivateMessage[][] = [
+  [
+    { id: '1', from: 'professional', text: 'Hola. Soy tu profesional asignado. Aquí puedes contarme lo que sientas; este es un espacio seguro y confidencial.', time: 'hace 2 horas' },
+    { id: '2', from: 'user',         text: 'Gracias. Llevo unas semanas con bastante ansiedad y no sé bien por dónde empezar.',                                  time: 'hace 1 hora'  },
+    { id: '3', from: 'professional', text: 'Entiendo. ¿Recuerdas cuándo notas que se intensifica más?',                                                            time: 'hace 50 min'  },
+    { id: '4', from: 'user',         text: 'Sobre todo por las noches, cuando intento dormir.',                                                                    time: 'hace 45 min'  },
+  ],
+  [
+    { id: '1', from: 'professional', text: 'Hola, gracias por escribirme. Cuéntame qué te ha traído aquí, sin prisa.',                                            time: 'hace 1 día'   },
+    { id: '2', from: 'user',         text: 'Tengo problemas para gestionar el enfado con mi familia. Me siento mal después.',                                     time: 'hace 1 día'   },
+    { id: '3', from: 'professional', text: 'El enfado no es el problema en sí. Lo importante es qué hacemos con él. ¿Quieres que veamos algunas técnicas?',       time: 'hace 22 horas' },
+  ],
+  [
+    { id: '1', from: 'professional', text: 'Buenas. Antes de empezar, ¿prefieres que hablemos por aquí o agendamos una videollamada?',                            time: 'hace 30 min'  },
+    { id: '2', from: 'user',         text: 'Por aquí está bien de momento, me cuesta menos escribir.',                                                            time: 'hace 25 min'  },
+    { id: '3', from: 'professional', text: 'Perfecto. Tómate el tiempo que necesites para cada respuesta.',                                                       time: 'hace 24 min'  },
+  ],
 ]
+
+export function buildMockPrivateMessages(professionalId: string): ApiPrivateMessage[] {
+  const n = parseInt(professionalId, 10)
+  const idx = (Number.isFinite(n) ? n : 0) % PRIVATE_THREADS.length
+  return PRIVATE_THREADS[idx] ?? PRIVATE_THREADS[0]!
+}
 
 // ── Perfil profesional (moderador) ─────────────────────────
 export const MOCK_MOD_PROFILE: ApiModProfile = {

@@ -1,0 +1,19 @@
+.item {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+}
+.item:last-child { border-bottom: none; padding-bottom: 0; }
+
+.question {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dark);
+  margin: 0 0 6px;
+}
+
+.answer {
+  font-size: 13px;
+  color: var(--mid);
+  line-height: 1.55;
+  margin: 0;
+}

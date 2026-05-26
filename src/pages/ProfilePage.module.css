@@ -118,49 +118,6 @@
 }
 .editUsernameBtn:hover { border-color: var(--primary-lt); color: var(--primary); }
 
-.usernameEditRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.usernameInput {
-  background: var(--white);
-  border: 2px solid var(--primary);
-  border-radius: 12px;
-  padding: 6px 14px;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--dark);
-  font-family: var(--font);
-  outline: none;
-  min-width: 200px;
-}
-
-.usernameSaveBtn {
-  background: var(--primary);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 6px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: var(--font);
-  cursor: pointer;
-}
-
-.usernameCancelBtn {
-  background: none;
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  padding: 5px 10px;
-  font-size: 13px;
-  color: var(--mid);
-  font-family: var(--font);
-  cursor: pointer;
-}
-
 /* ── Meta ─────────────────────────────────────────────────── */
 
 .metaRow {

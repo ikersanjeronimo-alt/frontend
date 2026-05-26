@@ -1,0 +1,43 @@
+.avatarRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.username {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--dark);
+  margin: 0 0 2px;
+}
+
+.role {
+  font-size: 12px;
+  color: var(--mid);
+  margin: 0;
+}
+
+.inputRow {
+  display: flex;
+  gap: 8px;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--lite);
+  margin: 0;
+}

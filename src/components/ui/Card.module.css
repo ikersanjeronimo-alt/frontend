@@ -1,0 +1,23 @@
+.card {
+  background: var(--white);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--dark);
+  margin: 0;
+}
+
+.body {
+  font-size: 14px;
+  color: var(--mid);
+  line-height: 1.6;
+  margin: 0;
+}

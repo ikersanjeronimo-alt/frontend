@@ -2,7 +2,12 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../context/AuthContext'
 import { useSavedFlash } from '../../hooks/useSavedFlash'
-import styles from '../../pages/SettingsPage.module.css'
+import { Section } from '../ui/Section'
+import { Card } from '../ui/Card'
+import { Input } from '../ui/Input'
+import { SaveButton } from '../ui/SaveButton'
+import { Feedback } from '../ui/Feedback'
+import styles from './AccountSection.module.css'
 
 export function AccountSection() {
   const { user, updateUsername } = useAuth()
@@ -31,42 +36,34 @@ export function AccountSection() {
     (user?.role ?? '')
 
   return (
-    <div className={styles.section}>
-      <h2 className={styles.sectionTitle}>{t('settings.section_cuenta')}</h2>
-
-      <div className={styles.card}>
+    <Section title={t('settings.section_cuenta')}>
+      <Card>
         <div className={styles.avatarRow}>
           <div className={styles.avatar}>
             {(user?.username ?? 'US').slice(0, 2).toUpperCase()}
           </div>
           <div>
-            <p className={styles.avatarUsername}>{user?.username}</p>
-            <p className={styles.avatarRole}>{roleLabel}</p>
+            <p className={styles.username}>{user?.username}</p>
+            <p className={styles.role}>{roleLabel}</p>
           </div>
         </div>
-      </div>
+      </Card>
 
-      <div className={styles.card}>
-        <h3 className={styles.cardTitle}>{t('settings.accChangeUsername')}</h3>
+      <Card title={t('settings.accChangeUsername')}>
         <div className={styles.inputRow}>
-          <input
+          <Input
             type="text"
             aria-label={t('settings.accChangeUsername')}
-            className={styles.input}
             value={usernameDraft}
             onChange={e => setUsernameDraft(e.target.value)}
             maxLength={32}
             placeholder={t('settings.accUsernamePh')}
           />
-          <button className={styles.saveBtn} onClick={handleSave}>
-            {saved ? t('common.saved') : t('common.save')}
-          </button>
+          <SaveButton onClick={handleSave} saved={saved} />
         </div>
-        {usernameError && (
-          <p className={styles.fieldError} role="alert">{usernameError}</p>
-        )}
-        <p className={styles.inputHint}>{t('settings.accUsernameHint')}</p>
-      </div>
-    </div>
+        {usernameError && <Feedback variant="error">{usernameError}</Feedback>}
+        <p className={styles.hint}>{t('settings.accUsernameHint')}</p>
+      </Card>
+    </Section>
   )
 }

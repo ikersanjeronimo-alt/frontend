@@ -1,0 +1,25 @@
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 13px 0;
+  font-size: 14px;
+  color: var(--dark);
+  font-family: var(--font);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.row:last-child { border-bottom: none; }
+.row:hover { color: var(--primary); }
+
+.rowActive { font-weight: 700; color: var(--primary); }
+
+.check {
+  font-size: 14px;
+  color: var(--primary);
+  font-weight: 700;
+}

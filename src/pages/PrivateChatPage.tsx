@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate, NavLink } from 'react-router-dom'
+import { useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useProfessionals } from '../hooks/useProfessionals'
 import { usePrivateChat } from '../hooks/usePrivateChat'
@@ -9,6 +9,10 @@ import { PageState } from '../components/ui/PageState'
 import { IconDot } from '../components/ui/Icons'
 import { SleepingCat } from '../components/ui/SleepingCat'
 import { catFor } from '../components/ui/catPalette'
+import {
+  ChatLayout, ChatSidebar, ChatSidebarItem, ChatSidebarExplore,
+  ChatMain, ChatHeader, ChatMessages, ChatBubble, ChatComposer, ChatPanel,
+} from '../components/chat/ChatLayout'
 import type { ApiProfessional } from '../types/api'
 import styles from './PrivateChatPage.module.css'
 
@@ -50,76 +54,51 @@ export function PrivateChatPage() {
   }
 
   const professional = professionals.find(p => p.id === professionalId)
-
-  const messagesRef = useRef<HTMLDivElement>(null)
-  const endRef      = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const el = messagesRef.current
-    if (!el) return
-    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120
-    if (nearBottom) endRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  const cat = catFor('/chat')
 
   if (loading) {
     return <PageState loading />
   }
 
   const sidebar = (
-    <aside className={styles.sidebar}>
-      <div className={styles.sidebarHeader}>
-        <h2 className={styles.sidebarTitle}>{t('privateChat.sidebarTitle')}</h2>
+    <ChatSidebar
+      title={t('privateChat.sidebarTitle')}
+      topRight={
         <SleepingCat
-          color={catFor('/chat').color}
-          seed={catFor('/chat').seed}
+          color={cat.color}
+          seed={cat.seed}
           size={72}
           className={styles.sidebarCat}
         />
-      </div>
-      <nav className={styles.sidebarList}>
-        {professionals.map(p => (
-          <NavLink
-            key={p.id}
-            to={`/chat/${p.id}`}
-            className={({ isActive }) => `${styles.sidebarItem} ${isActive ? styles.sidebarItemActive : ''}`}
-          >
-            <div className={styles.sidebarAvatar}>{initials(p.name)}</div>
-            <div className={styles.sidebarInfo}>
-              <span className={styles.sidebarName}>{p.name}</span>
-              <span className={styles.sidebarMeta}>
-                {SPECIALTY_LABELS[p.specialty] ?? p.specialty}
-              </span>
-            </div>
-          </NavLink>
-        ))}
-        <NavLink to="/profesionales" className={styles.sidebarExplore}>
-          {t('privateChat.explore')}
-        </NavLink>
-      </nav>
-    </aside>
+      }
+    >
+      {professionals.map(p => (
+        <ChatSidebarItem
+          key={p.id}
+          to={`/chat/${p.id}`}
+          avatar={<div className={styles.sidebarAvatar}>{initials(p.name)}</div>}
+          name={p.name}
+          meta={SPECIALTY_LABELS[p.specialty] ?? p.specialty}
+        />
+      ))}
+      <ChatSidebarExplore to="/profesionales">{t('privateChat.explore')}</ChatSidebarExplore>
+    </ChatSidebar>
   )
 
   if (!professional) {
     return (
-      <div className={styles.layout}>
+      <ChatLayout>
         {sidebar}
-        <main className={styles.chat}>
-          <div className={styles.chatHeader}>
-            <button className={styles.backBtn} onClick={() => navigate('/profesionales')}>
-              ←
-            </button>
-            <div className={styles.chatHeaderInfo}>
-              <span className={styles.chatHeaderName}>{t('privateChat.notFoundTitle')}</span>
-            </div>
-          </div>
+        <ChatMain>
+          <ChatHeader onBack={() => navigate('/profesionales')} name={t('privateChat.notFoundTitle')} />
           <div className={styles.notFound}>
             <p className={styles.notFoundMsg}>{t('privateChat.notFoundMsg')}</p>
-            <button className={styles.notFoundBtn} onClick={() => navigate('/profesionales')}>
+            <button type="button" className={styles.notFoundBtn} onClick={() => navigate('/profesionales')}>
               {t('privateChat.seeAll')}
             </button>
           </div>
-        </main>
-      </div>
+        </ChatMain>
+      </ChatLayout>
     )
   }
 
@@ -130,89 +109,49 @@ export function PrivateChatPage() {
     setInput('')
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
-
   return (
-    <div className={styles.layout}>
+    <ChatLayout>
 
       {sidebar}
 
-      <main className={styles.chat}>
+      <ChatMain>
+        <ChatHeader
+          onBack={() => navigate('/profesionales')}
+          backAriaLabel={t('privateChat.backAria')}
+          avatar={<div className={styles.headerAvatar}>{initials(professional.name)}</div>}
+          name={professional.name}
+          meta={SPECIALTY_LABELS[professional.specialty] ?? professional.specialty}
+          onInfoToggle={() => setShowPanel(p => !p)}
+          infoTitle={t('privateChat.info')}
+        />
 
-        <div className={styles.chatHeader}>
-          <button
-            className={styles.backBtn}
-            onClick={() => navigate('/profesionales')}
-            aria-label={t('privateChat.backAria')}
-          >
-            ←
-          </button>
-          <div className={styles.headerAvatar}>{initials(professional.name)}</div>
-          <div className={styles.chatHeaderInfo}>
-            <span className={styles.chatHeaderName}>{professional.name}</span>
-            <span className={styles.chatHeaderMeta}>
-              {SPECIALTY_LABELS[professional.specialty] ?? professional.specialty}
-            </span>
-          </div>
-          <button
-            className={styles.infoToggle}
-            onClick={() => setShowPanel(p => !p)}
-            title={t('privateChat.info')}
-          >
-            ⓘ
-          </button>
-        </div>
-
-        <div className={styles.messages} ref={messagesRef}>
+        <ChatMessages scrollDep={messages.length}>
           {messages.map(m => {
             const isUser = m.from === 'user'
             return (
-              <div
+              <ChatBubble
                 key={m.id}
-                className={`${styles.messageGroup} ${isUser ? styles.messageGroupOwn : ''}`}
+                side={isUser ? 'own' : 'other'}
+                avatar={!isUser ? initials(professional.name) : undefined}
+                time={m.time}
               >
-                {!isUser && (
-                  <div className={styles.bubbleAvatar}>{initials(professional.name)}</div>
-                )}
-                <div className={styles.bubbleCol}>
-                  <div className={`${styles.bubble} ${isUser ? styles.bubbleOwn : styles.bubbleOther}`}>
-                    {maskBannedWords(m.text, bannedWords)}
-                  </div>
-                  <span className={styles.bubbleTime}>{m.time}</span>
-                </div>
-              </div>
+                {maskBannedWords(m.text, bannedWords)}
+              </ChatBubble>
             )
           })}
-          <div ref={endRef} />
-        </div>
+        </ChatMessages>
 
-        <div className={styles.inputArea}>
-          <textarea
-            aria-label={t('privateChat.inputAria')}
-            className={styles.input}
-            placeholder={t('privateChat.inputPh', { name: professional.name })}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            rows={1}
-          />
-          <button
-            className={styles.sendBtn}
-            onClick={handleSend}
-            disabled={!input.trim()}
-            aria-label={t('privateChat.send')}
-          >
-            ➤
-          </button>
-        </div>
-      </main>
+        <ChatComposer
+          value={input}
+          onChange={setInput}
+          onSend={handleSend}
+          placeholder={t('privateChat.inputPh', { name: professional.name })}
+          ariaLabel={t('privateChat.inputAria')}
+          sendAriaLabel={t('privateChat.send')}
+        />
+      </ChatMain>
 
-      <aside className={`${styles.panel} ${showPanel ? styles.panelVisible : ''}`}>
+      <ChatPanel visible={showPanel}>
         <div className={styles.panelAvatar}>{initials(professional.name)}</div>
         <h3 className={styles.panelName}>{professional.name}</h3>
         <p className={styles.panelSpecialty}>
@@ -240,8 +179,8 @@ export function PrivateChatPage() {
             </div>
           </div>
         )}
-      </aside>
+      </ChatPanel>
 
-    </div>
+    </ChatLayout>
   )
 }
