@@ -1,0 +1,405 @@
+
+/* ── Hero ─────────────────────────────────────────────────── */
+
+.hero {
+  background: var(--white);
+  padding: 56px 20px 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .hero {
+    padding: 72px 40px 60px;
+  }
+}
+
+@media (min-width: 992px) {
+  .hero {
+    padding: 80px 60px 72px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .hero {
+    padding: 88px 100px 80px;
+  }
+}
+
+/* ── Blobs decorativos ────────────────────────────────────── */
+
+.blob1 {
+  width: 320px;
+  height: 280px;
+  background: var(--primary-lt);
+  left: -80px;
+  top: -80px;
+  opacity: 0.45;
+}
+
+.blob2 {
+  width: 240px;
+  height: 200px;
+  background: var(--peach-lt);
+  right: -60px;
+  bottom: -40px;
+  opacity: 0.55;
+}
+
+@media (min-width: 992px) {
+  .blob1 {
+    width: 480px;
+    height: 400px;
+  }
+
+  .blob2 {
+    width: 340px;
+    height: 300px;
+  }
+}
+
+/* ── Contenido hero ───────────────────────────────────────── */
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+}
+
+/* ── Título ───────────────────────────────────────────────── */
+
+.heroTitle {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 16px;
+  color: var(--dark);
+}
+
+.heroEm {
+  color: var(--primary);
+  font-style: normal;
+}
+
+@media (min-width: 576px) {
+  .heroTitle {
+    font-size: 44px;
+  }
+}
+
+@media (min-width: 992px) {
+  .heroTitle {
+    font-size: 54px;
+    margin-bottom: 20px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .heroTitle {
+    font-size: 60px;
+  }
+}
+
+/* ── Subtítulo ────────────────────────────────────────────── */
+
+.heroSub {
+  font-size: 15px;
+  color: var(--mid);
+  line-height: 1.7;
+  margin-bottom: 28px;
+  max-width: 480px;
+}
+
+@media (min-width: 992px) {
+  .heroSub {
+    font-size: 17px;
+    margin-bottom: 32px;
+  }
+}
+
+/* ── Botones CTA ──────────────────────────────────────────── */
+
+.heroBtns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.btnPrimary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  padding: 13px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.btnPrimary:hover {
+  background: var(--primary-dk);
+}
+
+/* ── Nota anónima ─────────────────────────────────────────── */
+
+.anonNote {
+  font-size: 12px;
+  color: var(--lite);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (min-width: 992px) {
+  .anonNote {
+    font-size: 13px;
+  }
+}
+
+/* ── Sección de funcionalidades ───────────────────────────── */
+
+.featuresSection {
+  background: var(--bg);
+  padding: 48px 20px 56px;
+  position: relative;
+}
+
+/* Gato grande sentado en el borde donde acaba el hero y empieza la grid
+   de features. Se apoya literalmente en la línea superior del bloque. */
+.landingCat {
+  position: absolute;
+  bottom: 100%;
+  right: 16px;
+  z-index: 3;
+  /* En móviles muy pequeños se acerca al borde; ya está OK con 16px. */
+}
+
+@media (min-width: 576px) {
+  .landingCat { right: 32px; }
+}
+
+@media (min-width: 992px) {
+  .landingCat { right: 80px; transform: scale(1.2);}
+}
+
+@media (min-width: 1200px) {
+  .landingCat { right: 140px;  transform: scale(1.8);  bottom: 105%;}
+}
+
+@media (min-width: 576px) {
+  .featuresSection {
+    padding: 56px 32px 64px;
+  }
+}
+
+@media (min-width: 992px) {
+  .featuresSection {
+    padding: 64px 60px 80px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .featuresSection {
+    padding: 72px 100px 88px;
+  }
+}
+
+/* ── Header de la sección ─────────────────────────────────── */
+
+.featuresHeader {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+@media (min-width: 992px) {
+  .featuresHeader {
+    margin-bottom: 48px;
+  }
+}
+
+.featuresTitle {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--dark);
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+  .featuresTitle {
+    font-size: 32px;
+  }
+}
+
+@media (min-width: 992px) {
+  .featuresTitle {
+    font-size: 36px;
+  }
+}
+
+.featuresSub {
+  font-size: 14px;
+  color: var(--mid);
+  line-height: 1.6;
+  margin: 0;
+}
+
+@media (min-width: 992px) {
+  .featuresSub {
+    font-size: 16px;
+  }
+}
+
+/* ── Grid de cards ────────────────────────────────────────── */
+
+/*
+  Layout:
+  - Móvil: columna única (Comunidades arriba, luego 4 pequeñas)
+  - Tablet (576px+): Comunidades ocupa todo el ancho, 4 pequeñas en 2×2
+  - Desktop (992px+): Comunidades grande a la izquierda (2 filas), 2×2 a la derecha
+*/
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 576px) {
+  .featuresGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+}
+
+@media (min-width: 992px) {
+  .featuresGrid {
+    grid-template-columns: 1.6fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 20px;
+  }
+}
+
+/* ── Card base ────────────────────────────────────────────── */
+
+.featCard {
+  text-align: left;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  font-family: var(--font);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.featCard:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* ── Card featured (Comunidades) ──────────────────────────── */
+
+.featCardFeatured {
+  padding: 28px 24px 24px;
+}
+
+/* Tablet: ocupa las 2 columnas */
+@media (min-width: 576px) {
+  .featCardFeatured {
+    grid-column: 1 / -1;
+    padding: 32px 28px;
+  }
+}
+
+/* Desktop: ocupa la columna izquierda y ambas filas */
+@media (min-width: 992px) {
+  .featCardFeatured {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    padding: 36px 32px;
+  }
+
+  .featCardFeatured {
+    font-size: 44px;
+    margin-bottom: 8px;
+  }
+
+  .featCardFeatured .featTitle {
+    font-size: 22px;
+  }
+
+  .featCardFeatured .featDesc {
+    font-size: 15px;
+    line-height: 1.65;
+    flex: 1;
+  }
+
+  .featCardFeatured .featArrow {
+    font-size: 14px;
+    margin-top: 16px;
+  }
+}
+
+/* ── Cards pequeñas ───────────────────────────────────────── */
+
+.featCardSmall {
+  padding: 20px 18px;
+}
+
+@media (min-width: 992px) {
+  .featCardSmall {
+    padding: 22px 20px;
+  }
+}
+
+/* ── Variantes de color ───────────────────────────────────── */
+
+.featCard_lavender {
+  background: var(--primary-vlt);
+}
+
+.featCard_peach {
+  background: var(--peach-lt);
+}
+
+.featCard_green {
+  background: var(--green-lt);
+}
+
+/* ── Contenido de la card ─────────────────────────────────── */
+
+.featTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--dark);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.featDesc {
+  font-size: 12px;
+  color: var(--mid);
+  line-height: 1.55;
+  margin: 0;
+  flex: 1;
+}
+
+.featArrow {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-top: 8px;
+  transition: transform 0.2s ease;
+}
+
+.featCard:hover .featArrow {
+  transform: translateX(4px);
+}

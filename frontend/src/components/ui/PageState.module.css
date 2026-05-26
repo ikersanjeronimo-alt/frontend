@@ -1,0 +1,55 @@
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  gap: 14px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--primary-lt);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: pmSpin 0.8s linear infinite;
+}
+
+@keyframes pmSpin {
+  to { transform: rotate(360deg); }
+}
+
+.error {
+  color: var(--peach);
+  font-size: 14px;
+  text-align: center;
+  margin: 0;
+  max-width: 480px;
+  line-height: 1.5;
+}
+
+.empty {
+  color: var(--lite);
+  font-size: 14px;
+  text-align: center;
+  margin: 0;
+}
+
+.retryBtn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--mid);
+  border-radius: var(--radius-sm);
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.retryBtn:hover {
+  background: var(--primary-vlt);
+  color: var(--primary);
+}

@@ -1,0 +1,118 @@
+
+/* ── Keyframes ───────────────────────────────────────────── */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.18); opacity: 0.6; }
+}
+
+@keyframes blobFloat {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-12px) scale(1.03); }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ── Clases utilitarias de animación ─────────────────────── */
+
+.animate-fadeIn     { animation: fadeIn     0.35s ease both; }
+.animate-fadeInUp   { animation: fadeInUp   0.4s  ease both; }
+.animate-fadeInDown { animation: fadeInDown 0.35s ease both; }
+.animate-scaleIn    { animation: scaleIn    0.3s  ease both; }
+.animate-slideRight { animation: slideInRight 0.35s ease both; }
+
+/* Delays escalonados para listas de cards */
+.delay-1 { animation-delay: 0.05s; }
+.delay-2 { animation-delay: 0.10s; }
+.delay-3 { animation-delay: 0.15s; }
+.delay-4 { animation-delay: 0.20s; }
+.delay-5 { animation-delay: 0.25s; }
+.delay-6 { animation-delay: 0.30s; }
+
+/* ── Blobs decorativos flotantes ─────────────────────────── */
+
+.blob {
+  border-radius: 50%;
+  position: absolute;
+  pointer-events: none;
+}
+
+.blob-float {
+  animation: blobFloat 6s ease-in-out infinite;
+}
+
+.blob-float-slow {
+  animation: blobFloat 9s ease-in-out infinite;
+  animation-delay: -3s;
+}
+
+/* ── Hover lift (elevación suave al pasar el ratón) ──────── */
+
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(100, 80, 180, 0.14);
+}
+
+/* ── Pulse para indicadores online ──────────────────────── */
+
+.pulse-dot {
+  display: inline-block;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ── Transiciones de página ──────────────────────────────── */
+
+.page-enter {
+  animation: fadeInUp 0.4s ease both;
+}

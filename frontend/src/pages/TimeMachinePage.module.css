@@ -1,0 +1,389 @@
+
+.page {
+  min-height: calc(100vh - 64px);
+  background: var(--bg);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px 60px;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (min-width: 576px) {
+  .page {
+    padding: 48px 24px 80px;
+    align-items: center;
+  }
+}
+
+.blob1 {
+  width: 360px;
+  height: 300px;
+  background: var(--primary-lt);
+  left: -100px;
+  top: -80px;
+  opacity: 0.4;
+}
+
+.blob2 {
+  width: 260px;
+  height: 220px;
+  background: var(--peach-lt);
+  right: -60px;
+  bottom: -40px;
+  opacity: 0.5;
+}
+
+/* ── Card principal ───────────────────────────────────────── */
+
+.card {
+  background: var(--white);
+  border-radius: 28px;
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 560px;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+
+.header {
+  background: var(--primary-vlt);
+  border-bottom: 1px solid var(--primary-lt);
+  padding: 28px 28px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+/* Gato apoyado en la línea inferior del header de la máquina del tiempo. */
+.timeCat {
+  position: absolute;
+  bottom: 0;
+  right: 14px;
+  z-index: 2;
+}
+
+.headerEmoji {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--dark);
+  margin: 0;
+}
+
+@media (min-width: 576px) {
+  .title {
+    font-size: 26px;
+  }
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--mid);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.subtitle strong {
+  color: var(--primary);
+}
+
+/* ── Cuerpo ───────────────────────────────────────────────── */
+
+.body {
+  padding: 24px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (min-width: 576px) {
+  .body {
+    padding: 28px 32px 32px;
+  }
+}
+
+/* ── Papel estilo carta ───────────────────────────────────── */
+
+.paperWrapper {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #fffdf7;
+}
+
+.paperLines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  padding: 20px 16px;
+  gap: 0;
+}
+
+.paperLine {
+  height: 1px;
+  background: rgba(138, 125, 196, 0.1);
+}
+
+.textarea {
+  position: relative;
+  width: 100%;
+  min-height: 220px;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 20px 20px;
+  font-size: 15px;
+  font-family: var(--font);
+  color: var(--dark);
+  line-height: 1.9;
+  resize: none;
+  z-index: 1;
+}
+
+@media (min-width: 576px) {
+  .textarea {
+    min-height: 260px;
+  }
+}
+
+/* ── Contador de caracteres ───────────────────────────────── */
+
+.charCount {
+  font-size: 12px;
+  color: var(--lite);
+  text-align: right;
+  margin-top: -12px;
+}
+
+.charHint {
+  color: var(--peach);
+}
+
+/* ── Fila de email ────────────────────────────────────────── */
+
+.emailRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.emailLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.emailInput {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 11px 16px;
+  font-size: 14px;
+  font-family: var(--font);
+  color: var(--dark);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.emailInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(138, 125, 196, 0.12);
+}
+
+.emailNote {
+  font-size: 11px;
+  color: var(--lite);
+  margin: 0;
+}
+
+/* ── Botones ──────────────────────────────────────────────── */
+
+.primaryBtn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  padding: 13px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.primaryBtn:hover {
+  background: var(--primary-dk);
+}
+
+.primaryBtn:disabled {
+  background: var(--border);
+  color: var(--lite);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.secondaryBtn {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font);
+  color: var(--mid);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.secondaryBtn:hover {
+  border-color: var(--primary-lt);
+  color: var(--primary);
+}
+
+.actionRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.actionRow .primaryBtn {
+  flex: 1;
+}
+
+/* ── Confirmación ─────────────────────────────────────────── */
+
+.confirmBox {
+  background: #fffdf7;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.confirmLetter {
+  font-size: 14px;
+  color: var(--dark);
+  line-height: 1.7;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.confirmMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.confirmRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.confirmIcon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.confirmLabel {
+  font-size: 11px;
+  color: var(--lite);
+  display: block;
+}
+
+.confirmValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dark);
+  display: block;
+}
+
+/* ── Estado enviado ───────────────────────────────────────── */
+
+.sentBody {
+  text-align: center;
+  align-items: center;
+  padding-top: 36px;
+  padding-bottom: 40px;
+}
+
+.sentEmoji {
+  font-size: 56px;
+  line-height: 1;
+  animation: launch 0.6s ease forwards;
+}
+
+@keyframes launch {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+  60%  { transform: translateY(-16px) rotate(-10deg); opacity: 1; }
+  100% { transform: translateY(0) rotate(0deg); opacity: 1; }
+}
+
+.sentTitle {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--dark);
+  margin: 0;
+}
+
+.sentText {
+  font-size: 14px;
+  color: var(--mid);
+  line-height: 1.6;
+  margin: 0;
+  max-width: 380px;
+}
+
+.sentText strong {
+  color: var(--primary);
+}
+
+.errorMsg {
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  background: var(--peach-lt);
+  color: var(--dark);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* ── Modo oscuro ──────────────────────────────────────────────
+   "Pergamino de noche": el papel cream pasa a una superficie oscura
+   ligeramente cálida, distinguible del card lavanda para mantener
+   la identidad de "carta" sin romper el contraste del tema oscuro. */
+
+:global([data-theme="dark"]) .paperWrapper {
+  background: #26211B;
+}
+
+:global([data-theme="dark"]) .paperLine {
+  background: rgba(245, 168, 130, 0.10);
+}
+
+:global([data-theme="dark"]) .confirmBox {
+  background: #26211B;
+}

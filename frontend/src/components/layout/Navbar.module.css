@@ -1,0 +1,355 @@
+
+/* ── Wrapper ──────────────────────────────────────────────── */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 12px rgba(100, 80, 180, 0.06);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  height: 64px;
+  padding: 0 16px;
+  gap: 0;
+}
+
+@media (min-width: 576px) {
+  .nav {
+    padding: 0 24px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .nav {
+    padding: 0 40px;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+}
+
+/* ── Logo ─────────────────────────────────────────────────── */
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.logoIcon {
+  width: 30px;
+  height: 30px;
+  background: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.logo:hover .logoIcon {
+  transform: scale(1.1) rotate(-5deg);
+}
+
+.logoText {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--dark);
+}
+
+@media (min-width: 992px) {
+  .logoIcon {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .logoText {
+    font-size: 15px;
+  }
+}
+
+/* ── Links — ocultos en móvil, visibles en escritorio ────── */
+
+.links {
+  display: none;
+}
+
+@media (min-width: 992px) {
+  .links {
+    display: flex;
+    gap: 24px;
+    margin: 0 auto;
+  }
+}
+
+.link,
+.linkActive {
+  font-size: 13px;
+  text-decoration: none;
+  padding: 4px 2px;
+  position: relative;
+  transition: color 0.15s;
+}
+
+.link {
+  color: var(--mid);
+}
+
+.link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 2px;
+  transition: width 0.2s ease;
+}
+
+.link:hover {
+  color: var(--primary);
+}
+
+.link:hover::after {
+  width: 100%;
+}
+
+.linkActive {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.linkActive::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+
+/* ── Zona derecha — oculta en móvil, visible en escritorio ─ */
+
+.right {
+  display: none;
+}
+
+@media (min-width: 992px) {
+  .right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+}
+
+/* ── Username chip ────────────────────────────────────────────── */
+
+.usernameChip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary-vlt);
+  border: 1px solid var(--primary-lt);
+  border-radius: 17px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  white-space: nowrap;
+}
+
+.usernameChip:hover {
+  background: var(--primary-lt);
+  transform: translateY(-1px);
+}
+
+.editIcon {
+  font-size: 11px;
+  opacity: 0.65;
+}
+
+.usernameInput {
+  background: var(--primary-vlt);
+  border: 1.5px solid var(--primary);
+  border-radius: 17px;
+  padding: 5px 14px;
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 500;
+  outline: none;
+  width: 160px;
+  font-family: var(--font);
+  box-shadow: 0 0 0 3px rgba(138, 125, 196, 0.15);
+}
+
+/* ── Sesión iniciada: botón circular + username estático (ambos → /dashboard) ── */
+
+.dashboardBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: var(--primary-vlt);
+  border: 1px solid var(--primary-lt);
+  border-radius: 50%;
+  color: var(--primary);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  flex-shrink: 0;
+}
+
+.dashboardBtn:hover {
+  background: var(--primary-lt);
+  transform: translateY(-1px);
+}
+
+.usernameStatic {
+  display: flex;
+  align-items: center;
+  background: var(--primary-vlt);
+  border: 1px solid var(--primary-lt);
+  border-radius: 17px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  white-space: nowrap;
+  font-family: var(--font);
+}
+
+.usernameStatic:hover {
+  background: var(--primary-lt);
+  transform: translateY(-1px);
+}
+
+/* ── Botón entrar ─────────────────────────────────────────── */
+
+.enterBtn {
+  background: var(--primary);
+  border: none;
+  border-radius: 17px;
+  padding: 7px 18px;
+  font-size: 13px;
+  color: #fff;
+  font-weight: 600;
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+}
+
+.enterBtn:hover {
+  background: var(--primary-dk);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(138, 125, 196, 0.4);
+}
+
+/* ── Hamburger — visible en móvil, oculto en escritorio ──── */
+
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.hamburger span {
+  display: block;
+  height: 2px;
+  background: var(--dark);
+  border-radius: 2px;
+  transition: transform 0.25s ease, opacity 0.2s ease;
+  transform-origin: center;
+}
+
+/* Animación X al abrir */
+.hamburgerOpen span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburgerOpen span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.hamburgerOpen span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+@media (min-width: 992px) {
+  .hamburger {
+    display: none;
+  }
+}
+
+/* ── Menú móvil — visible en móvil, oculto en escritorio ─── */
+
+.mobileMenu {
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border-top: 1px solid var(--border);
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.mobileMenuOpen {
+  max-height: 520px;
+  padding: 8px 0 16px;
+}
+
+@media (min-width: 992px) {
+  .mobileMenu {
+    display: none;
+  }
+}
+
+.mobileLink {
+  display: block;
+  padding: 12px 24px;
+  font-size: 14px;
+  color: var(--mid);
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+}
+
+.mobileLink:hover {
+  color: var(--primary);
+  background: var(--primary-vlt);
+}
+
+.mobileLinkActive {
+  color: var(--primary);
+  font-weight: 600;
+  background: var(--primary-vlt);
+}
+
+.mobileDivider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 24px;
+}
+
+.mobileBottom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 24px 0;
+}

@@ -1,0 +1,80 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* --- Colores principales --- */
+  --primary:      #8A7DC4;   /* lavanda media — botones, acentos */
+  --primary-dk:   #6B5BAA;   /* hover, gradientes oscuros */
+  --primary-lt:   #E8E4F6;   /* fondos de chips, bordes suaves */
+  --primary-vlt:  #F3F1FB;   /* fondos de cards, hover suave */
+
+  /* --- Acento cálido --- */
+  --peach:        #F5A882;
+  --peach-lt:     #FEF0EA;
+
+  /* --- Fondos --- */
+  --bg:           #F9F7FC;   /* fondo general de la app */
+  --white:        #FFFFFF;
+
+  /* --- Texto --- */
+  --dark:         #2A2560;   /* texto principal */
+  --mid:          #696283;   /* texto secundario */
+  --lite:         #9E99B5;   /* texto terciario, placeholders */
+
+  /* --- Bordes y separadores --- */
+  --vlite:        #D1CDE0;
+  --border:       #E5E0F5;
+
+  /* --- Estados positivos / online --- */
+  --green:        #7BC67E;
+  --green-lt:     #E5F7E6;
+
+  /* --- Tipografía --- */
+  --font:         'Inter', system-ui, sans-serif;
+
+  /* --- Border radius --- */
+  --radius-sm:    12px;
+  --radius-md:    16px;
+  --radius-lg:    24px;
+  --radius-full:  50%;
+
+  /* --- Sombras (tonos lavanda, nunca negro puro) --- */
+  --shadow-sm:    0 2px 10px rgba(100, 80, 180, 0.06);
+  --shadow-md:    0 4px 20px rgba(100, 80, 180, 0.10);
+  --shadow-lg:    0 8px 32px rgba(100, 80, 180, 0.12);
+  --shadow-xl:    0 16px 64px rgba(100, 80, 180, 0.14);
+}
+
+/* ── Modo oscuro ─────────────────────────────────────────────
+   Activado al setear `data-theme="dark"` en <html>. Mantiene los
+   mismos nombres de variables — el resto del CSS no cambia. */
+[data-theme="dark"] {
+  /* Acentos: el lavanda se aclara ligeramente para contraste sobre fondo oscuro.
+     `--primary-dk` se usa para hover y en oscuro pasa a ser MÁS claro que
+     `--primary` (el nombre se mantiene por compatibilidad). */
+  --primary:      #9F94D3;
+  --primary-dk:   #BAB1E0;
+  --primary-lt:   #3A3258;
+  --primary-vlt:  #272238;
+
+  --peach:        #F5A882;
+  --peach-lt:     #3A2A26;
+
+  --bg:           #13111E;
+  --white:        #1D1A2E;
+
+  --dark:         #EDEAF6;
+  --mid:          #B5AFC8;
+  --lite:         #7E7895;
+
+  --vlite:        #241F38;
+  --border:       #2D2842;
+
+  --green:        #7BC67E;
+  --green-lt:     #1F2F22;
+
+  --shadow-sm:    0 2px 10px rgba(0, 0, 0, 0.30);
+  --shadow-md:    0 4px 20px rgba(0, 0, 0, 0.40);
+  --shadow-lg:    0 8px 32px rgba(0, 0, 0, 0.50);
+  --shadow-xl:    0 16px 64px rgba(0, 0, 0, 0.55);
+}

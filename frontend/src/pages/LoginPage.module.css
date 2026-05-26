@@ -1,0 +1,323 @@
+
+.page {
+  min-height: calc(100vh - 64px);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px 60px;
+  position: relative;
+  overflow: hidden;
+}
+
+.blob1 {
+  width: 380px;
+  height: 320px;
+  background: var(--primary-lt);
+  left: -100px;
+  top: -80px;
+  opacity: 0.4;
+}
+
+.blob2 {
+  width: 280px;
+  height: 240px;
+  background: var(--peach-lt);
+  right: -60px;
+  bottom: -60px;
+  opacity: 0.5;
+}
+
+/* ── Card ─────────────────────────────────────────────────── */
+
+.card {
+  background: var(--white);
+  border-radius: 28px;
+  box-shadow: var(--shadow-lg);
+  padding: 32px 24px 28px;
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (min-width: 480px) {
+  .card { padding: 36px 32px 32px; }
+}
+
+/* Gato apoyado en el borde superior de la card de login/registro. */
+.authCat {
+  position: absolute;
+  bottom: 100%;
+  right: 18px;
+  z-index: 2;
+}
+
+/* ── Logo ─────────────────────────────────────────────────── */
+
+.logoLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  justify-content: center;
+}
+
+.logoIcon {
+  width: 34px;
+  height: 34px;
+  background: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.logoText {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+/* ── Tabs ─────────────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.tab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-radius: 10px;
+  padding: 9px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--mid);
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.tabActive {
+  background: var(--white);
+  color: var(--dark);
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Formulario ───────────────────────────────────────────── */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Campo ────────────────────────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.fieldHint {
+  font-size: 11px;
+  color: var(--lite);
+  margin: 0;
+}
+
+.forgotBtn {
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: var(--primary);
+  cursor: pointer;
+  font-family: var(--font);
+  padding: 0;
+  transition: color 0.15s;
+}
+.forgotBtn:hover { color: var(--primary-dk); }
+
+/* ── Input ────────────────────────────────────────────────── */
+
+.input {
+  width: 100%;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 11px 14px;
+  font-size: 14px;
+  font-family: var(--font);
+  color: var(--dark);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(138, 125, 196, 0.12);
+}
+
+/* ── Password wrapper ─────────────────────────────────────── */
+
+.passWrapper {
+  position: relative;
+}
+
+.passWrapper .input {
+  padding-right: 44px;
+}
+
+.showPassBtn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mid);
+  transition: color 0.15s ease;
+}
+.showPassBtn:hover { color: var(--primary); }
+
+:global([data-theme="dark"]) .showPassBtn { color: var(--dark); }
+:global([data-theme="dark"]) .showPassBtn:hover { color: var(--primary); }
+
+/* ── Error ────────────────────────────────────────────────── */
+
+.error {
+  font-size: 13px;
+  color: #e53935;
+  background: #ffeaea;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 0;
+}
+
+/* ── Submit ───────────────────────────────────────────────── */
+
+.submitBtn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  margin-top: 4px;
+}
+
+.submitBtn:hover:not(:disabled) { background: var(--primary-dk); }
+
+.submitBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Divider ──────────────────────────────────────────────── */
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--lite);
+  font-size: 13px;
+  margin: -4px 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Botón anónimo ────────────────────────────────────────── */
+
+.anonBtn {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 13px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mid);
+  font-family: var(--font);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.anonBtn:hover {
+  border-color: var(--primary-lt);
+  background: var(--primary-vlt);
+  color: var(--primary);
+}
+
+/* ── Nota privacidad ──────────────────────────────────────── */
+
+.privacyNote {
+  font-size: 11px;
+  color: var(--lite);
+  text-align: center;
+  line-height: 1.55;
+  margin: -4px 0 0;
+}
+
+/* Bloque "registro completado" en ModRegisterPage */
+.successBlock {
+  text-align: center;
+  padding: 24px 0;
+}
+
+.successTitle {
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 8px;
+}
+
+.successBody {
+  font-size: 14px;
+  color: var(--mid);
+  margin-bottom: 24px;
+}
+
+.backBtnBlock {
+  display: block;
+  margin: 12px auto 0;
+}

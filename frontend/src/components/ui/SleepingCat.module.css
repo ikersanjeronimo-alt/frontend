@@ -1,0 +1,113 @@
+/* ── Wrapper ──────────────────────────────────────────────── */
+
+.cat {
+  display: inline-block;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit; /* lo setea el componente con style={{ color }} */
+  cursor: pointer;
+  line-height: 0; /* evita huecos verticales del baseline */
+  -webkit-tap-highlight-color: transparent;
+  /* En oscuro, los pasteles se ven un pelín más vivos; bajamos un toque
+     la saturación para que no canten demasiado. Coherencia de identidad. */
+}
+
+/* Si no es interactivo, el wrapper es un <span>: anulamos el cursor. */
+.cat:not(button) {
+  cursor: default;
+}
+
+.cat:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* En oscuro: bajar un pelín saturación y subir un pelín brillo para que
+   los pasteles funcionen sobre fondos oscuros sin perder identidad. */
+:global([data-theme='dark']) .svg {
+  filter: brightness(1.05) saturate(0.88);
+}
+
+/* ── Respiración del cuerpo ───────────────────────────────── */
+
+.bodyGroup {
+  transform-origin: 50% 100%;
+  animation: breathe 4.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scaleY(1); }
+  50%      { transform: scaleY(1.045); }
+}
+
+/* ── Cabeza: ladeo al despertar ───────────────────────────── */
+
+.headGroup {
+  transform-origin: 48px 118px;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.svg.awake .headGroup {
+  animation: wake 1.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes wake {
+  0%   { transform: rotate(0deg) translateY(0); }
+  25%  { transform: rotate(-4deg) translateY(-3px); }
+  60%  { transform: rotate(-3deg) translateY(-2px); }
+  100% { transform: rotate(0deg) translateY(0); }
+}
+
+/* ── Ojos: cerrado/abierto ────────────────────────────────── */
+
+.eyesClosed { opacity: 1; transition: opacity 0.18s ease; }
+.eyesOpen   { opacity: 0; transition: opacity 0.18s ease; }
+
+.svg.awake .eyesClosed { opacity: 0; transition-delay: 0.05s; }
+.svg.awake .eyesOpen   { opacity: 1; transition-delay: 0.15s; }
+
+/* ── Cola: wag ─────────────────────────────────────────────
+   Anima cada ~8s con un pequeño wag de tres oscilaciones y luego
+   descansa. Las animaciones por seed empiezan en momentos distintos
+   para que dos gatos no muevan la cola al unísono. */
+
+.tail {
+  transform-origin: 205px 92px;
+  animation: wag 8s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes wag {
+  0%, 70%, 100% { transform: rotate(0deg); }
+  74%           { transform: rotate(10deg); }
+  78%           { transform: rotate(-8deg); }
+  82%           { transform: rotate(10deg); }
+  86%           { transform: rotate(-6deg); }
+  90%           { transform: rotate(4deg); }
+}
+
+/* ── Respeto a usuarios con prefers-reduced-motion ────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .bodyGroup,
+  .tail,
+  .svg.awake .headGroup {
+    animation: none;
+  }
+  .eyesClosed,
+  .eyesOpen {
+    transition: none;
+  }
+}

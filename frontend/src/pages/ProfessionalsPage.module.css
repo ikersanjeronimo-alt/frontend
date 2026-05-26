@@ -1,0 +1,332 @@
+
+.page {
+  background: var(--bg);
+  min-height: calc(100vh - 64px);
+  padding-bottom: 60px;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+
+.header {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 32px 20px 28px;
+  position: relative;
+}
+
+@media (min-width: 576px) {
+  .header { padding: 36px 32px 30px; }
+}
+@media (min-width: 992px) {
+  .header { padding: 40px 60px 32px; }
+}
+@media (min-width: 1200px) {
+  .header { padding: 40px 100px 32px; }
+}
+
+/* Gato apoyado en la línea inferior del header. */
+.pageCat {
+  position: absolute;
+  bottom: 0;
+  right: 20px;
+  z-index: 2;
+}
+
+@media (min-width: 576px) { .pageCat { right: 32px; } }
+@media (min-width: 992px) { .pageCat { right: 60px; } }
+@media (min-width: 1200px) { .pageCat { right: 100px; } }
+
+.title {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--dark);
+  margin: 0 0 8px;
+  line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+  .title { font-size: 34px; }
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--mid);
+  margin: 0;
+  line-height: 1.6;
+  max-width: 560px;
+}
+
+@media (min-width: 992px) {
+  .subtitle { font-size: 15px; }
+}
+
+/* ── Controles ────────────────────────────────────────────── */
+
+.controls {
+  background: var(--white);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 64px;
+  z-index: 10;
+}
+
+@media (min-width: 576px) { .controls { padding: 16px 32px; } }
+@media (min-width: 992px) { .controls { padding: 16px 60px; } }
+@media (min-width: 1200px) { .controls { padding: 16px 100px; } }
+
+/* ── Buscador ─────────────────────────────────────────────── */
+
+.searchWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 40px 10px 38px;
+  font-size: 14px;
+  color: var(--dark);
+  font-family: var(--font);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.searchInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(138, 125, 196, 0.12);
+}
+
+.clearBtn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: var(--lite);
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.15s ease;
+}
+
+.clearBtn:hover { color: var(--mid); }
+
+/* ── Filtros ──────────────────────────────────────────────── */
+
+.filters {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.filters::-webkit-scrollbar { display: none; }
+
+.filterBtn {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--mid);
+  font-family: var(--font);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.filterBtn:hover {
+  border-color: var(--primary-lt);
+  color: var(--primary);
+}
+
+.filterBtnActive {
+  background: var(--primary-vlt);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* ── Grid ─────────────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  padding: 24px 20px;
+}
+
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 28px 32px;
+  }
+}
+
+@media (min-width: 992px) {
+  .grid {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    padding: 32px 60px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .grid { padding: 32px 100px; }
+}
+
+/* ── Card ─────────────────────────────────────────────────── */
+
+.card {
+  background: var(--white);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* ── Info principal ───────────────────────────────────────── */
+
+.cardMain {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.cardName {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--dark);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.cardSpecialty {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  margin: 0;
+}
+
+.cardBio {
+  font-size: 13px;
+  color: var(--mid);
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Tags ─────────────────────────────────────────────────── */
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.tag {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2px 10px;
+  font-size: 11px;
+  color: var(--mid);
+  font-weight: 500;
+}
+
+/* ── Footer de la card ────────────────────────────────────── */
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+/* ── Disponibilidad pills ─────────────────────────────────── */
+
+.pill {
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 3px 10px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pillNow      { background: #e6f4ea; color: #2d7d46; }
+.pillToday    { background: #fff3e0; color: #e65100; }
+.pillTomorrow { background: var(--bg); color: var(--mid); border: 1px solid var(--border); }
+
+:global([data-theme="dark"]) .pillNow   { background: #163524; color: #7ED9A1; }
+:global([data-theme="dark"]) .pillToday { background: #3A2917; color: #F0B86B; }
+
+/* ── Botón contactar ──────────────────────────────────────── */
+
+.contactBtn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 7px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.contactBtn:hover {
+  background: var(--primary-dk);
+  transform: translateY(-1px);
+}
+
+.contactBtn:disabled,
+.contactBtnDisabled {
+  background: var(--vlite);
+  color: var(--mid);
+  cursor: not-allowed;
+}
+
+.contactBtn:disabled:hover,
+.contactBtnDisabled:hover {
+  background: var(--vlite);
+  transform: none;
+}
+

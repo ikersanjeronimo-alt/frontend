@@ -1,0 +1,7 @@
+# Forzar LF en todos los ficheros de texto para evitar conflictos
+# CRLF/LF cuando se trabaja en el devcontainer Linux desde Windows.
+* text=auto eol=lf
+
+# Excepciones especificas
+/mvnw text eol=lf
+*.cmd text eol=crlf

@@ -1,0 +1,346 @@
+
+.page {
+  background: var(--bg);
+  min-height: calc(100vh - 64px);
+  padding-bottom: 60px;
+}
+
+/* ── Banner ───────────────────────────────────────────────── */
+
+.banner {
+  background: var(--primary-vlt);
+  height: 140px;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .banner { height: 180px; }
+}
+
+.bannerBlob {
+  position: absolute;
+  width: 300px;
+  height: 240px;
+  background: var(--primary-lt);
+  border-radius: 50%;
+  right: -80px;
+  top: -60px;
+  opacity: 0.5;
+}
+
+.avatarWrapper {
+  position: absolute;
+  bottom: -44px;
+  left: 20px;
+}
+
+@media (min-width: 576px) {
+  .avatarWrapper { left: 32px; }
+}
+@media (min-width: 992px) {
+  .avatarWrapper { left: 60px; }
+}
+
+/* Gato apoyado en el borde inferior del banner del perfil (lado opuesto al avatar). */
+.profileCat {
+  position: absolute;
+  bottom: 0;
+  right: 20px;
+  z-index: 2;
+}
+
+@media (min-width: 576px) { .profileCat { right: 32px; } }
+@media (min-width: 992px) { .profileCat { right: 60px; } }
+@media (min-width: 1200px) { .profileCat { right: 100px; } }
+
+.avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 4px solid var(--white);
+  color: #fff;
+  font-size: 28px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+}
+
+/* ── Contenido principal ──────────────────────────────────── */
+
+.main {
+  padding: 56px 20px 0;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+@media (min-width: 576px) { .main { padding: 60px 32px 0; } }
+@media (min-width: 992px) { .main { padding: 64px 60px 0; } }
+@media (min-width: 1200px) { .main { padding: 64px 100px 0; } }
+
+/* ── Username ─────────────────────────────────────────────────── */
+
+.usernameRow { margin-bottom: 8px; }
+
+.usernameDisplay {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.username {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--dark);
+  margin: 0;
+  line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+  .username { font-size: 32px; }
+}
+
+.editUsernameBtn {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mid);
+  font-family: var(--font);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.editUsernameBtn:hover { border-color: var(--primary-lt); color: var(--primary); }
+
+.usernameEditRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.usernameInput {
+  background: var(--white);
+  border: 2px solid var(--primary);
+  border-radius: 12px;
+  padding: 6px 14px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--dark);
+  font-family: var(--font);
+  outline: none;
+  min-width: 200px;
+}
+
+.usernameSaveBtn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+}
+
+.usernameCancelBtn {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 5px 10px;
+  font-size: 13px;
+  color: var(--mid);
+  font-family: var(--font);
+  cursor: pointer;
+}
+
+/* ── Meta ─────────────────────────────────────────────────── */
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.metaBadge {
+  background: var(--primary-vlt);
+  border: 1px solid var(--primary-lt);
+  border-radius: 10px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.metaDate {
+  font-size: 13px;
+  color: var(--mid);
+}
+
+/* ── Stats ────────────────────────────────────────────────── */
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+@media (min-width: 480px) {
+  .statsRow { grid-template-columns: repeat(4, 1fr); }
+}
+
+.statBox {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 14px 12px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statBox strong {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.statBox span {
+  font-size: 11px;
+  color: var(--mid);
+}
+
+/* ── Grid dos columnas ────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .grid { grid-template-columns: 1fr 1fr; gap: 20px; }
+}
+
+/* ── Widget ───────────────────────────────────────────────── */
+
+.widget {
+  background: var(--white);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.widgetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.widgetTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--dark);
+  margin: 0;
+}
+
+.widgetLink {
+  font-size: 12px;
+  color: var(--primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font);
+  font-weight: 500;
+  padding: 0;
+}
+.widgetLink:hover { color: var(--primary-dk); }
+
+/* ── Timeline ─────────────────────────────────────────────── */
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.timelineItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.timelineIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+}
+
+.timelineBody { flex: 1; }
+
+.timelineText {
+  font-size: 13px;
+  color: var(--dark);
+  margin: 0 0 2px;
+  line-height: 1.4;
+}
+
+.timelineTime {
+  font-size: 11px;
+  color: var(--lite);
+}
+
+/* ── Preferencias ─────────────────────────────────────────── */
+
+.prefList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.prefRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+.prefRow:last-child { border-bottom: none; }
+
+.prefLabel {
+  font-size: 13px;
+  color: var(--mid);
+  flex-shrink: 0;
+}
+
+.prefLabelCap {
+  text-transform: capitalize;
+}
+
+.prefValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dark);
+  text-align: right;
+}

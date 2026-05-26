@@ -1,0 +1,111 @@
+
+.footer {
+  background: var(--dark);
+  padding: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+@media (min-width: 576px) {
+  .footer {
+    padding: 20px 32px;
+  }
+}
+
+@media (min-width: 992px) {
+  .footer {
+    padding: 20px 60px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .footer {
+    padding: 20px 100px;
+  }
+}
+
+/* ── Logo ─────────────────────────────────────────────────── */
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.logoIcon {
+  width: 26px;
+  height: 26px;
+  background: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.logoText {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--white);
+}
+
+/* ── Link de ayuda ────────────────────────────────────────── */
+
+.helpLink {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary-lt);
+  text-decoration: none;
+  margin-left: auto;
+  transition: color 0.15s ease;
+}
+
+.helpLink:hover {
+  color: var(--white);
+  text-decoration: underline;
+}
+
+/* ── Nota de privacidad ───────────────────────────────────── */
+
+.privacy {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 575px) {
+  .helpLink {
+    margin-left: 0;
+  }
+}
+
+/* En modo oscuro, el footer se mantiene "oscuro sobre oscuro" en lugar de
+   invertirse (var(--dark) en dark theme = texto claro). */
+:global([data-theme="dark"]) .footer {
+  background: #100E1A;
+}
+
+:global([data-theme="dark"]) .logoText {
+  color: var(--dark);
+}
+
+:global([data-theme="dark"]) .helpLink {
+  color: var(--mid);
+}
+
+:global([data-theme="dark"]) .helpLink:hover {
+  color: var(--dark);
+}
+
+:global([data-theme="dark"]) .privacy {
+  color: var(--lite);
+}

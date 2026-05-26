@@ -1,0 +1,96 @@
+.root {
+  position: relative;
+  width: 100%;
+}
+
+/* ── Trigger ──────────────────────────────────────────────── */
+
+.trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 11px 14px;
+  font-size: 14px;
+  font-family: var(--font);
+  color: var(--dark);
+  cursor: pointer;
+  outline: none;
+  text-align: left;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.trigger:hover { border-color: var(--primary-lt); }
+
+.trigger:focus-visible,
+.triggerOpen {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(138, 125, 196, 0.12);
+}
+
+.triggerEmpty .value { color: var(--lite); }
+
+.value {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  color: var(--lite);
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.chevronOpen { transform: rotate(180deg); }
+
+/* ── Panel desplegado ─────────────────────────────────────── */
+
+.list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+  padding: 6px;
+  margin: 0;
+  list-style: none;
+  z-index: 20;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.item {
+  padding: 10px 12px;
+  margin: 2px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--dark);
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.itemPlaceholder { color: var(--lite); }
+
+.itemHover { background: var(--primary-vlt); }
+
+.itemActive {
+  background: var(--primary-vlt);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Cuando el placeholder es a la vez el "activo", mantener look neutro */
+.itemActive.itemPlaceholder {
+  color: var(--lite);
+  font-weight: 500;
+}
