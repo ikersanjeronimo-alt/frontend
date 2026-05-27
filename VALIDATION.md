@@ -134,14 +134,13 @@ Los ficheros candidatos en el código fuente son:
 - `frontend/src/styles/animations.css` — animaciones reutilizables.
 - `frontend/src/pages/*.module.css` — estilos de cada página.
 
-> **Nota:** `frontend/src/styles/bootstrap-theme.scss` no se puede validar directamente porque es SCSS, no CSS. Hay que validar el resultado compilado (paso anterior).
+> **Nota:** Los CSS Modules del proyecto son CSS estándar, no SCSS. Se pueden pegar directamente en el validador sin compilar previamente.
 
 ### Falsos positivos típicos en CSS
 
 - **Vendor prefixes** (`-webkit-`, `-moz-`): el validador los marca como advertencia, pero son necesarios para compatibilidad con navegadores. Mantenerlos.
 - **Variables CSS personalizadas** (`--primary`, `--peach`): válidas en CSS Level 3, asegurarse de tener el perfil correcto seleccionado.
 - **Reglas `@property`, `:has()`, `:is()`:** son CSS moderno válido; algunos validadores antiguos pueden no reconocerlas.
-- **Reglas de Bootstrap 5:** el bundle final incluye CSS de Bootstrap que puede generar muchos warnings (no errores). Son aceptables.
 
 ---
 

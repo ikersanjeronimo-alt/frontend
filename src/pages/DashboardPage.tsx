@@ -8,9 +8,6 @@ import { useDashboardMessages } from '../hooks/useDashboardMessages'
 import { useBannedWords } from '../hooks/useBannedWords'
 import { maskBannedWords } from '../lib/bannedWords'
 import { submitMood } from '../services/profile'
-import { isNetworkError } from '../services/api'
-import { ALLOW_MOCK_FALLBACK } from '../lib/env'
-import { markDemoMode } from '../lib/demoMode'
 import {
   IconMoodVeryBad,
   IconMoodBad,
@@ -22,7 +19,6 @@ import {
   IconMap,
 } from '../components/ui/Icons'
 
-// Config del selector de mood. Vivía en mocks/data.ts pero no es mock — es UI.
 const MOOD_OPTIONS = [
   { value: 1, label: 'Muy mal' },
   { value: 2, label: 'Mal' },
@@ -33,6 +29,8 @@ const MOOD_OPTIONS = [
 import { SleepingCat } from '../components/ui/SleepingCat'
 import { catFor } from '../components/ui/catPalette'
 import styles from './DashboardPage.module.css'
+
+const dashCat = catFor('/dashboard')
 
 const MOOD_ICONS = {
   1: IconMoodVeryBad,
@@ -56,7 +54,6 @@ export function DashboardPage() {
 
   const myCommunities = communities.filter(c => c.joined)
   const nextEvent     = events[0]
-  const cat = catFor('/dashboard')
 
   const handleMood = async (value: number) => {
     if (moodSending) return
@@ -67,12 +64,8 @@ export function DashboardPage() {
     try {
       await submitMood(value)
     } catch (e) {
-      if (isNetworkError(e) && ALLOW_MOCK_FALLBACK) {
-        markDemoMode()
-      } else {
-        setMood(previous)
-        setMoodError(e instanceof Error ? e.message : t('dashboard.moodError'))
-      }
+      setMood(previous)
+      setMoodError(e instanceof Error ? e.message : t('dashboard.moodError'))
     } finally {
       setMoodSending(false)
     }
@@ -92,8 +85,8 @@ export function DashboardPage() {
 
       <section className={styles.moodSection} aria-label="Selector de estado de ánimo">
         <SleepingCat
-          color={cat.color}
-          seed={cat.seed}
+          color={dashCat.color}
+          seed={dashCat.seed}
           size={110}
           className={styles.dashCat}
         />
@@ -152,6 +145,9 @@ export function DashboardPage() {
               <h2 className={styles.widgetTitle}>{t('dashboard.recentMsgs')}</h2>
             </div>
             <div className={styles.messageList}>
+              {messages.length === 0 && (
+                <p className={styles.emptyMsg}>{t('common.noResults')}</p>
+              )}
               {messages.map(m => (
                 <div key={m.id} className={styles.messageRow}>
                   <div className={styles.messageAvatar}>{m.username.slice(0, 2).toUpperCase()}</div>

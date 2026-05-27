@@ -10,7 +10,6 @@ export function usePrivateChat(professionalId: string) {
   const { data: messages, setData: setMessages, loading, error } = useApi(
     () => getPrivateChat(professionalId),
     EMPTY,
-    () => import('../mocks/data').then(m => m.buildMockPrivateMessages(professionalId)),
     [professionalId],
   )
 

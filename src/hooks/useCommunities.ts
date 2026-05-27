@@ -5,9 +5,5 @@ import type { ApiCommunity } from '../types/api'
 const EMPTY: ApiCommunity[] = []
 
 export function useCommunities() {
-  return useApi(
-    getCommunities,
-    EMPTY,
-    () => import('../mocks/data').then(m => m.MOCK_COMMUNITIES),
-  )
+  return useApi(getCommunities, EMPTY)
 }

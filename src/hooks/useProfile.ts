@@ -2,8 +2,6 @@ import { useApi } from './useApi'
 import { getProfile } from '../services/profile'
 import type { ApiProfile } from '../types/api'
 
-// Perfil vacío que se muestra durante el primer load (loading: true) y si la
-// API falla sin fallback al mock. Las pantallas lo gestionan vía `loading`/`error`.
 const EMPTY_PROFILE: ApiProfile = {
   username: '',
   role: 'ANON',
@@ -14,9 +12,5 @@ const EMPTY_PROFILE: ApiProfile = {
 }
 
 export function useProfile() {
-  return useApi(
-    getProfile,
-    EMPTY_PROFILE,
-    () => import('../mocks/data').then(m => m.MOCK_PROFILE),
-  )
+  return useApi(getProfile, EMPTY_PROFILE)
 }

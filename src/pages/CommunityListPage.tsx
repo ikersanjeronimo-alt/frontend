@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCommunities } from '../hooks/useCommunities'
@@ -15,7 +15,7 @@ export function CommunityListPage() {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
 
-  const FILTERS = [
+  const FILTERS = useMemo(() => [
     { id: 'all',         label: t('communities.categories.all') },
     { id: 'ansiedad',    label: t('communities.categories.ansiedad') },
     { id: 'depresion',   label: t('communities.categories.depresion') },
@@ -23,14 +23,14 @@ export function CommunityListPage() {
     { id: 'relaciones',  label: t('communities.categories.relaciones') },
     { id: 'duelo',       label: t('communities.categories.duelo') },
     { id: 'mindfulness', label: t('communities.categories.mindfulness') },
-  ]
+  ], [t])
 
-  const filtered = communities.filter(c => {
+  const filtered = useMemo(() => communities.filter(c => {
     const matchesFilter = filter === 'all' || c.category === filter
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) ||
                           c.desc.toLowerCase().includes(search.toLowerCase())
     return matchesFilter && matchesSearch
-  })
+  }), [communities, filter, search])
 
   const toggleJoin = (id: string, e: React.MouseEvent) => {
     e.preventDefault()

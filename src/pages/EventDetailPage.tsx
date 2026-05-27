@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import type { ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -35,6 +36,9 @@ export function EventDetailPage() {
 
   const { toggle, isInterested } = useEventInterests()
   const liked = eventId ? isInterested(eventId) : false
+  // Captura el estado inicial para que el delta optimista sea correcto:
+  // si el usuario ya había marcado interés, interestedCount del servidor ya lo incluye.
+  const likedOnMount = useRef(liked)
 
   if (loading || error || notFound || !event) {
     return (
@@ -147,7 +151,7 @@ export function EventDetailPage() {
             >
               <IconHeart filled={liked} size={18} />
               <span>{liked ? t('events.interestedYes') : t('events.interestedNo')}</span>
-              <span className={styles.heartCount}>· {(event.interestedCount ?? 0) + (liked ? 1 : 0)}</span>
+              <span className={styles.heartCount}>· {(event.interestedCount ?? 0) + (liked === likedOnMount.current ? 0 : liked ? 1 : -1)}</span>
             </button>
 
           </div>

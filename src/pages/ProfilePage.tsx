@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useProfile } from '../hooks/useProfile'
+import { getRoleLabel } from '../lib/roles'
 import { PageState } from '../components/ui/PageState'
 import { IconChat, IconCalendar, IconUsers, IconBottle, IconMap } from '../components/ui/Icons'
 import { SleepingCat } from '../components/ui/SleepingCat'
@@ -22,13 +23,6 @@ export function ProfilePage() {
   const { data: profile, loading, error } = useProfile()
   const navigate = useNavigate()
   const { t } = useTranslation()
-
-  const ROLE_LABEL: Record<string, string> = {
-    ANON:      t('common.anon'),
-    USER:      t('common.registered'),
-    MODERATOR: t('common.moderator'),
-    ADMIN:     t('common.administrator'),
-  }
 
   if (loading || error) {
     return (
@@ -80,7 +74,7 @@ export function ProfilePage() {
         </div>
 
         <div className={styles.metaRow}>
-          <span className={styles.metaBadge}>{ROLE_LABEL[user?.role ?? 'ANON']}</span>
+          <span className={styles.metaBadge}>{getRoleLabel(user?.role, t)}</span>
           <span className={styles.metaDate}>{t('profile.memberSince')} {joinStr}</span>
         </div>
 

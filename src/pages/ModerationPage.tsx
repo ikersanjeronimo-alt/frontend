@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ReportsSection }     from '../components/moderation/ReportsSection'
 import { MembersSection }     from '../components/moderation/MembersSection'
@@ -13,11 +13,11 @@ export function ModerationPage() {
   const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>('reports')
 
-  const TABS: { id: Tab; label: string }[] = [
+  const TABS = useMemo<{ id: Tab; label: string }[]>(() => [
     { id: 'reports', label: t('moderation.tabReports') },
     { id: 'members', label: t('moderation.tabMembers') },
     { id: 'filter',  label: t('moderation.tabFilter') },
-  ]
+  ], [t])
 
   return (
     <div className={styles.page}>
@@ -36,13 +36,13 @@ export function ModerationPage() {
       </div>
 
       <div className={styles.sectionNav}>
-        {TABS.map(t => (
+        {TABS.map(tabItem => (
           <button
-            key={t.id}
-            className={`${styles.sectionBtn} ${tab === t.id ? styles.sectionBtnActive : ''}`}
-            onClick={() => setTab(t.id)}
+            key={tabItem.id}
+            className={`${styles.sectionBtn} ${tab === tabItem.id ? styles.sectionBtnActive : ''}`}
+            onClick={() => setTab(tabItem.id)}
           >
-            {t.label}
+            {tabItem.label}
           </button>
         ))}
       </div>

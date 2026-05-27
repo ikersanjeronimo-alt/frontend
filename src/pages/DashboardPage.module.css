@@ -348,6 +348,13 @@
 
 /* ── Mensajes recientes ───────────────────────────────────── */
 
+.emptyMsg {
+  font-size: 13px;
+  color: var(--lite);
+  margin: 8px 0 0;
+  text-align: center;
+}
+
 .messageList {
   display: flex;
   flex-direction: column;

@@ -11,26 +11,14 @@ export function useCommunityChat(communityId: string) {
   const { user } = useAuth()
   const username = user?.username ?? 'tú'
 
-  // Si caemos al mock, atribuimos los mensajes "propios" del seed al user actual.
-  // Cada comunidad tiene un hilo distinto via buildMockMessages(id).
-  // Dynamic import: solo se descarga en modo demo cuando el back está caído.
-  const mockFallback = useCallback(
-    async () => {
-      const { buildMockMessages } = await import('../mocks/data')
-      return buildMockMessages(communityId).map(m => (m.own ? { ...m, username } : m))
-    },
-    [communityId, username],
-  )
-
   const { data: messages, setData: setMessages, loading, error } = useApi(
     () => getMessages(communityId),
     EMPTY,
-    mockFallback,
-    [communityId, username],
+    [communityId],
   )
 
   const sendMessage = useCallback(async (text: string) => {
-    const tempId = `mock_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+    const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
     const optimistic: ApiMessage = {
       id: tempId,
       username,

@@ -31,7 +31,7 @@ export function ModLoginPage() {
       setError(t('modLogin.errFields'))
       return
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
       setError(t('modLogin.errEmail'))
       return
     }

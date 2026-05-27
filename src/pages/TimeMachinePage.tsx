@@ -2,9 +2,6 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { sendLetter } from '../services/letters'
-import { isNetworkError } from '../services/api'
-import { ALLOW_MOCK_FALLBACK } from '../lib/env'
-import { markDemoMode } from '../lib/demoMode'
 import { SleepingCat } from '../components/ui/SleepingCat'
 import { catFor } from '../components/ui/catPalette'
 import styles from './TimeMachinePage.module.css'
@@ -38,12 +35,7 @@ export function TimeMachinePage() {
       await sendLetter(letter, email)
       setStep('sent')
     } catch (e) {
-      if (isNetworkError(e) && ALLOW_MOCK_FALLBACK) {
-        markDemoMode()
-        setStep('sent')
-      } else {
-        setSendError(e instanceof Error ? e.message : t('time.errSend'))
-      }
+      setSendError(e instanceof Error ? e.message : t('time.errSend'))
     } finally {
       setSending(false)
     }

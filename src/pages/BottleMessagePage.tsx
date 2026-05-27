@@ -1,9 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { sendBottle, receiveBottle } from '../services/bottles'
-import { isNetworkError } from '../services/api'
-import { ALLOW_MOCK_FALLBACK } from '../lib/env'
-import { markDemoMode } from '../lib/demoMode'
 import { useBannedWords } from '../hooks/useBannedWords'
 import { useFloatingBottles } from '../hooks/useFloatingBottles'
 import { maskBannedWords } from '../lib/bannedWords'
@@ -25,6 +22,7 @@ export function BottleMessagePage() {
   const [message, setMessage]         = useState('')
   const [received, setReceived]       = useState<ReceivedBottle | null>(null)
   const [throwing, setThrowing]       = useState(false)
+  const [receiving, setReceiving]     = useState(false)
   const [openedBottle, setOpenedBottle] = useState<number | null>(null)
   const [sendError, setSendError]     = useState('')
   const { words: bannedWords }        = useBannedWords()
@@ -38,32 +36,25 @@ export function BottleMessagePage() {
       await sendBottle(message.trim())
       setStep('sent')
     } catch (e) {
-      if (isNetworkError(e) && ALLOW_MOCK_FALLBACK) {
-        markDemoMode()
-        setStep('sent')
-      } else {
-        setSendError(e instanceof Error ? e.message : t('bottle.errSend'))
-      }
+      setSendError(e instanceof Error ? e.message : t('bottle.errSend'))
     } finally {
       setThrowing(false)
     }
   }
 
-  const handleReceive = () => {
-    receiveBottle()
-      .then(b => {
-        setReceived({ text: b.text, time: b.time })
-        setStep('received')
-      })
-      .catch(e => {
-        if (isNetworkError(e) && ALLOW_MOCK_FALLBACK) {
-          markDemoMode()
-          setReceived({ text: t('bottle.noBottles'), time: '' })
-          setStep('received')
-        } else {
-          setSendError(e instanceof Error ? e.message : t('bottle.errReceive'))
-        }
-      })
+  const handleReceive = async () => {
+    if (receiving) return
+    setReceiving(true)
+    setSendError('')
+    try {
+      const b = await receiveBottle()
+      setReceived({ text: b.text, time: b.time })
+      setStep('received')
+    } catch (e) {
+      setSendError(e instanceof Error ? e.message : t('bottle.errReceive'))
+    } finally {
+      setReceiving(false)
+    }
   }
 
   const handleReset = () => {
@@ -153,8 +144,8 @@ export function BottleMessagePage() {
                 <span>{t('bottle.or')}</span>
               </div>
 
-              <button className={styles.receiveBtn} onClick={handleReceive}>
-                {t('bottle.receive')}
+              <button className={styles.receiveBtn} onClick={handleReceive} disabled={receiving}>
+                {receiving ? t('common.loading') : t('bottle.receive')}
               </button>
             </div>
           </>
@@ -169,8 +160,8 @@ export function BottleMessagePage() {
               <button className={`${styles.sendBtn} hover-lift`} onClick={handleReset}>
                 {t('bottle.sentAnother')}
               </button>
-              <button className={styles.receiveBtn} onClick={handleReceive}>
-                {t('bottle.receive')}
+              <button className={styles.receiveBtn} onClick={handleReceive} disabled={receiving}>
+                {receiving ? t('common.loading') : t('bottle.receive')}
               </button>
             </div>
           </div>
@@ -189,8 +180,8 @@ export function BottleMessagePage() {
               <button className={`${styles.sendBtn} hover-lift`} onClick={handleReset}>
                 {t('bottle.writeMine')}
               </button>
-              <button className={styles.receiveBtn} onClick={handleReceive}>
-                {t('bottle.receiveAnother')}
+              <button className={styles.receiveBtn} onClick={handleReceive} disabled={receiving}>
+                {receiving ? t('common.loading') : t('bottle.receiveAnother')}
               </button>
             </div>
           </div>

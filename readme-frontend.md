@@ -28,6 +28,7 @@ La app queda disponible en `http://localhost:5173`.
 | Estilos | CSS Modules + variables CSS globales | — |
 | Enrutamiento | React Router DOM | v7 |
 | Mapa | Leaflet + react-leaflet | 1.9 / 4.x |
+| i18n | i18next + react-i18next | — |
 | Tipografía | Inter (Google Fonts) | — |
 
 No hay dependencia de Bootstrap ni ningún framework CSS externo. Todos los estilos son CSS Modules por componente más un sistema de tokens CSS globales.
@@ -42,18 +43,27 @@ frontend/
 ├── src/
 │   ├── assets/               # Imágenes y SVGs estáticos
 │   ├── components/
-│   │   └── layout/
-│   │       ├── Navbar.tsx          # Barra de navegación (sticky, responsive)
-│   │       ├── Navbar.module.css
-│   │       ├── Footer.tsx          # Pie de página (simple, fondo oscuro)
-│   │       └── Footer.module.css
+│   │   ├── auth/             # TotpPanel (2FA)
+│   │   ├── chat/             # ChatLayout y sub-componentes reutilizables
+│   │   ├── events/           # EventFormSection
+│   │   ├── layout/           # Navbar, Footer, MainLayout, BareLayout, DemoModeBanner
+│   │   ├── moderation/       # ReportsSection, MembersSection, BannedWordsSection
+│   │   ├── settings/         # AccountSection, ModProfileSection, AppearanceSection, …
+│   │   └── ui/               # PageState, ErrorBoundary, SleepingCat, Icons, Select, …
 │   ├── context/
 │   │   └── AuthContext.tsx         # Estado global de autenticación
-│   ├── pages/                # Una carpeta por pantalla (ver sección de pantallas)
+│   ├── hooks/                # useApi, useAuth, useRole, useCommunities, useEvents, …
+│   ├── lib/                  # i18n, roles, initials, bannedWords, eventInterests, authBus, …
+│   ├── mocks/
+│   │   └── data.ts           # Única fuente de datos mock (importación siempre dinámica)
+│   ├── pages/                # Una página = un .tsx + un .module.css
+│   ├── services/             # apiFetch, auth, communities, events, profile, storage, …
 │   ├── styles/
 │   │   ├── variables.css           # Tokens CSS (colores, sombras, tipografía)
 │   │   └── animations.css          # Keyframes y clases de animación
-│   ├── App.tsx               # Configuración del router y layout raíz
+│   ├── types/
+│   │   └── api.ts            # Tipos compartidos del contrato con el backend
+│   ├── App.tsx               # Configuración del router y layouts anidados
 │   ├── index.css             # Reset CSS + imports de estilos globales
 │   └── main.tsx              # Punto de entrada de React
 ├── index.html
@@ -130,7 +140,7 @@ Nunca se usa `max-width` en CSS propio.
 Provee el estado global de sesión a toda la app mediante `AuthProvider` y el hook `useAuth()`.
 
 ```ts
-const { user, isLoading, login, register, logout, updateUsername } = useAuth()
+const { user, isLoading, login, register, logout, updateUsername, loginAsMod, verifyLoginAsMod } = useAuth()
 ```
 
 | Propiedad | Tipo | Descripción |
@@ -141,6 +151,8 @@ const { user, isLoading, login, register, logout, updateUsername } = useAuth()
 | `register(username, password)` | función | Llama a `POST /api/auth/register` |
 | `logout()` | función | Limpia sesión y genera usuario anónimo nuevo |
 | `updateUsername(username)` | función | Actualiza el username sin recargar |
+| `loginAsMod(email, password)` | función | Paso 1 del login de moderadores. Llama a `POST /api/auth/login/mod`, devuelve `{ challengeId, requires2fa }`. No establece sesión todavía. |
+| `verifyLoginAsMod(challengeId, code)` | función | Paso 2 del login de moderadores (2FA TOTP). Llama a `POST /api/auth/login/mod/verify`, establece sesión si el código es válido. |
 
 Login y register usan **username + contraseña** (sin email). Si el backend no está disponible, cae a mock local automáticamente.
 
@@ -190,7 +202,7 @@ Hub principal post-login.
 Perfil del usuario.
 
 - Banner con fondo lavanda (140px). Avatar con iniciales del username a `position: absolute; bottom: -44px`.
-- Username editable inline: clic en ✎ → input + guardar/cancelar. Llama a `updateUsername()`.
+- Username mostrado como texto estático. La edición se realiza en `/configuracion` → sección "Mi cuenta".
 - Fila de 4 estadísticas en grid 2→4 columnas.
 - Dos columnas: timeline de actividad reciente + preferencias (lista con valor y flecha).
 
@@ -212,8 +224,17 @@ Catálogo de profesionales de salud mental.
 - `Availability` type: `'now' | 'today' | 'tomorrow'` → colores diferentes.
 - "Contactar" navega a `/chat/:id`.
 
-### 08. PrivateChatPage — `/chat/:userId`
-**Placeholder** — pendiente de implementar.
+### 08. PrivateChatPage — `/chat/:professionalId`
+Chat 1 a 1 entre el usuario y un profesional de salud mental (psicólogo / terapeuta / psiquiatra).
+
+- **Layout 3 columnas** (igual que CommunityChatPage): sidebar izquierda con lista de todos los profesionales + chat central + panel derecho de info.
+- **Header:** avatar con iniciales, nombre y especialidad del profesional. Botón ⓘ abre el panel derecho.
+- **Burbujas:** propias (lavanda, derecha) y del profesional (lavanda claro, izquierda con iniciales).
+- **Empty state:** mensaje si todavía no hay conversación.
+- **Panel derecho:** disponibilidad (pill verde/naranja/gris), bio y tags del profesional.
+- **Not-found:** si el `:professionalId` no existe muestra "Profesional no encontrado" con CTA a `/profesionales`.
+- Censura con `maskBannedWords`. Error de envío visible bajo el composer con `role="alert"`.
+- Se llega desde el botón "Contactar" de `ProfessionalsPage`.
 
 ### 09. CommunityListPage — `/comunidades`
 Explorador de comunidades.
@@ -230,7 +251,7 @@ Chat en tiempo real dentro de una comunidad.
 - **Layout 3 columnas:** sidebar izquierda (oculto <992px) + chat central (flex:1) + panel derecho (oculto <992px, overlay en móvil).
 - **Sidebar:** Lista de comunidades del usuario, la activa resaltada.
 - **Chat:** Burbujas propias (lavanda, derecha) y ajenas (lavanda claro, izquierda). Username visible solo cuando cambia el emisor. Auto-scroll con `useRef` + `useEffect`.
-- **Panel derecho:** Info de la comunidad, miembros, mini-mapa Leaflet.
+- **Panel derecho:** Info de la comunidad (nombre, descripción, stats, moderador), lista de miembros activos.
 - Botón ⓘ activa el panel como overlay en móvil.
 - Enter envía mensaje, Shift+Enter inserta salto de línea.
 - El layout tiene `height: calc(100vh - 64px); overflow: hidden` para que el chat no expanda la página.
@@ -240,12 +261,12 @@ Listado de eventos y talleres.
 
 - Filtros por tipo: Todos / Talleres / Sesiones / Charlas.
 - Cards horizontales: emoji, tipo (pill con color propio), fecha, título, moderador, descripción recortada a 2 líneas, barra de progreso de plazas, botón "Apuntarse" / "✓ Apuntado".
-- Exporta `EVENTS_DATA` y el tipo `Event` para que `EventDetailPage` los consuma.
+- Los datos se obtienen mediante el hook `useEvents()` (con fallback al mock centralizado en `mocks/data.ts`).
 
 ### 12. EventDetailPage — `/eventos/:eventId`
 Vista completa de un evento.
 
-- Importa `EVENTS_DATA` de `EventListPage` y localiza el evento por `useParams`.
+- Localiza el evento con `useEvents().data.find(id)` a partir del `useParams`.
 - **Hero:** Emoji, título, badge de tipo, moderador.
 - **Layout 2 columnas (992px+):** columna principal (descripción, qué esperar, tags) + sidebar sticky (info rows: fecha/hora/formato/aforo, barra de plazas, botón CTA).
 - Botón CTA alterna entre "Apuntarse", "✓ Apuntado" y "Completo" (deshabilitado).
@@ -266,20 +287,43 @@ Mensajes anónimos enviados a un usuario aleatorio.
 - **Ondas animadas:** Dos capas SVG con `@keyframes wave` en bucle (la segunda con `animation-delay`).
 - **Flujo:** `write` → lanzamiento (animación de botella) → `sent` → "Recoger una botella" → `received` (mensaje aleatorio de 3 mocks).
 - `MAX_CHARS = 400`.
-- Selector de etiqueta: 💪 Ánimo / 💙 Apoyo / 🌟 Esperanza / 🤗 Empatía / 🌱 Crecimiento.
+- Los botones de recepción se deshabilitan mientras la petición está en vuelo para evitar dobles solicitudes.
 
 ### 15. MapPage — `/mapa`
 Mapa mundial de historias anónimas.
 
 - **Librería:** Leaflet 1.9 + react-leaflet. Tiles CartoDB Voyager (gratis, sin API key).
-- **Fix de iconos Leaflet en Vite:** Sobreescritura de `L.Icon.Default._getIconUrl` + `mergeOptions` con URLs CDN.
-- **Marcadores:** `L.divIcon` con HTML inline — círculo de color + emoji. 3 tipos: personal (lavanda), apoyo (melocotón), reflexión (verde).
-- **Añadir historia:** FAB "📍 Añadir historia" activa modo click → clic en el mapa crea `pendingMarker` + panel de escritura → envío agrega story al estado.
-- `MapClickHandler` es un componente hijo que usa el hook `useMapEvents` (necesario porque `useMap` solo funciona dentro de `MapContainer`).
+- **Fix de iconos Leaflet en Vite:** Sobreescritura de `L.Icon.Default._getIconUrl` + `mergeOptions` con paths locales bundleados.
+- **Marcadores:** `L.divIcon` con HTML inline — círculo de color + emoji (escapado para prevenir XSS). 2 tipos: historia publicada (lavanda) y marcador pendiente mientras se escribe (melocotón).
+- **Añadir historia:** FAB activa modo click → clic en el mapa crea `pendingMarker` + panel de escritura → envío agrega la story al estado.
+- `MapClickHandler` es un componente hijo que usa el hook `useMapEvents` (necesario porque `useMapEvents` solo funciona dentro de `MapContainer`).
 - 12 historias mock distribuidas por el mundo.
-- Stats overlay en esquina inferior: total historias, países, añadidas hoy.
+- Stats bar en esquina inferior: total de historias en el mapa.
 
-### 16. ModerationPage — `/moderacion`
+### 16. EventCreatePage — `/eventos/nuevo`
+Formulario de creación de evento. Solo accesible para `MODERATOR` y `ADMIN` (guard `<RequireRole>`).
+
+- Campos: título, descripción, tipo (Taller/Sesión/Charla), fecha, hora, formato (Online/Presencial), aforo, tags.
+- Validación inline. Al enviar muestra mensaje de éxito + redirige a `/eventos` a los 1.8 s.
+- **Sin backend real todavía** — simula el envío. Se conectará a `POST /api/events` cuando exista.
+
+### 17. ModLoginPage — `/loginmod`
+Login de moderadores y administradores con autenticación en dos factores (TOTP).
+
+- **Fase 1 — Credenciales:** email + contraseña. Al enviar llama a `loginAsMod()` → obtiene un `challengeId`.
+- **Fase 2 — TOTP:** input de 6 dígitos (Google Authenticator). Llama a `verifyLoginAsMod()` → establece sesión si el código es válido.
+- Usa el componente `TotpPanel` (sin prop `enroll`).
+- Botón "Volver" en la fase TOTP reinicia al estado de credenciales.
+
+### 18. ModRegisterPage — `/modregister`
+Registro de moderadores y administradores con enrolamiento TOTP.
+
+- **Dos pestañas:** Moderador (pide profesión y especialización opcionales) / Administrador (sin empresa).
+- **Fase 1 — Formulario:** nombre, apellido, username, email, contraseña, rol, empresa (solo mod), profesión, especialización.
+- **Fase 2 — Enrolamiento:** `TotpPanel` con `enroll={secret, otpauthUri}` muestra el QR de Google Authenticator. Verificación del primer código con `verifyModRegistration`.
+- **Fase 3 — Éxito:** confirmación + CTA a `/loginmod`.
+
+### 19. ModerationPage — `/moderacion`
 Panel de control para moderadores.
 
 - **Stats row:** 4 cards (Pendientes, Resueltos hoy, Comunidades, Miembros) con colores naranja/verde/lavanda.

@@ -7,10 +7,11 @@ import styles from './BannedWordsSection.module.css'
 export function BannedWordsSection() {
   const { t } = useTranslation()
   const { words: bannedWords, add, remove, update } = useBannedWords()
-  const [newWord, setNewWord]       = useState('')
-  const [editingIdx, setEditingIdx] = useState<number | null>(null)
-  const [draftWord, setDraftWord]   = useState('')
-  const [wordError, setWordError]   = useState<string | null>(null)
+  const [newWord, setNewWord]           = useState('')
+  const [editingIdx, setEditingIdx]     = useState<number | null>(null)
+  const [confirmDeleteIdx, setConfirmDeleteIdx] = useState<number | null>(null)
+  const [draftWord, setDraftWord]       = useState('')
+  const [wordError, setWordError]       = useState<string | null>(null)
 
   const handleAdd = () => {
     const res = add(newWord)
@@ -25,6 +26,7 @@ export function BannedWordsSection() {
       setEditingIdx(null)
       setDraftWord('')
     }
+    setConfirmDeleteIdx(null)
     setWordError(null)
   }
 
@@ -86,9 +88,10 @@ export function BannedWordsSection() {
       ) : (
         <ul className={styles.list}>
           {bannedWords.map((w, i) => {
-            const isEditing = editingIdx === i
+            const isEditing         = editingIdx === i
+            const isConfirmingDelete = confirmDeleteIdx === i
             return (
-              <li key={i} className={styles.row}>
+              <li key={w} className={styles.row}>
                 {isEditing ? (
                   <input
                     type="text"
@@ -129,6 +132,24 @@ export function BannedWordsSection() {
                         {t('common.cancel')}
                       </button>
                     </>
+                  ) : isConfirmingDelete ? (
+                    <>
+                      <span className={styles.confirmText}>{t('moderation.deleteConfirm')}</span>
+                      <button
+                        type="button"
+                        className={`${styles.actionBtn} ${styles.actionDelete}`}
+                        onClick={() => handleDelete(i)}
+                      >
+                        {t('common.confirm')}
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.actionBtn}
+                        onClick={() => setConfirmDeleteIdx(null)}
+                      >
+                        {t('common.cancel')}
+                      </button>
+                    </>
                   ) : (
                     <>
                       <button
@@ -141,7 +162,7 @@ export function BannedWordsSection() {
                       <button
                         type="button"
                         className={`${styles.actionBtn} ${styles.actionDelete}`}
-                        onClick={() => handleDelete(i)}
+                        onClick={() => setConfirmDeleteIdx(i)}
                       >
                         {t('common.delete')}
                       </button>

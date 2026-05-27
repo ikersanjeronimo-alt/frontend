@@ -6,6 +6,7 @@ import { MainLayout } from './components/layout/MainLayout'
 import { BareLayout } from './components/layout/BareLayout'
 import { RequireRole } from './components/auth/RequireRole'
 import { PageState } from './components/ui/PageState'
+import { ErrorBoundary } from './components/ui/ErrorBoundary'
 
 // Eager: pantallas frecuentes o ligeras
 import { LandingPage }       from './pages/LandingPage'
@@ -37,6 +38,7 @@ import './App.css'
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <BrowserRouter>
       <AuthProvider>
         <DemoModeBanner />
@@ -78,5 +80,6 @@ export default function App() {
         </Suspense>
       </AuthProvider>
     </BrowserRouter>
+    </ErrorBoundary>
   )
 }

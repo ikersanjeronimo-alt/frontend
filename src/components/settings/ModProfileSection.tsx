@@ -45,7 +45,7 @@ export function ModProfileSection() {
       setError(t('settings.modRequired'))
       return
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email.trim())) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(profile.email.trim())) {
       setError(t('settings.modBadEmail'))
       return
     }

@@ -1,0 +1,552 @@
+# CLAUDE.md — Contexto del proyecto ShareYourStory-PBL
+
+> Este fichero NO se sube al repo (está en `.gitignore`). Es el contexto persistente para Claude entre conversaciones.
+
+---
+
+## Reglas para Claude (importante leer antes de cada prompt)
+
+- **Idioma:** El usuario escribe en castellano. Responde siempre en castellano salvo que pida lo contrario.
+- **Diseño de UI — reglas estrictas:**
+  - **Diseños simples y efectivos.** No añadir secciones, animaciones, bloques decorativos ni elementos visuales solo por rellenar. Cada cosa en pantalla debe tener una razón funcional.
+  - **Prohibido usar emojis en la UI.** Ni en botones, etiquetas, títulos, iconos decorativos ni en ningún texto fijo del código. La única excepción son los emojis de símbolo tipográfico (la X el simbolo del nav comprimido...).
+  - Si necesitas un icono, usa texto, símbolo tipográfico o SVG — nunca emoji.
+- **Preguntas:** Al usuario **le gusta que le hagas preguntas**. Si hay ambigüedad sobre alcance, diseño, naming, o cualquier decisión relevante, **pregunta antes de implementar** en vez de asumir. Mejor pecar de preguntar de más que entregar algo que no es lo que esperaba.
+- **Al terminar una tarea, SIEMPRE:**
+  1. Explicar al usuario qué se cambió (resumen claro por ficheros/áreas, sin pegar el diff entero).
+  2. Pasar los **comandos de commit** listos para copiar/pegar (uno o varios, agrupando lógicamente). **Formato simple, en dos líneas**: un `git add <ficheros>` con los paths explícitos + un `git commit -m "<prefijo>: <descripción corta en castellano>"` de una sola línea. **Nada de HEREDOC ni cuerpos multilínea** — todo el contexto va en el resumen previo, no en el mensaje de commit. Prefijos del repo: `feat:`, `fix:`, `refactor:`, `docs:`, `style:`. Ejemplos válidos: `style: añadir SVGs a las acciones rápidas del dashboard`, `refactor: cambiar de nick a username`, `feat: añadir inicio de sesion de moderadores`. Ejemplo de formato:
+     ```
+     git add frontend/src/components/ui/Icons.tsx frontend/src/pages/DashboardPage.tsx
+     git commit -m "style: añadir SVGs a las acciones rápidas del dashboard"
+     ```
+     **No hacer commit automáticamente** — solo proporcionar los comandos para que el usuario los ejecute.
+- **Mantener este fichero vivo:** Cada vez que hagas un **cambio relevante** en el código (nueva pantalla, nuevo endpoint, refactor importante, cambio de stack, etc.) o el usuario te diga algo **importante** (preferencia, decisión de diseño, contexto del proyecto, regla de trabajo) → **actualiza este `CLAUDE.md`** para que la siguiente conversación lo refleje. No esperes a que te lo pidan.
+- **No subir secretos:** El fichero está en `.gitignore`, pero igualmente: no apuntes contraseñas reales, tokens, ni datos personales aquí.
+- **Si dudas sobre si algo merece estar aquí:** pregunta al usuario.
+
+---
+
+## Resumen del proyecto
+
+**ShareYourStory** es una app web de apoyo emocional para jóvenes. Permite:
+- Comunidades de chat moderadas por profesionales de salud mental (chat grupal).
+- Chat 1 a 1 con profesionales (psicólogos / terapeutas / psiquiatras). **No hay chats privados entre usuarios anónimos**: los anónimos solo hablan en comunidades (grupal moderado) o vía botella al mar (anónimo one-shot).
+- Eventos terapéuticos (talleres, sesiones grupales, charlas).
+- Mensajes anónimos (botella al mar).
+- Cartas al yo futuro (máquina del tiempo).
+- Mapa mundial de historias (Leaflet).
+- Panel de moderación.
+
+Es un **PBL** (Project-Based Learning), por eso el alcance está más cerca de "demo funcional" que de producto en producción.
+
+**Estado actual:**
+- Frontend: 16 pantallas montadas con datos mock; integración con backend recién empezada.
+- Backend: muy verde — solo existe el endpoint `POST /api/auth/register/mod` y la entidad `User`. Casi todo está pendiente.
+
+---
+
+## Stack
+
+### Backend (raíz del repo)
+- **Java 21** + **Spring Boot 4.1.0-SNAPSHOT** (snapshot, ojo con esto).
+- Módulos: `spring-boot-starter-webmvc`, `spring-boot-starter-data-jpa`, `spring-boot-starter-validation`, `spring-boot-starter-security`, `spring-boot-starter-oauth2-authorization-server`.
+- **MySQL** (driver `mysql-connector-j`) — `ddl-auto=update`, base de datos `shareYourStory` en `mysql:3306`.
+- Maven wrapper (`mvnw` / `mvnw.cmd`).
+- Lombok comentado en `pom.xml` → **getters/setters a mano**.
+- Paquete raíz: `shareyourstory` (clase main: `ShareYourStoryApplication`).
+
+### Frontend (`frontend/`)
+- **React 19** + **TypeScript 6** + **Vite 8**.
+- **React Router 7** para rutas (con `React.lazy` + `Suspense` en `/mapa` y `/moderacion`).
+- **CSS Modules** por página + variables globales en `src/styles/variables.css`.
+- **Leaflet / react-leaflet 5** para el mapa (iconos bundled localmente, no unpkg).
+- **i18next + react-i18next** para i18n (Español / English / Euskera).
+- Sin librería de estado global — `AuthContext` + stores singleton vía `useSyncExternalStore` para datos compartidos (demo mode, palabras prohibidas, eventos likeados).
+- Sin React Query/SWR — helper `useApi(fetcher, fallback, deps)` + `optimisticMutation` para mutaciones.
+- **Sin Bootstrap** (Sprint 2: tirado `react-bootstrap`, `bootstrap`, `sass`; `PageState` reescrito con spinner CSS propio).
+
+### Infra
+- **Devcontainer** con `compose.yml` (`.devcontainer/compose.yml`): servicios `java-app`, `frontend` y `mysql`.
+- Frontend dev: `http://localhost:5173`. Backend: `http://localhost:8080`. MySQL: `3306`.
+- Proxy de Vite: `/api/*` → `VITE_BACKEND_URL` (por defecto `http://localhost:8080`).
+
+---
+
+## Estructura del repo
+
+```
+ShareYourStory-PBL/
+├── .devcontainer/        # compose.yml, devcontainer.json
+├── .mvn/                 # Maven wrapper
+├── frontend/             # App React (ver readme-frontend.md para detalle exhaustivo)
+├── src/main/java/shareyourstory/
+│   ├── ShareYourStoryApplication.java
+│   ├── auth/
+│   │   ├── config/SecurityConfig.java
+│   │   ├── controller/AuthController.java
+│   │   ├── dto/RegisterRequest.java
+│   │   └── service/AuthService.java
+│   └── domain/user/
+│       ├── model/        # User, Roles, ProfessionType, SpecializationType
+│       └── repository/UserRepository.java
+├── src/main/resources/
+│   ├── application.properties
+│   └── Static/index.html (vacío)
+├── pom.xml
+├── readme-frontend.md    # Documentación exhaustiva del frontend
+└── README.md             # Solo título
+```
+
+---
+
+## Backend: estado actual
+
+### Lo que existe
+- **`SecurityConfig`** — `/api/testJWT` requiere autenticación; el resto es `permitAll`. CSRF off, CORS abierto a `http://localhost:5173`. `BCryptPasswordEncoder` + `AuthenticationManager` registrados. `AuthTokenFilter` (JWT) en la cadena antes de `UsernamePasswordAuthenticationFilter`.
+- **`AuthController`** — flujo mod completo (4 endpoints "armonizados" con el front Sprint 3):
+  - `POST /api/auth/register/mod` → `RegisterModEnrollment { secret, otpauthUri, email }` — crea user, genera secreto TOTP, devuelve URI del QR para Google Authenticator.
+  - `POST /api/auth/register/mod/verify` → 204 — valida el primer código TOTP (no marca activación, ver TODO).
+  - `POST /api/auth/login/mod` → `LoginModChallengeResponse { challengeId, requires2fa: true }` — valida email+password con `AuthenticationManager` y devuelve un `challengeId` UUID con TTL 5 min en memoria.
+  - `POST /api/auth/login/mod/verify` → `AuthResponse { token, user }` — consume el challenge, valida el TOTP, devuelve JWT + `UserPublic`.
+  - **Endpoints viejos que siguen vivos** (el front no los usa): `GET /api/auth/register/mod/2fa/qr`, `POST /api/auth/register/mod/2fa/qr`, `POST /api/auth/login/mod/2fa/code`, `GET /api/testJWT`, `POST /api/mailTest`.
+  - `@ExceptionHandler` locales: `BadCredentialsException → 401`, `DataIntegrityViolationException → 409` (email duplicado).
+- **`AuthService`** — orquesta el flujo: `registerMod`, `verifyModRegistration`, `loginMod`, `verifyModLogin`. Map `ConcurrentHashMap<challengeId, ChallengeData>` en memoria con TTL 5 min para los challenges del 2FA. **El proceso reiniciado pierde los challenges en curso** (esperado).
+- **DTOs del flujo mod (records)**: `RegisterModRequest` (acepta `name, lastName, username, password, email, company, role, profession?, specialization?` — los dos últimos se aceptan pero **NO se persisten**), `RegisterModEnrollment`, `VerifyTotpRequest`, `LoginModRequest`, `LoginModChallengeResponse`, `VerifyLoginRequest`, `AuthResponse`, `UserPublic`. La clase vieja `RegisterRequest` (no record) queda como código muerto post-merge.
+- **`JWTService`** — firma HS256 con `security.jwt.secret-key` de `application.properties`, expiration 1h (`security.jwt.expiration-time`). Subject = email del user.
+- **`AuthTokenFilter`** — extrae `Bearer <token>`, valida, carga `UserDetails` y mete el `Authentication` en el `SecurityContextHolder`.
+- **`GoogleAuthService`** — usa la lib `com.warrenstrange:googleauth`. `generateKey(email)` crea secreto, `isValid(secret, intCode)` valida, `getQR(email)` construye la URI otpauth.
+- **`UserService`** implementa `UserDetailsService` → carga por email.
+- **`User`** (entidad JPA, tabla `users`) implementa `UserDetails`: `id (Integer), name, lastName, username, password, email (único), company, role (Roles, EnumType.STRING), secretKey (único)`. `getAuthorities()` devuelve lista vacía (sin granted authorities reales todavía).
+- **`Roles`** enum: `ADMINISTRATOR, PROFESSIONAL`. (No hay `USER` ni `ANON` aún.)
+- **`ProfessionType` / `SpecializationType`** — entidades vacías (`id + name`), creadas pero sin lógica ni FK desde `User`.
+- **`UserRepository`** — `JpaRepository<User, Integer>` + `findByEmail`.
+- **Dominio `storyMap`** y **`timeMachine`** — controller/service/repo/model creados desde el back, pero el front no los llama todavía (el front sigue con mock para letters/map). `TimeMachine` usaba `@Getter/@Setter` de Lombok pero Lombok está comentado en `pom.xml` → corregido a getters/setters manuales.
+
+### Bugs/cosas raras conocidas en el backend
+- El proyecto declara `oauth2-authorization-server` pero no está configurado.
+- Sigue sin autenticación real para usuarios anónimos/normales (todas las rutas no-mod son `permitAll`).
+- `TimeMachineService.createTimeMachine` tiene un bug: hace `newTimeMachine.setEmail(newTimeMachineData.deliveryDate())` — asigna deliveryDate al email. No bloquea porque el front no lo llama. Arreglar antes de probar `/maquina-del-tiempo` con back real.
+- `POST /api/auth/register/mod/2fa/qr` y `POST /api/auth/login/mod/2fa/code` siguen vivos como endpoints viejos (decisión usuario: no borrar). El primero además tiene la firma rota (`@RequestBody String email, int code`), no se arregla porque nadie lo llama.
+- `User.id` es `Integer` en Java y se serializa como número JSON; el front (`UserPublic.id: string`) lo recibe coerced, pero el DTO `UserPublic` ya lo expone como `String` para evitar líos de tipos.
+
+### Endpoints que el frontend ya espera (pendientes de implementar)
+El front **siempre intenta llamar al backend real**. Si el back está caído (network error), cada hook/servicio cae al mock local de `mocks/data.ts` y la app sigue funcionando para el demo. Si el back responde error de servidor (4xx/5xx fuera del flujo de auth), el error se propaga a la UI.
+
+Estado tras la armonización del 2FA mod (2026-05-25):
+
+| Servicio | Endpoint | Backend implementado |
+|---|---|---|
+| `auth.ts` | `POST /api/auth/anonymous` | No |
+| `auth.ts` | `POST /api/auth/login` | No |
+| `auth.ts` | `POST /api/auth/register` | No |
+| `auth.ts` | `POST /api/auth/register/mod` | **Sí** — devuelve `RegisterModEnrollment` |
+| `auth.ts` | `POST /api/auth/register/mod/verify` | **Sí** — 204 si TOTP válido |
+| `auth.ts` | `POST /api/auth/login/mod` | **Sí** — devuelve `LoginModChallengeResponse` (challengeId UUID, TTL 5 min) |
+| `auth.ts` | `POST /api/auth/login/mod/verify` | **Sí** — devuelve `AuthResponse { token, user }` con JWT real |
+| `auth.ts` | `PATCH /api/users/me/username` | No |
+| `profile.ts` | `GET/PATCH /api/users/me/profile`, `/settings`, `/onboarding`, `/mod-profile`, `/password` | No |
+| `communities.ts` | `GET /api/communities`, `POST/DELETE /api/communities/:id/join`, mensajes | No |
+| `events.ts` | `GET /api/events`, `GET /api/events/:id`, `POST/DELETE /api/events/:id/join` | No |
+| `stories.ts`, `bottles.ts`, `letters.ts`, `professionals.ts`, `moderation.ts` | varios | No |
+
+---
+
+## Frontend: claves de alto nivel
+
+> Ver `readme-frontend.md` para el detalle exhaustivo de cada pantalla.
+
+### Autenticación
+- `AuthContext` (`frontend/src/context/AuthContext.tsx`) es el núcleo.
+- Idea: **todo visitante recibe identidad anónima** desde el primer segundo vía `POST /api/auth/anonymous`. El JWT se guarda en `localStorage` con clave `sys_token`. Si el back no responde (network error), hay **fallback mock local** (`createMockAnonUser`).
+- **Política de fallback (decidida en auditoría):** `try { real() } catch { mock() }` solo si el error es de red (status 0). Errores de servidor (401, 422, 500) se propagan a la UI para que el usuario los vea. Cuando el back funcione, el fallback deja de dispararse sin tocar código.
+- Roles en el front: `'ANON' | 'USER' | 'MODERATOR' | 'ADMIN'`. El back trabaja con `'PROFESSIONAL' | 'ADMINISTRATOR' | 'USER' | 'ANON'`. La **traducción vive en `services/auth.ts`** (helper `mapBackendRole`): `PROFESSIONAL → MODERATOR`, `ADMINISTRATOR → ADMIN`. Tipos `BackendUser`/`BackendAuthResponse` son privados de esa capa; el resto de la app solo conoce `UserRole`.
+- Hook `useAuth()` expone: `user`, `isLoading`, `login`, `register`, `logout`, `updateUsername`, `loginAsMod`, `verifyLoginAsMod`. **Para checks de rol usa `useRole()`** (`hooks/useRole.ts` → `{ user, isMod, isAdmin, isAnon, isLoggedIn }`), no rehagas el check inline.
+- **Antes existía** una asignación de rol por prefijo de username (`startsWith('admin') → ADMIN`) que abría privilege escalation. Eliminada en la Tarea 2 de la auditoría — no reintroducir.
+- 401 fuera del flujo de auth (`/api/auth/*`) dispara `authBus.fireExpired()` (`lib/authBus.ts`, singleton con buffer) que el `AuthProvider` escucha. El buffer hace que si el 401 llega antes de que el provider monte, el listener lo recibe en cuanto se subscribe. **No usar `window.dispatchEvent`** para esto: el bus es resistente a race conditions del orden de mount.
+
+### Naming convention reciente
+- **Reciente refactor (commit `614f997`): se renombró `nick` → `username`** en todo el frontend. Si ves restos de `nick`, son legacy → cambiar.
+
+### Rutas (`frontend/src/App.tsx`)
+`/`, `/onboarding`, `/login`, `/dashboard`, `/perfil`, `/configuracion`, `/profesionales`, `/chat/:professionalId`, `/comunidades`, `/comunidades/:comunidadId`, `/eventos`, `/eventos/:eventId`, `/maquina-del-tiempo`, `/botella`, `/mapa`, `/moderacion`, `/loginmod`, `/modregister`.
+
+### Convenciones de código en el front
+- Una página = un `.tsx` + un `.module.css` al lado en `src/pages/`. Sin subcarpetas por página (decisión deliberada hasta que crezca).
+- Sub-componentes de una page van en `src/components/<area>/` (settings/, moderation/, events/, chat/, auth/, layout/, ui/) **con su propio `.module.css`** al lado. **Prohibido importar el CSS de la page padre** desde un sub-componente — acoplamiento invertido eliminado en B1.
+- Hooks de datos en `src/hooks/use*.ts`. **Todos usan `useApi(fetcher, initialData, mockFallback?, deps?)`** de `hooks/useApi.ts`: llama al backend, devuelve `data: T` desde el primer render (con `initialData` vacío durante `loading`), y solo si hay error de red Y `ALLOW_MOCK_FALLBACK` carga el `mockFallback` via **dynamic import** (`() => import('../mocks/data').then(m => m.MOCK_X)`). Esto saca `mocks/data.ts` del bundle de prod cuando la flag está off.
+- Llamadas API en `src/services/*.ts`, todas pasan por `apiFetch` de `src/services/api.ts`. `apiFetch` mete `Authorization: Bearer <sys_token>` automáticamente, **timeout de 15s** y soporta `signal: AbortSignal` opcional, distingue network error (status 0, helper `isNetworkError`) de error de servidor, solo añade `Content-Type: application/json` si hay body (evita CORS preflight en GETs), y para 401 fuera de `/api/auth/*` dispara `authBus.fireExpired()`.
+- **Acceso a localStorage centralizado en `src/services/storage.ts`** con sub-objetos tipados (`tokenStorage`, `themeStorage`, `langStorage`, `bannedWordsStorage`, `eventInterestsStorage`, `modAccountStorage`). Errores de quota/private mode silenciados de forma uniforme. **Prohibido `localStorage.*` directo** fuera de este módulo — usa o crea el wrapper correspondiente.
+- **Mocks en `frontend/src/mocks/data.ts`** — única fuente de verdad. **Se importan SOLO via dynamic import** desde los hooks (`() => import('../mocks/data').then(m => m.MOCK_X)`). Para chats hay `buildMockMessages(communityId)` y `buildMockPrivateMessages(professionalId)` con plantillas rotando por id (cada comunidad/profesional muestra un hilo distinto). Prohibido meter datos hardcoded en componentes.
+- Tipos compartidos del backend en `src/types/api.ts`. Los tipos del backend "crudos" (con `BackendRole`, etc.) viven solo en `services/auth.ts` y no salen de esa capa.
+- Estilos: variables CSS globales (`--primary`, `--peach`, `--dark`, etc.), nunca hexadecimales sueltos.
+- Mobile-first; breakpoints `576 / 768 / 992 / 1200`.
+- Animaciones reutilizables en `src/styles/animations.css` (`animate-fadeInUp`, `hover-lift`, `blob blob-float`, `delay-1..6`).
+- **Emojis pictográficos prohibidos en la UI** (regla estricta, decidida en auditoría). Reemplazar siempre por SVG en `components/ui/Icons.tsx` (`IconLock`, `IconHeart`, `IconCalendar`, `IconUsers`, etc., todos con `stroke="currentColor"`). Excepción: emojis que vienen como dato del backend (campo `emoji` de una entidad). **Símbolos tipográficos Unicode monocromos sí están permitidos**: `✓ ✕ ✎ ➤ ☰ ★ ½`.
+
+### Pantallas con detalle conocido
+- **Alcance del chat 1 a 1**: `PrivateChatPage` (`/chat/:professionalId`) es **solo entre un usuario y un profesional** (psicólogo / terapeuta / psiquiatra). **No se ofrecen chats privados entre usuarios anónimos**: los anónimos hablan en comunidades (grupal moderado) o vía `/botella` (anónimo one-shot). Se llega desde "Contactar" de `ProfessionalsPage`.
+- `TimeMachinePage` y `BottleMessagePage` — UI completa. Errores de envío (network + flag) caen al banner demo y simulan éxito; errores de servidor se muestran al usuario.
+- `ModerationPage` — protegida con `<RequireRole roles={['MODERATOR', 'ADMIN']}>` desde Sprint 1.
+- `CommunityChatPage` — si el `:comunidadId` no existe en los mocks, muestra "Comunidad no encontrada" con CTA a `/comunidades`.
+- `EventCreatePage` y el form embebido de `EventDetailPage` (`EventFormSection`) — **simulan publicar/guardar sin backend real**. Documentado como deuda; cuando el back tenga `POST /api/events` y `POST /api/events/:id/form*` se conectan con `useApi` + `optimisticMutation`.
+
+---
+
+## Variables de entorno
+
+| Variable | Dónde | Valor por defecto | Notas |
+|---|---|---|---|
+| `VITE_BACKEND_URL` | `frontend/.env` | `http://localhost:8080` | URL del backend para el proxy de Vite |
+| `VITE_USE_MOCK_FALLBACK` | `frontend/.env` | `true` (dev), `false` (prod) | Si `true`, los errores de red caen al mock y se activa el banner "Modo demostración". Cuando el back funcione, poner `false` para que los errores propaguen al UI |
+| `PORT` | (opcional, frontend) | `5173` | Puerto del dev server |
+| `spring.datasource.url` | `application.properties` | `jdbc:mysql://mysql:3306/shareYourStory` | Apunta al servicio `mysql` del compose |
+| `spring.datasource.username` | `application.properties` | `root` | |
+| `spring.datasource.password` | `application.properties` | `pasahitza` | Solo dev |
+
+---
+
+## Cómo arrancar
+
+### Todo con devcontainer (recomendado)
+- Abrir el repo en VS Code → "Reopen in Container" → arranca java-app, frontend, mysql.
+- Frontend en `http://localhost:5173`, backend en `http://localhost:8080`.
+
+### Solo backend (sin devcontainer)
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+Necesita MySQL corriendo en `localhost:3306` con la BD `shareYourStory`. Si solo lanzas mysql desde el compose: `docker compose -f .devcontainer/compose.yml up mysql`.
+
+### Solo frontend
+```powershell
+cd frontend
+npm install
+npm run dev         # http://localhost:5173
+npm run build       # tsc -b + vite build
+npm run lint        # ESLint
+npm test            # Vitest, run-once
+npm run test:watch  # Vitest, modo watch
+```
+
+---
+
+## Decisiones de diseño / convenciones aprendidas
+
+- **EOL: LF en todo el repo.** `.gitattributes` impone `* text=auto eol=lf`. Esto es para que el devcontainer Linux no marque como modificados los ficheros que Windows tiene en CRLF. Si añades un fichero nuevo, no fuerces CRLF.
+- **HMR en devcontainer:** Vite usa polling (`server.watch.usePolling: true`) porque inotify no cruza el bind mount Windows→Linux. Si el HMR vuelve a fallar, revisar `vite.config.ts`.
+- **Cards cliqueables (HTML5 válido):** Las tarjetas que navegan a otra ruta NO usan `<button onClick={navigate}>`, porque HTML5 prohíbe `<div>`/`<h3>`/`<p>` dentro de `<button>`. Patrón actual:
+  - Contenedor `<article className={styles.card}>` con `position: relative`.
+  - Dentro, `<Link className={styles.cardLinkOverlay}>` vacío con `position: absolute; inset: 0` que captura el click sobre toda la card. Incluir `aria-label` descriptivo.
+  - Si la card tiene un botón de acción interno (ej. "Unirse"), ese botón es un `<button>` independiente con `position: relative; z-index: 2`, y su handler hace `e.preventDefault(); e.stopPropagation()`.
+  - Aplicado en `LandingPage`, `CommunityListPage`, `EventListPage`, `DashboardPage`. Si añades una nueva card cliqueable, sigue este mismo patrón.
+- **`npm run preview` en devcontainer:** Vite preview está configurado con `preview.host: true` y `port: 4173` en `vite.config.ts`. El puerto `4173` está en `forwardPorts` de `.devcontainer/devcontainer.json`. Si VS Code no lo forwardea solo, abrir la pestaña "Ports" y hacer "Forward a Port" → 4173.
+- **No usar Lombok** — está comentado en `pom.xml`. Getters/setters a mano.
+- **El front asume contrato JSON con el back** definido en `src/types/api.ts`. Al implementar endpoints, **el back debe respetar esos tipos** (camelCase, mismos nombres de campo, etc.) o cambiarlos en ambos lados a la vez.
+- **Login moderadores ≠ login usuarios**: dos endpoints distintos (`/api/auth/login` y `/api/auth/login/mod`). Mod usa email; usuario usa username.
+- **Username anónimo** se genera en el front si el back no responde — formato `anonimo<4 dígitos>` actualmente.
+- **Helper `useApi(fetcher, fallback)`** (`frontend/src/hooks/useApi.ts`) es el patrón canónico para data fetching en este proyecto. Todos los hooks `useX` lo usan (4 LOC cada uno). Si añades un hook nuevo de datos, sigue el mismo patrón en vez de reinventar `useState + useEffect`. El state vive en un único objeto (`data`/`loading`/`error`) para no caer en la regla `react-hooks/set-state-in-effect` de ESLint v10.
+- **Traducción de roles backend ↔ frontend**: la capa vive en `services/auth.ts` (`mapBackendRole`). El resto de la app solo conoce `UserRole` (`ANON|USER|MODERATOR|ADMIN`). No exportar `BackendRole` ni `BackendUser` fuera de esa capa.
+- **Mocks unificados**: `frontend/src/mocks/data.ts` es la única fuente. Prohibido datos inline en componentes. Si necesitas un mock nuevo (p. ej. para una pantalla nueva), añádelo allí y léelo desde un hook (`useApi(...)`).
+- **Iconos: SVG inline a mano** en `components/ui/Icons.tsx` (no `lucide-react`, decisión de auditoría). Wrapper `Svg` con defaults `stroke="currentColor" strokeWidth="2"`. Cada icono es una función `IconXxx({ size, className })`. Para añadir uno nuevo, copia el patrón de los existentes.
+- **Fallback selectivo en `apiFetch`**: solo `isNetworkError(e)` cae al mock. Errores 4xx/5xx propagan a la UI. Las funciones del `AuthContext` (`login`, `register`) ya implementan este patrón — replicarlo en cualquier servicio nuevo.
+- **Modo demo controlado por flag**: `VITE_USE_MOCK_FALLBACK` (lee en `lib/env.ts` como `ALLOW_MOCK_FALLBACK`). Cuando está activo, los errores de red caen al mock Y disparan `markDemoMode()` (banner global "Modo demostración"). Cuando está off, los errores propagan al UI sin mock. **Patrón obligatorio en cualquier nuevo `catch` que silencie errores**: `if (isNetworkError(e) && ALLOW_MOCK_FALLBACK) { markDemoMode(); fallback() } else { throw e }`.
+- **Stores singleton vía `useSyncExternalStore`** (`lib/demoMode.ts`, `lib/bannedWords.ts`, `lib/eventInterests.ts`): patrón para estado global que vive fuera del árbol React. Cada uno expone `getX()`, `subscribeX(fn)`, `setX/addX/etc()`. El hook React (`useDemoMode`, `useBannedWords`, `useEventInterests`) lo consume con `useSyncExternalStore`. Usar este patrón para nuevos stores compartidos en vez de Context (más simple, sin re-renders innecesarios, accesible desde código no-React como `apiFetch`).
+- **`optimisticMutation` helper** (`lib/optimisticMutation.ts`): encapsula el patrón "aplica optimista → llama al back → reemplaza con respuesta del server, o rollback en error, o marca demo en network error". Usar en cualquier mutación que necesite optimistic update (chat, joinComunidad, like de evento, etc.) en vez de copiar el try/catch a mano.
+- **`useApi` como helper de lectura, `optimisticMutation` para escritura**. Si necesitas más complejidad (paginación, refetch, cache), considerar TanStack Query — pero hoy NO lo necesitamos.
+- **Errores de escritura propagan al UI; nunca se silencian salvo en modo demo**. Aplicado en `sendBottle`, `sendLetter`, `updateUsername`, `submitMood`, `markInterest`. Patrón: `try { await op() } catch (e) { if (isNetworkError(e) && ALLOW_MOCK_FALLBACK) { markDemoMode(); /* asumir éxito */ } else { setError(e.message); /* mostrar al usuario */ } }`.
+- **`<RequireRole roles={[...]} redirectTo="/">` para proteger rutas**. Usado en `/moderacion`, `/modregister` (con redirect a `/loginmod`), `/eventos/nuevo`. **No** hacer checks de rol inline dentro de cada página — usar el wrapper.
+- **`<NotFoundPage>` y ruta catch-all `*`** al final de `<Routes>` en App.tsx. Cualquier URL inválida muestra una página 404 con CTA al home.
+- **Lazy-load para rutas pesadas o poco frecuentes** con `React.lazy(() => import('./pages/X').then(m => ({ default: m.X })))` y `<Suspense fallback={<PageState loading/>}>` envolviendo Routes. Hoy: `MapPage` (Leaflet), `ModerationPage`. Si añades una pantalla nueva pesada (>50KB) o solo accesible para mods/admins, considerar lazy.
+- **Filtro de palabras prohibidas en render**: `maskBannedWords(text, bannedWords)` (de `lib/bannedWords.ts`) se aplica al renderizar **cualquier texto generado por usuarios** — chat de comunidades, mensajes del dashboard, popups de mapa, popups de botella, etc. Subscribirse a la lista con `useBannedWords()`. Cuando se añada un surface nuevo con texto de usuario, **aplicar el mask**.
+- **i18n con `react-i18next`** (`lib/i18n.ts`): tres idiomas Español/English/Euskera, persistido en `localStorage` (`sys_lang`), inicializado antes del primer render. Hook `useTranslation()` + `t('namespace.key')`. Recursos inline en `lib/i18n.ts` hasta crecer a >50 strings por idioma; entonces mover a `locales/{lang}.json`. Cobertura actual parcial (ver TODOs).
+- **Persistencia local cuando no hay back** (`lib/bannedWords.ts`, `lib/eventInterests.ts`, `sys_lang`, `sys_theme`, `sys_token`): patrón con `localStorage` + clave `sys_*` + módulo singleton con `get/set/subscribe`. Cuando exista el back, sustituir solo la capa de fetch — los hooks consumidores no cambian.
+- **Sub-componentes en `components/<area>/`**: para descomponer god components, los sub-componentes viven en su propia subcarpeta de `components/` (no en `pages/`). Convención actual: `components/auth/`, `components/settings/`, `components/moderation/`, `components/events/`, `components/layout/`, `components/ui/`. Cada sub-componente tiene su **propio `.module.css`**. **Prohibido importar el CSS Module de la page padre** desde un sub-componente — acoplamiento invertido eliminado en la auditoría B1.
+- **`useSavedFlash(ms)` hook** (`hooks/useSavedFlash.ts`): para el patrón "✓ Guardado" temporal. Devuelve `[shown, flash]`. Llama a `flash()` tras un éxito y `shown` queda true durante `ms` (2000 por defecto). Cancela el timer al desmontar. Usar este en vez de `useState + setTimeout` inline.
+- **Eventos "Me interesa" con contador real**: el back devuelve `interestedCount` **incluyendo** al usuario actual si ya tiene interés registrado. Para evitar doble conteo, `EventDetailPage` captura el estado inicial de `liked` con `useRef(liked)` en el primer render y calcula un **delta**: `(event.interestedCount ?? 0) + (liked === likedOnMount.current ? 0 : liked ? 1 : -1)`. Si el estado no cambió desde el monte → delta 0; si el usuario acaba de dar like → +1; si acaba de quitarlo → −1.
+
+---
+
+## Cosas pendientes / TODO conocidos
+
+### Backend
+- [x] ~~Renombrar `passowrd` → `password` en `RegisterRequest`.~~ (hecho 2026-05-21)
+- [x] ~~No exponer `User` (con password hash) en respuesta del registro mod.~~ (ahora devuelve 204 No Content)
+- [x] ~~Asignar `role` en `AuthService.register`.~~ (hecho: el front lo envía y el back lo valida con `@Pattern`)
+- [ ] Implementar `POST /api/auth/anonymous`, `/login`, `/register`, `/login/mod`. **El front ya los llama** (con fallback al mock controlado por `VITE_USE_MOCK_FALLBACK`); cuando existan, poner el flag a `false` en `.env` y el demo deja de caer al mock automáticamente.
+- [ ] Implementar JWT real (ahora todo es `permitAll`).
+- [ ] Endpoints de `users/me/*` (profile, settings, onboarding, mod-profile, password, username, mood). **El front ya los llama.**
+- [ ] Lógica de comunidades (con `joined`, `unread`, `pinnedNote` por user actual), eventos (con `interestedCount` por evento), historias, botellas, cartas, profesionales y moderación. **El front ya los llama** vía `useApi`; sin back, ven datos de `mocks/data.ts`.
+- [ ] Nuevos endpoints que el front ya espera (Sprint 2):
+  - `GET /api/communities/:id/members/active` → `ApiChatMember[]`
+  - `GET /api/users/me/dashboard/messages` → `ApiDashboardMessage[]`
+  - `GET /api/bottles/floating` → `ApiBottleStory[]`
+  - `GET /api/moderation/members` → `ApiModerationMember[]`
+  - `POST /api/users/me/mood` (body `{ value: 1..5 }`)
+  - `POST/DELETE /api/events/:id/interest`
+- [ ] Decisión arquitectónica resuelta en auditoría: el back **mantiene** `PROFESSIONAL | ADMINISTRATOR | USER | ANON`; el front mantiene `ANON | USER | MODERATOR | ADMIN`. La traducción está hecha en `services/auth.ts`. **No hace falta cambiar el enum del back.** Solo añadir `USER` y `ANON` al enum de Java cuando se implementen los endpoints de usuario final.
+- [ ] `RegisterModRequest` acepta `profession` y `specialization` (armonización 2026-05-25) pero **NO los persiste todavía** — `User` no tiene los campos. Cuando se quiera, añadirlos a `User` con `@Enumerated(EnumType.STRING)` o FK a `ProfessionType`/`SpecializationType`.
+- [ ] **Filtro automático de palabras (CRUD + aplicación server-side)**: el front ya aplica la censura al renderizar (vía `maskBannedWords` en `lib/bannedWords.ts`) con lista persistida en `localStorage`. Cuando el back lo asuma:
+  - Entidad `BannedWord` (id, word, createdBy?, createdAt) y repositorio.
+  - Endpoints `GET/POST /api/moderation/banned-words`, `PATCH/DELETE /api/moderation/banned-words/:id` (solo MODERATOR/ADMIN).
+  - Aplicar el filtro **server-side** antes de guardar/enviar mensajes; el front pasa a ser solo UI de CRUD (la censura en render se mantiene como red de seguridad).
+- [x] ~~**2FA TOTP (Google Authenticator) en el flujo de moderadores/administradores.**~~ — armonizado 2026-05-25. Los 4 endpoints (`/register/mod`, `/register/mod/verify`, `/login/mod`, `/login/mod/verify`) implementados en el back con la lib `com.warrenstrange:googleauth`, JWT real (`JWTService`), y un `ConcurrentHashMap<challengeId, ChallengeData>` con TTL 5 min en `AuthService` para los challenges. Cuando el flujo arranque, el front deja de caer al mock de `lib/totp.ts` automáticamente. Pendientes derivados:
+  - **`totpActivated: boolean`** en `User` — hoy `verifyModRegistration` valida el primer código pero no marca la activación. Cualquier user creado puede hacer login aunque nunca confirme el QR. Bajo riesgo (es para mods), pero hay que añadir el flag y bloquear login si no está `true`.
+  - **Map de challenges es in-memory** — sin TTL real (solo timestamp), sin limpieza periódica, se pierde al reiniciar. Para producción mover a Redis o tabla.
+  - **Eliminar `frontend/src/lib/totp.ts`** y los catch del fallback en `services/auth.ts` cuando se valide que el flujo funciona contra el back real. Hoy se mantienen porque `VITE_USE_MOCK_FALLBACK=true` permite seguir desarrollando sin back.
+
+### Frontend
+- [x] ~~Reemplazar arrays mock inline por llamadas (servicios) con fallback al mock centralizado.~~ (hecho — auditoría tareas 1+2)
+- [x] ~~Conectar `ProfilePage` con `useProfile()`.~~ (hecho — antes lo ignoraba)
+- [x] ~~Activar servicios reales en `AuthContext` con fallback selectivo.~~ (hecho — auditoría tarea 2)
+- [x] ~~Capa de traducción de roles back↔front.~~ (hecho en `services/auth.ts`)
+- [x] ~~Sustituir emojis pictográficos por SVG.~~ (hecho — auditoría tarea 3)
+- [x] ~~Arreglar fallback silencioso de CommunityChatPage cuando el id no existe.~~ (hecho)
+- [x] ~~Arreglar auto-scroll del chat que secuestraba la lectura del historial.~~ (hecho)
+- [x] ~~Bug fix: `modSaved` activándose tras error en `SettingsPage`.~~ (hecho)
+- [x] ~~Borrar lógica de privilege escalation por prefijo de username.~~ (hecho — antes `startsWith('admin') → ADMIN`)
+- [x] ~~Guard de rol en rutas (`<RequireRole>`)~~ — Sprint 1.
+- [ ] **Restaurar `<RequireRole roles={['MODERATOR','ADMIN']} redirectTo="/loginmod">` en `/modregister`** — quitado temporalmente 2026-05-25 para poder crear el primer admin durante las pruebas del 2FA (chicken-and-egg: el guard original impedía registrar a nadie sin ser ya admin). Restaurar cuando exista un mecanismo de bootstrap de admin (seed via CommandLineRunner, endpoint `/api/auth/register/admin/bootstrap` que solo permite el primero, o seed SQL).
+- [x] ~~Ruta catch-all `*` con `<NotFoundPage />`~~ — Sprint 1.
+- [x] ~~`.env.example` con `VITE_BACKEND_URL` y `VITE_USE_MOCK_FALLBACK`~~ — Sprint 1.
+- [x] ~~"Modo oscuro próximamente": implementado como toggle real~~ — hecho 2026-05-23.
+- [x] ~~Quitar `react-bootstrap` y reemplazar `Spinner` de `PageState` por uno propio~~ — Sprint 1.
+- [x] ~~Lazy loading por ruta (`/mapa` y `/moderacion`)~~ — Sprint 2.
+- [x] ~~Bug joinedSet de CommunityListPage~~ — Sprint 1.
+- [x] ~~Sanitizar `emoji` antes del `divIcon` de Leaflet~~ — Sprint 1.
+- [x] ~~Bundle iconos de Leaflet locales (no unpkg)~~ — Sprint 1.
+- [x] ~~Deshabilitar botón "Contactar" en ProfessionalsPage hasta tener PrivateChatPage~~ — Sprint 1 (texto "Próximamente", `disabled`).
+- [x] ~~Propagar errores en `sendBottle`/`sendLetter`/`updateUsername`~~ — Sprint 1.
+- [x] ~~Banner "Modo demostración" + flag `VITE_USE_MOCK_FALLBACK`~~ — Sprint 1.
+- [x] ~~Filtro de palabras compartido (`lib/bannedWords.ts`) con censura en render~~ — Sprint 1.
+- [x] ~~`_setUserFromToken` → `loginAsMod` en context~~ — Sprint 2.
+- [x] ~~Unificar `useCommunityChat` con `useApi` (vía `optimisticMutation`)~~ — Sprint 2.
+- [x] ~~Reemplazar `MOCK_*` importados directamente por hooks~~ — Sprint 2 (`useCommunityMembers`, `useDashboardMessages`, `useFloatingBottles`, `useModerationMembers`). Campos `unread` y `pinnedNote` movidos a `ApiCommunity`.
+- [x] ~~Decisión: mood selector~~ — Sprint 2: conecta a `POST /api/users/me/mood` con propagación de errores y demo mode.
+- [x] ~~Decisión: selector de idioma~~ — Sprint 2: i18n real con Español / English / Euskera (cobertura parcial, ver pendientes).
+- [x] ~~Decisión: modo compacto~~ — Sprint 2: borrado del toggle.
+- [x] ~~Decisión: like de eventos~~ — Sprint 2: `lib/eventInterests.ts` con persistencia local + contador `interestedCount`.
+- [x] ~~Romper SettingsPage en `components/settings/`~~ — Sprint 2 (8 sub-componentes, página 90 LOC vs 436 antes).
+- [x] ~~Romper ModerationPage en `components/moderation/`~~ — Sprint 2 (3 sub-componentes, página 47 LOC vs 349 antes).
+- [x] ~~Extraer EventForm de EventDetailPage en `components/events/`~~ — Sprint 2 (página 148 LOC vs 435 antes).
+- [x] ~~Mover inline styles a CSS Modules~~ — Sprint 2 (solo quedan el `width: ${pct}%` dinámico y el placeholder de PrivateChatPage).
+- [x] ~~Implementar `PrivateChatPage`~~ — Sprint 3. Chat 1 a 1 funcional con mock (4 mensajes seed), avatar + nombre + especialidad en el header, optimistic update vía `optimisticMutation`, not-found si el profesional no existe. Botón "Contactar" de ProfessionalsPage reactivado.
+- [x] ~~Ocultar `company` en ModProfileSection para ADMIN~~ — Sprint 3. `ApiModProfile.company` ahora `string | undefined`; FIELDS se filtran si `user.role === 'ADMIN'`.
+- [ ] Decidir y aplicar política de token storage. Hoy: `localStorage`. **Decisión auditoría 2026-05-24: privacidad = marketing, así que se mantiene `localStorage` por ahora.** Revisar si cambia el alcance.
+- [ ] `@fontsource/inter` en lugar de Google Fonts CDN. **Decisión auditoría 2026-05-24: pospuesto (privacidad = marketing).** El render-blocking sigue siendo argumento técnico válido para hacerlo eventualmente.
+- [ ] (Decisión pendiente del usuario) Sustituir también los símbolos tipográficos `✓ ✕ ✎ ➤ ☰ ★` por SVG dedicados para consistencia total. Hoy se quedan como Unicode.
+- [x] ~~Navbar dependiente del rol~~ — Sprint 3. MODERATOR/ADMIN ven: Moderación, Comunidades, Eventos, Profesionales. ANON/USER mantienen los 6 originales. Botón "Entrar" oculto cuando `isLoggedIn`.
+- [x] ~~i18n cobertura completa~~ — Sprint 3. Las 16 pantallas internas + sub-secciones traducidas. Total ~280 keys × 3 idiomas. Recursos siguen inline en `lib/i18n.ts` (~1100 LOC). Si crece más, mover a `locales/{lang}.json` con `i18next-http-backend`.
+- [x] ~~**MOCK_MOD_PROFILE singleton**~~ — Auditoría 2026-05-26 (B6). Seed derivado de `useAuth()` (username del usuario actual); el MOCK_MOD_PROFILE ya no se importa en runtime. Cuando exista `GET /api/users/me/mod-profile`, migrar a `useModProfile()` con `useApi`.
+- [x] ~~**PrivateChatPage mensajes mock idénticos**~~ — Auditoría 2026-05-26 (C6). `buildMockPrivateMessages(professionalId)` rota entre 3 plantillas; cada profesional muestra un hilo distinto. Idem para `buildMockMessages(communityId)` en comunidades.
+- [x] ~~**Refactor `auth:expired` → bus singleton**~~ — Auditoría 2026-05-26 (B4). `lib/authBus.ts` con buffer del último evento; resistente a race conditions del orden de mount.
+- [ ] **Símbolos tipográficos `✓ ✕ ✎ ➤ ☰ ★` → SVG dedicados** (consistencia visual total). Decisión usuario 2026-05-25: pospuesto.
+
+---
+
+## Branches
+
+- `main` — branch principal.
+- `main-frontend` — branch de trabajo actual (frontend).
+- `main-firstFeature`, `main-firstFeature-correct` — features del backend (login mod, comunicación con el endpoint).
+- `main-backend`, `main-backend-loginTest`, `backendTest` — branches del backend.
+
+Commits recientes (con tag):
+- `614f997` refactor: cambiar de nick a username
+- `27f67e9` feat: sincronizar React con Spring Boot, comunicación con `registerMod`
+- `68e30bc` Update compose.yml, change java-app for localhost
+
+---
+
+## Notas misceláneas
+
+- Hay un `src/main/resources/Static/index.html` vacío (1 línea). No se sirve nada estático todavía; el frontend vive en su propio proceso.
+- `target/` está en `.gitignore`. El directorio existe localmente con clases compiladas, ignorar.
+- El proyecto usa Spring Boot **4.1.0-SNAPSHOT** (no released). El repo `spring-snapshots` está añadido en `pom.xml`. Si Maven falla resolviendo dependencias, verificar acceso a `https://repo.spring.io/snapshot`.
+- El `readme-frontend.md` está mantenido y es fuente de verdad para detalles del frontend. Si hay discrepancia entre este CLAUDE.md y `readme-frontend.md`, consultar al usuario y actualizar el que esté mal.
+
+---
+
+## Última actualización
+
+- **2026-05-27** — **Eliminación completa de mocks. Preparación para backend real.**
+
+  - **`src/mocks/data.ts` eliminado.** Era la única fuente de datos mock (comunidades, eventos, profesionales, historias, botellas, reportes, perfil, chats, etc.).
+  - **`useApi` simplificado**: firma cambia de `useApi(fetcher, initialData, mockFallback?, deps?)` a `useApi(fetcher, initialData, deps?)`. El parámetro `mockFallback` desaparece; cualquier error se propaga al UI via `error: string | null`.
+  - **12 hooks actualizados** (`useCommunities`, `useCommunityChat`, `useCommunityMembers`, `useDashboardMessages`, `useEvents`, `useFloatingBottles`, `useMapStories`, `useModerationMembers`, `useModerationReports`, `usePrivateChat`, `useProfessionals`, `useProfile`): eliminados los dynamic imports a `mocks/data`.
+  - **`AuthContext.tsx` limpiado**: sin mock de usuario anónimo ni de login/register cuando el back está caído. Si el back no responde, `user` queda `null` y las pantallas lo gestionan con el estado de error.
+  - **`services/auth.ts` limpiado**: eliminado todo el código de simulación 2FA TOTP del lado cliente (funciones `mockEnrollment`, `mockChallenges` Map, importaciones de `lib/totp.ts`). Los 4 endpoints mod (`registerMod`, `verifyModRegistration`, `loginMod`, `verifyModLogin`) llaman directamente al back sin fallback.
+  - **`optimisticMutation.ts` simplificado**: cualquier error (red o servidor) hace rollback y relanza. Eliminado el `ALLOW_MOCK_FALLBACK` que antes dejaba el cambio optimista en sitio en errores de red.
+  - **`silentMutation.ts` simplificado**: cualquier error devuelve el mensaje al consumidor. Antes los errores de red se silenciaban en modo demo.
+  - **`BottleMessagePage`, `DashboardPage`, `TimeMachinePage`**: eliminadas las ramas `if (isNetworkError(e) && ALLOW_MOCK_FALLBACK)` que simulaban éxito cuando el back estaba caído.
+  - **`optimisticMutation.test.ts` actualizado**: el test "network error → no rollback con flag activa" eliminado; ahora todos los errores producen rollback + throw.
+  - **`lib/env.ts` y `lib/demoMode.ts` conservados** pero sin consumidores activos — el banner "Modo demostración" ya no aparecerá. Se pueden limpiar en un paso posterior si se decide quitar toda la infraestructura de demo.
+  - **`lib/totp.ts` conservado** (el test `totp.test.ts` lo necesita).
+  - **TypeScript: sin errores** tras todos los cambios.
+
+- **2026-05-27** — **Segunda auditoría frontend (bloques 1, 2 y 3): bugs, deuda técnica y pulido UX.**
+
+  **Bloque 1 — Bugs:**
+  - **B1**: `common.errSend` añadido al i18n (ES/EN/EU) — faltaba la key que usan `CommunityChatPage` y `PrivateChatPage` al fallar el envío.
+  - **B2**: `EventDetailPage` corregido el doble conteo de `interestedCount`. El back ya incluye al usuario en el conteo; el front ahora calcula un delta respecto al estado en el primer render (con `useRef(liked)` → `likedOnMount`). Patrón documentado arriba en "Eventos Me interesa".
+  - **B3**: `CommunityChatPage` y `PrivateChatPage` — `handleSend` convertido a async/await con `sendError` state (`useState<string|null>`). El error se muestra bajo el `ChatComposer` con `role="alert"`. Clase `.sendError` añadida en ambos `.module.css`.
+  - **B4**: `ModLoginPage` y `ModProfileSection` — regex de email corregida de `/[^\s@]+\.[^\s@]+/` a `/[^\s@]+\.[^\s@]{2,}/` (TLD mínimo 2 caracteres).
+
+  **Bloque 2 — Deuda técnica:**
+  - **D1**: `lib/initials.ts` — **nuevo fichero** con la función `initials(name: string): string`. Maneja nombres multi-palabra (primera letra de cada palabra, ej. "Juan Díaz" → "JD") y usernames de una sola palabra (primeros 2 caracteres, ej. "joana" → "JO"). Elimina la función duplicada que vivía en `PrivateChatPage` y el `m.username.slice(0, 2)` de `CommunityChatPage`.
+  - **D2**: `lib/roles.ts` — añadida `getRoleLabel(role, t)` que centraliza la traducción de roles a etiqueta visible. Elimina el objeto `ROLE_LABEL` de `ProfilePage` y el ternario de `AccountSection`.
+  - **D3**: `components/ui/ErrorBoundary.tsx` — **nuevo fichero**, class component con `getDerivedStateFromError`. Envuelve `<BrowserRouter>` en `App.tsx`. Captura errores de render inesperados antes de que colapsen la app.
+  - **D4**: `ModerationPage` — `TABS` envuelto en `useMemo([t])` y renombrada variable `.map(t =>` → `.map(tabItem =>` para eliminar el shadow sobre el hook `t = useTranslation()`.
+  - **D5**: `BannedWordsSection` — `key={i}` (índice mutable) cambiado a `key={w}` (valor estable, las palabras son únicas).
+
+  **Bloque 3 — UX y pulido:**
+  - **U1**: `BottleMessagePage` — los 3 botones de recepción añaden estado `receiving` (disabled + texto "Cargando…" mientras la petición está en vuelo).
+  - **U2**: `BannedWordsSection` — el botón "Eliminar" ahora muestra una confirmación inline ("¿Eliminar? [Confirmar] [Cancelar]") en lugar de borrar directamente. Sin `window.confirm()`.
+  - **U3**: `DashboardPage` — widget "Mensajes recientes" muestra `<p>` vacío con `t('common.noResults')` si no hay mensajes. `const cat = catFor('/dashboard')` elevado a nivel de módulo como `dashCat` (llamada pura con argumento constante).
+  - **U4**: `PrivateChatPage` — muestra `<p>` con `t('privateChat.noMessages')` cuando el historial está vacío.
+  - **U5**: `CommunityListPage` — `FILTERS` y `filtered` envueltos en `useMemo` (evita recalcular en cada render).
+  - **U6**: `CommunityChatPage` — `backAriaLabel` añadido a ambos `<ChatHeader>` (estado "no encontrado" y estado normal).
+
+  **i18n añadido:** `common.errSend`, `moderation.deleteConfirm`, `privateChat.noMessages` (× 3 idiomas).
+
+- **2026-05-26** — **Auditoría frontend completa (bloques A, B, C). 17 commits, 38 tests verdes.** Tras una auditoría exhaustiva detectando ~50 hallazgos (críticos / altos / medios / bajos), se ejecutaron 3 bloques de trabajo. El usuario decidió mantener `useApi` propio (no migrar a TanStack Query) y conservar `localStorage` para JWT por scope PBL.
+
+  **Bloque A — Crítico:**
+  - **A1**: activado `strict: true` + `noUncheckedIndexedAccess` en `tsconfig.app.json` (`exactOptionalPropertyTypes` fuera a propósito — produce ruido en React sin valor real). 9 bugs latentes arreglados en `BannedWordsSection`, `catPalette`, `Select`, `CommunityChatPage`, `MapPage.escapeHtml`, `OnboardingPage`.
+  - **A2**: `useApi` cambia firma a `useApi(fetcher, initialData, mockFallback?, deps?)`. Todos los 12 hooks `useX` migrados a `() => import('../mocks/data').then(m => m.MOCK_X)`. **Resultado: con `VITE_USE_MOCK_FALLBACK=false`, `mocks/data.ts` se queda en su propio chunk que NUNCA se descarga** en producción. `MOOD_OPTIONS` movido inline en DashboardPage (no era mock, era config UI).
+  - **A3**: borrado el editor de username inline del Navbar y de ProfilePage; la edición vive **solo en `/configuracion > Cuenta`** (fuente única). Esto cierra el bug de la promesa sin manejar en `Navbar.handleUsernameSave`.
+  - **A4**: `ModLoginPage` y `ModRegisterPage` pasan a lazy-load. Vite separa `qrcode` (~80KB) + `otpauth` (~10KB) + `lib/totp.ts` del bundle principal.
+  - **A5**: `setTimeout` pendientes en `MapPage` y `EventCreatePage` se guardan en un `useRef` y se cancelan en `useEffect` cleanup al desmontar.
+
+  **Bloque B — Arquitectura:**
+  - **B1**: nuevos primitivos en `components/ui/`: `Section`, `Card`, `Input`, `FormField`, `Feedback` (error/success), `SaveButton`, `Toggle` (movido de settings/), `ToggleRow`. **8 sub-componentes de `settings/`, 3 de `moderation/`, `EventFormSection` y `TotpPanel` migrados** — ya no importan CSS de su page padre (acoplamiento invertido eliminado). Cada sub-componente con `.module.css` propio. CSS de las pages padre reducido drásticamente (SettingsPage 405 → 137 LOC, ModerationPage 602 → 99 LOC, EventDetailPage 632 → 320 LOC).
+  - **B2**: nuevo `components/chat/ChatLayout.tsx` (+ `.module.css`) con sub-componentes exportados: `ChatLayout`, `ChatSidebar`, `ChatSidebarItem`, `ChatSidebarExplore`, `ChatMain`, `ChatHeader`, `ChatMessages` (auto-scroll near-bottom encapsulado), `ChatBubble`, `ChatComposer`, `ChatPanel`. `CommunityChatPage` 234 → 178 LOC, `PrivateChatPage` 247 → 175 LOC. Lógica deduplicada: auto-scroll, back/info, render de burbujas, composer con Enter-sin-Shift.
+  - **B3**: nuevo `lib/roles.ts` con `canModerate`, `canAdminister`, `isAnon`, `isLoggedIn`, `MOD_ROLES`. Nuevo `hooks/useRole.ts` con `{ user, isMod, isAdmin, isAnon, isLoggedIn }`. Barridas las 5 duplicaciones de `role === 'MODERATOR' || role === 'ADMIN'` en Navbar, EventListPage, EventDetailPage, SettingsPage.
+  - **B4**: nuevo `lib/authBus.ts` con `fireExpired`/`onExpired` y **buffer del último evento** (si el 401 llega antes de que el `AuthProvider` monte, el listener lo recibe en el primer subscribe vía `queueMicrotask`). Sustituye al `window.dispatchEvent(new CustomEvent('auth:expired'))` que era frágil ante race conditions.
+  - **B5**: nuevo `services/storage.ts` con sub-objetos tipados: `tokenStorage`, `themeStorage`, `langStorage`, `bannedWordsStorage`, `eventInterestsStorage`, `modAccountStorage`. Errores de quota/private mode silenciados de forma uniforme. **Prohibido `localStorage.*` directo** fuera de este módulo. Migrados 7 archivos; borradas 5 declaraciones duplicadas de `const TOKEN_KEY = 'sys_token'` / `const STORAGE_KEY = 'sys_X'`. `lib/totp.ts` ahora valida shape del JSON guardado (antes `as StoredAccount` sin guard).
+  - **B6**: `ModProfileSection` ya no hace dynamic import del MOCK; el seed deriva del `user.username` actual de `useAuth()`. Cada moderador ve **su** username, no "Carlos García" siempre.
+
+  **Bloque C — Calidad:**
+  - **C1**: setup de Vitest + jsdom. Scripts `npm test` (run-once) y `npm run test:watch`. 38 tests cubriendo `lib/roles`, `lib/bannedWords` (incluido word-boundary unicode), `lib/optimisticMutation` (con mock de la flag), `lib/totp` (incluido caso de JSON corrupto en storage). `vitest.config.ts` separado del `vite.config.ts`.
+  - **C2**: nuevo `lib/silentMutation.ts` que encapsula el patrón "best-effort: network error + flag → demo mode, error de servidor → mensaje". Aplicado en `NotificationsSection`, `PrivacySection` (con rollback visual + Feedback inline), `MapPage.createStory` (con toast de error), `EventListPage` y `EventDetailPage` (markInterest con rollback), `OnboardingPage` (updateUsername + saveOnboarding). **Convención: prohibido `.catch(() => {})` ciego** — usar `silentMutation` o propagar.
+  - **C3**: `apiFetch` ahora acepta `ApiFetchOptions` extendido con `timeoutMs?` (default 15s) y `signal?: AbortSignal`. Implementación encadena el `signal` del caller con un `AbortController` interno para el timeout. Reason del timeout es un `ApiError` con `status: 0` (consistente con `isNetworkError`). Cancelaciones explícitas del caller re-lanzan el `AbortError` original. Bonus: solo añade `Content-Type: application/json` si hay body (evita CORS preflight innecesario en GETs).
+  - **C4**: `ModRegisterPage`: renombrado `nombre/apellido/empresa/profesion/especializacion` (castellano) → `firstName/lastName/company/profession/specialization` (inglés). Coherente con el resto del codebase.
+  - **C5**: nuevos `components/layout/MainLayout.tsx` (Navbar + Outlet + Footer) y `BareLayout.tsx` (Navbar + Outlet). `App.tsx` con rutas anidadas: el Footer aparece solo en pantallas estándar; las pantallas full-viewport (chats, auth) usan BareLayout. Esto soluciona el bug de "el Footer empuja el contenido fuera de viewport en `/comunidades/:id` y `/chat/:id`".
+  - **C6**: `MOCK_MESSAGES` y `MOCK_PRIVATE_MESSAGES` sustituidos por funciones `buildMockMessages(communityId)` y `buildMockPrivateMessages(professionalId)` que rotan entre **3 plantillas distintas** por id. Hooks `useCommunityChat` y `usePrivateChat` actualizados.
+
+  **Limpiezas post-C:**
+  - `nav.editUsername` borrado del i18n (3 idiomas) — ya no se usa tras A3.
+  - `Navbar.module.css`: borradas `.usernameChip`, `.editIcon`, `.usernameInput`.
+  - `ProfilePage.module.css`: borradas `.usernameEditRow`, `.usernameInput`, `.usernameSaveBtn`, `.usernameCancelBtn`.
+
+  **Convenciones nuevas tras el audit (todas documentadas arriba):**
+  - `strict: true` siempre.
+  - Mocks vía dynamic import (no estático).
+  - Sub-componentes con CSS propio (no importar del page padre).
+  - `useRole()` para checks de rol — no rehacer inline.
+  - `authBus` para señalar "sesión expiró" (no `dispatchEvent`).
+  - `storage.ts` único punto de `localStorage` (no `localStorage.*` directo).
+  - `silentMutation` para mutaciones fire-and-forget (no `.catch(()=>{})`).
+  - `ChatLayout` para nuevas pantallas tipo chat.
+  - `MainLayout`/`BareLayout` decididos por ruta.
+  - `apiFetch` soporta `signal` + `timeoutMs` opcionales.
+  - Mocks de chat distintos por id (función `buildMockX(id)`).
+
+  **Decisiones tomadas durante el audit (registradas):**
+  - **NO migrar a TanStack Query** ahora — mantener `useApi` propio.
+  - **NO bloquear loginMod en modo demo** — útil para enseñar el flujo TOTP completo aunque el back esté caído.
+  - **EventCreatePage y EventFormSection se mantienen** — el usuario los conectará al back cuando exista (`POST /api/events`, `POST /api/events/:id/form*`).
+  - **Cuando el back tenga 2FA real**: borrar `lib/totp.ts` y los catch del fallback en `services/auth.ts`.
+  - **Política ANON/USER**: estilo Pokemon Showdown — anónimo es plenamente funcional; registrarse mantiene el nick + persiste configuración/datos en el back.
+  - **`exactOptionalPropertyTypes` fuera** — explícitamente documentado en `tsconfig.app.json`: en React es idiomático pasar `className={maybe}` y activarlo obligaba a ensuciar cada call site sin aportar seguridad real.
+
+  **Pendientes detectados (no resueltos en este audit):**
+  - Acceso directo a tokens en `localStorage` sigue siendo el modelo (cookie `HttpOnly` requiere coordinación con el back).
+  - Google Fonts CDN (render-blocking + privacy) pospuesto.
+  - Símbolos tipográficos Unicode (`✓ ✕ ✎ ➤ ☰ ★`) no migrados a SVG.
+  - No hay alias `@/*` en Vite/tsconfig (los imports siguen siendo `../../`).
+  - No hay `manualChunks` en `vite.config.ts`.
+  - Test coverage solo cubre funciones puras; hooks React no testeados todavía.
+
+- **2026-05-25** — **Armonización backend ↔ frontend del flujo 2FA mod.** Tras el merge `main-backend + main-frontend → main`, el contrato HTTP del back no casaba con el del front Sprint 3. Cambios mínimos en el back para que el flujo de registro + login de moderadores funcione end-to-end contra el back real (sin caer al mock):
+  - **6 DTOs nuevos** (records en `src/main/java/shareyourstory/auth/dto/`): `RegisterModEnrollment`, `VerifyTotpRequest`, `LoginModChallengeResponse`, `VerifyLoginRequest`, `AuthResponse`, `UserPublic`.
+  - **`RegisterModRequest`** ahora acepta `name, lastName, role (PROFESSIONAL|ADMINISTRATOR con @Pattern), profession?, specialization?`. Los dos últimos se aceptan pero **no se persisten** (el User no tiene los campos — implementarlos sería "implementar algo nuevo", queda como TODO).
+  - **`AuthService`**: `registerMod` devuelve `RegisterModEnrollment { secret, otpauthUri, email }` en vez de `int`. Nuevo `verifyModRegistration(VerifyTotpRequest)` valida el primer código TOTP (sin marcar activación todavía). `loginMod` devuelve `LoginModChallengeResponse { challengeId, requires2fa: true }` en vez de `int`; genera UUID y lo persiste en `ConcurrentHashMap<challengeId, ChallengeData>` con TTL 5 min. Nuevo `verifyModLogin(VerifyLoginRequest)` consume el challenge, valida el TOTP, devuelve `AuthResponse { token, user: UserPublic }`. Métodos muertos `register`/`login` borrados.
+  - **`AuthController`**: dos endpoints nuevos `POST /api/auth/register/mod/verify` y `POST /api/auth/login/mod/verify`. Los antiguos `POST /2fa/qr` y `POST /2fa/code` (más el `GET /2fa/qr`, `/testJWT`, `/mailTest`) se mantienen vivos por si algún cliente externo los usa (decisión del usuario). `@ExceptionHandler` locales: `BadCredentialsException → 401`, `DataIntegrityViolationException → 409`.
+  - **Bug fix colateral**: `TimeMachine.java` no compilaba (usaba `@Getter/@Setter` de Lombok pero Lombok está comentado en `pom.xml`). Sustituido por getters/setters a mano según convención. El bug lógico de `TimeMachineService.createTimeMachine` (asigna `deliveryDate` al `email`) sigue sin corregir — no bloquea porque el front no llama a ese endpoint.
+  - **Decisiones tomadas durante la armonización (documentadas como deuda en TODOs):**
+    - **`challengeId = UUID + Map en memoria con TTL 5 min**, no `email`. Más seguro que el atajo "email-como-challengeId". Cuando se vaya a producción, mover a Redis o tabla.
+    - **`code` viaja como `String`** en los DTOs nuevos (no `int`) — robusto frente a códigos `"000123"` y consistente con lo que envía el front. Se parsea a `int` en `AuthService.parseCode`.
+    - **No se añade `@ControllerAdvice` global**, solo `@ExceptionHandler` dentro del `AuthController` (alcance mínimo).
+    - **No se borra la clase vieja `RegisterRequest`** (no record, distinta de `RegisterModRequest`) — queda como código muerto post-merge, pero borrarla excede lo necesario.
+  - **Estado tras la armonización**: el flujo mod (registro + login con 2FA) funciona contra el back real. El resto de endpoints que el front llama (`/api/auth/anonymous`, `/api/auth/login`, `/api/users/me/*`, `/api/communities/*`, etc.) NO existen en el back — el front sigue cayendo al mock para ellos. Para probar de verdad el flujo mod: `VITE_USE_MOCK_FALLBACK=false` en `frontend/.env` (que NO caiga al mock), arrancar back con devcontainer, ir a `/modregister` → crear cuenta → escanear QR con Google Authenticator → introducir código → ir a `/loginmod`.
+- **2026-05-25** — **Gatos durmientes (SleepingCat) en todas las pantallas.** Componente reutilizable `components/ui/SleepingCat.tsx` (+ `.module.css`) con SVG dibujado a mano estilo infantil (trazo grueso 2.6px, `stroke-linecap=round`, fill suave con opacity 0.14, filtro SVG `feTurbulence + feDisplacementMap` para wobble por seed). API: `<SleepingCat color size={120} seed={n} interactive />`. Animaciones CSS: respiración del cuerpo (scaleY 1.045, 4.2s loop), wag de cola (3 oscilaciones cada 8s con `animation-delay` por seed para desincronizar entre gatos), y al hacer click `awake` durante 1.8s (ojos abren un poco con dos ellipses + cabeza se ladea -4°). Respeta `prefers-reduced-motion`. Helper `components/ui/catPalette.ts` con 16 colores pastel "crayola" y `catFor(routeKey)` que mapea cada pantalla a `{color, seed}` determinista. Convenciones:
+  - **Cada pantalla tiene UN gato** apoyado en un divisor/borde real del layout (border-bottom de un header, top de una sección, borde superior de una card). Patrón CSS: el padre tiene `position: relative`; el gato se posiciona absoluto (`bottom: 0` para apoyarse en un border-bottom, `bottom: 100%` para apoyarse en el top de la card desde fuera).
+  - **Tamaños**: landing = grande (300px); headers de páginas internas = 88-110px; sidebars de chats = ~72px.
+  - **Modo oscuro**: el SVG aplica `filter: brightness(1.05) saturate(0.88)` automáticamente vía `:global([data-theme='dark'])` para que los pasteles funcionen sobre fondos oscuros sin perder identidad. No hace falta tocar nada por pantalla.
+  - **Si añades una pantalla nueva**: añade su ruta al map `ROUTE_CATS` en `catPalette.ts` con un color libre y un seed entero único, y coloca el `<SleepingCat>` apoyado en algún divisor real.
+- **2026-05-21** — Creación inicial del fichero tras análisis completo del repo.
+- **2026-05-21** — Arreglados bugs del backend en `/api/auth/register/mod`: typo `passowrd → password`, asignación de `role` (validado por `@Pattern`), respuesta 204 No Content. Frontend `ModRegisterPage` ahora tiene dos pestañas (Moderador / Administrador); admin no pide `company`. `RegisterModPayload` añade `role: 'PROFESSIONAL' | 'ADMINISTRATOR'`. Añadida regla de workflow: explicar cambios + dar comandos de commit al terminar.
+- **2026-05-21** — Devcontainer: HMR activado con `server.watch.usePolling` en `vite.config.ts`. `.gitattributes` reescrito para forzar LF en todo el repo (`* text=auto eol=lf`) y evitar el problema de falsos "modificados" al usar el bind mount Windows→Linux. Toca renormalizar el working tree con `git add --renormalize .`.
+- **2026-05-22** — `EventDetailPage`: los moderadores (`MODERATOR`/`ADMIN`) pueden crear un formulario por evento debajo de la descripción. Dos tipos: opción múltiple (radio + resultados con %) o texto libre (textarea + lista de respuestas). Único por evento, estado totalmente local en el componente (sin localStorage ni API), TODOs marcados para los futuros endpoints `POST/DELETE /api/events/:id/form`, `POST .../vote`, `POST .../response`.
+- **2026-05-22** — `ModRegisterPage`: la pestaña Moderador añade dos selects opcionales **Profesión** (Psicólogo/Terapeuta/Psiquiatra) y **Especialización** (Ansiedad/Depresión/Estrés/Duelo/Autoestima/Relaciones). Listas hardcodeadas en el componente; tipos `Profession`/`Specialization` y campos opcionales en `RegisterModPayload` (`frontend/src/types/api.ts`). Solo se envían si el usuario los elige. **El backend los ignora** silenciosamente (no están en `RegisterRequest`). La pestaña Administrador no los muestra.
+- **2026-05-22** — Nuevo componente reutilizable `components/ui/Select.tsx` (+ `.module.css`). Dropdown custom genérico `Select<T extends string>` con panel flotante redondeado, hover lavanda, navegación con teclado (Arriba/Abajo/Enter/Escape), cierre al clicar fuera. Reemplaza los `<select>` nativos en `ModRegisterPage`. Usar este componente cuando se necesite un dropdown estilizado en lugar del nativo.
+- **2026-05-22** — `ModerationPage` sección "Filtro automático": las 4 stat cards anteriores se sustituyen por un CRUD de palabras prohibidas con vista previa de la censura (`puta` → `p***`). Añadir/editar/borrar es 100% estado local en el componente (`INITIAL_BANNED_WORDS = ['puta','idiota','imbécil','tonto']`); sin persistencia ni backend todavía. TODOs con los endpoints futuros añadidos en este fichero y comentarios `TODO:` en `ModerationPage.tsx`.
+- **2026-05-22** — **Auditoría frontend completa**. Tres tareas grandes aplicadas tras discutir decisiones con el usuario:
+  - **Tarea 1 (refactor mocks unificados):** `mocks/data.ts` es ahora única fuente de verdad. Borrados los mocks inline de `DashboardPage`, `CommunityChatPage`, `ProfilePage`, `ModerationPage` (tabla miembros), `BottleMessagePage`. Añadidos: `MOCK_PINNED_NOTES`, `MOCK_JOINED_COMMUNITY_IDS`, `MOCK_UNREAD_COUNTS`, `MOCK_DASHBOARD_MESSAGES`, `MOCK_DASHBOARD_EVENT`, `MOCK_TIP`, `MOOD_OPTIONS`, `MOCK_CHAT_MEMBERS`, `MOCK_BOTTLE_STORIES`, `MOCK_MOD_MEMBERS`. `MOCK_COMMUNITIES` ampliado a 7 ítems (incluye id 7 = "Noches difíciles"). `ApiProfile.stats` añade `messages: number`. `ProfilePage` ahora conecta con `useProfile()` (antes lo ignoraba). `CommunityChatPage` muestra "Comunidad no encontrada" si el id no existe (antes hacía fallback silencioso a la id 1). Auto-scroll del chat solo se dispara si el usuario está cerca del fondo (deja de secuestrar la lectura del historial). `useCommunityChat` atribuye los mensajes "propios" del mock al usuario actual.
+  - **Tarea 2 (servicios reales + traducción de roles):** `services/api.ts` distingue network error (status 0, helper `isNetworkError`) de error de servidor. El 401 fuera de `/api/auth/*` dispara un `CustomEvent('auth:expired')` en lugar de `window.location.href = '/'`. `services/auth.ts` añade capa de traducción `BackendRole ↔ UserRole` interna (PROFESSIONAL→MODERATOR, ADMINISTRATOR→ADMIN); los tipos del back no salen de esta capa. `AuthContext` llama al backend real con fallback al mock solo en network errors; los errores de servidor propagan a la UI. **Borrada** la lógica `username.startsWith('admin') → ADMIN` (privilege escalation). Nuevo helper genérico `hooks/useApi.ts` con state-en-objeto (compatible con la regla `react-hooks/set-state-in-effect` de ESLint v10). Los 6 hooks `useX` pasan a 4 LOC cada uno. `useCommunityChat` con GET real, fallback y optimistic update con rollback solo en errores de servidor. `EventDetailPage` pasa a usar `useEvents()` + `.find(id)` derivado en vez de setState en useEffect. `SettingsPage`: useEffect → useState lazy init. Bug fix: `modSaved` ya no se activa cuando `updateModProfile` falla.
+  - **Tarea 3 (emojis pictográficos → SVG):** `components/ui/Icons.tsx` ampliado con 11 iconos nuevos (`IconShield`, `IconHand`, `IconLock`, `IconQuestion`, `IconCalendar`, `IconClock`, `IconUser`, `IconUsers`, `IconChat`, `IconMap`, `IconBottle`, `IconHeart` con prop `filled`, `IconDot` con prop `color`). Sustituidos en `Footer` (🔒), `EventDetailPage` (🛡️ ✋ 🔒 ❓ 📅 ⏱️ 👤 ❤️ 🤍), `EventListPage` (❤️ 🤍), `ProfessionalsPage` (🟢 🟠), `ProfilePage` timeline (mapping semántico). El color del corazón pasa de `#e74c3c` (rojo crudo) a `var(--peach)` para encajar con la paleta. Símbolos tipográficos monocromos (`✓ ✕ ✎ ➤ ☰ ★ ½`) se mantienen como texto (no son emojis pictográficos). Eliminado el re-export muerto `Event` de `EventListPage`.
+  - **Decisiones de la auditoría que quedan documentadas como convenciones:** servicios reales con fallback al mock solo en network errors; traducción de roles vive en `services/auth.ts`; mocks centralizados en `mocks/data.ts`; emojis pictográficos prohibidos (SVG dedicado); iconos a mano en `Icons.tsx` (no `lucide-react`); `useApi` como helper canónico de data fetching.
+  - **Queda pendiente del Sprint 1 de la auditoría:** route guards (`<RequireRole>`), `<NotFound>`, `.env.example`, eliminar features que mienten (Idioma, Modo oscuro próximamente, Mood selector sin persistencia, Modo compacto), decidir política de token storage, implementar `PrivateChatPage` o deshabilitar entrada, romper god components, `@fontsource/inter`, lazy loading por ruta, quitar `react-bootstrap`.
+- **2026-05-22** — `DashboardPage`: borrado el widget "Consejo del día" (y el mock `MOCK_TIP` + interface `ProfessionalTip` en `mocks/data.ts` + clases `.tip*` en `DashboardPage.module.css`). El selector de mood pasa de emojis solo-texto a SVG line-art en `components/ui/Icons.tsx` (`IconMoodVeryBad/Bad/Neutral/Good/VeryGood`); la fila se centra (`.moodRow` con `justify-content: center` + `max-width: 560px`) y `.moodSection` apila columna centrada en todos los breakpoints (antes pasaba a fila con la confirmación al lado en ≥576px).
+- **2026-05-22** — **Alcance de chat aclarado:** el chat 1 a 1 (`PrivateChatPage`, `/chat/:professionalId`) es **solo entre un usuario y un profesional**. **No hay chats privados entre usuarios anónimos**: comunidad = grupal moderado; botella = anónimo one-shot. Ruta renombrada de `:userId` a `:professionalId`. `PrivateChatPage` placeholder, subtítulo de `ProfessionalsPage` y entradas correspondientes de `readme-frontend.md` actualizadas. El usuario confirmó que cualquier rol (incluso ANON) puede iniciar el contacto — no se necesita guard de rol específico para esta ruta.
+- **2026-05-23** — **Navbar: comportamiento del username según sesión.** Se calcula `isLoggedIn = !!user && user.role !== 'ANON'` en `components/layout/Navbar.tsx`. Si **ANON**: chip editable con lápiz (comportamiento previo). Si **USER/MODERATOR/ADMIN** (cualquiera de los tres): aparece un botón circular con `IconUser` (34×34, clase `.dashboardBtn`) que navega a **`/configuracion`**, seguido del nombre como botón con texto estático (clase `.usernameStatic`, sin lápiz) que navega a **`/dashboard`**. Los dos cierran el menú móvil si estaba abierto. Aplicado tanto en `.right` (desktop) como en `.mobileBottom` (móvil). El cambio de username de un usuario logueado tendrá que hacerse desde `/configuracion` o `/perfil` (todavía no implementado). **No se cambian los `NAV_LINKS` aún** — todos los roles ven los seis enlaces actuales; los enlaces dependientes del rol (Moderación, ocultar enlaces de ANON para MOD/ADMIN) y la ocultación del botón "Entrar" cuando hay sesión siguen pendientes.
+- **2026-05-23** — **Modo oscuro** activable desde `/configuracion → Apariencia`. Nuevo módulo `frontend/src/lib/theme.ts` con `getInitialTheme/applyTheme/setTheme` (clave en `localStorage`: `sys_theme`). `main.tsx` aplica el tema antes del primer render (`applyTheme(getInitialTheme())`) para evitar parpadeo. La primera vez respeta `prefers-color-scheme` del SO; después prevalece la elección del usuario. `variables.css` añade un bloque `[data-theme="dark"]` que sobreescribe todas las CSS variables manteniendo los mismos nombres — el resto del CSS no cambia (paleta lavanda preservada, fondos `--bg #13111E` / `--white #1D1A2E`, texto `--dark #EDEAF6`). `Footer.module.css` añade overrides con `:global([data-theme="dark"])` para que el footer no se invierta (en oscuro: bg `#100E1A` y texto `var(--dark)`). Fix puntual: `BottleMessagePage` popup pasa de `background: #fff` hardcodeado a `var(--white)`. Toggle "Modo oscuro" añadido en la sección Apariencia de `SettingsPage`; se elimina el texto "Modo oscuro próximamente". **Convención nueva:** al añadir CSS, usar siempre `var(--...)`; si un componente necesita comportamiento "invertido" en oscuro (como el Footer), usar `:global([data-theme="dark"])` en su `.module.css`.
+- **2026-05-25** — **Sprint 3 aplicado: PrivateChat funcional + Navbar role-dependent + company para ADMIN + i18n completo.**
+  - **PrivateChatPage funcional con mock:** chat 1 a 1 entre usuario y profesional. Hook `usePrivateChat(professionalId)` (patrón `useApi` + `optimisticMutation`). Service `services/chats.ts` con `getPrivateChat` / `sendPrivateMessage`. Mock `MOCK_PRIVATE_MESSAGES` genérico (4 mensajes seed) en `mocks/data.ts`. Tipo `ApiPrivateMessage` con `from: 'user' | 'professional'` en `types/api.ts`. CSS limpio en `PrivateChatPage.module.css` (burbujas alineadas izda/dcha, auto-scroll solo si está cerca del fondo, censura aplicada con `maskBannedWords`, header con avatar + nombre + especialidad, not-found state). Botón "Contactar" de `ProfessionalsPage` reactivado.
+  - **Navbar role-dependent:** MOD/ADMIN ven solo Moderación + Comunidades + Eventos + Profesionales (no Mapa/Botella/Máquina del tiempo). ANON/USER mantienen los 6 enlaces actuales. Botón "Entrar" oculto cuando `isLoggedIn`. Nueva key `nav.moderacion` en los 3 idiomas.
+  - **Ocultar `company` para ADMIN en ModProfileSection:** `ApiModProfile.company` ahora opcional. `FIELDS` se construye como `BASE_FIELDS + (isAdmin ? [] : [COMPANY_FIELD])`. Mismo patrón que `ModRegisterPage` desde Sprint 2.
+  - **i18n cobertura completa:** todas las pantallas internas traducidas. Namespaces: `common`, `nav`, `footer`, `landing`, `dashboard`, `onboarding`, `login`, `communities`, `events`, `professionals`, `privateChat`, `map`, `bottle`, `time`, `profile`, `moderation`, `modLogin`, `modRegister`, `notFound`, `settings`. ~280 keys por idioma. Patrón establecido: definiciones tipo `STEPS = [...]` o `FILTERS = [...]` que antes vivían en module scope ahora dentro del componente para acceder a `t()`. Interpolación con `{{var}}` en placeholders (TimeMachine, PrivateChat).
+  - **Convenciones nuevas:**
+    - **i18n al añadir pantalla nueva:** crear un namespace en `lib/i18n.ts` con las 3 traducciones. No dejar strings hardcoded en JSX.
+    - **Arrays que dependen de `t()` van dentro del componente**, no en module scope. Si son grandes, considerar `useMemo`.
+    - **`SPECIALTY_LABELS` y mapeos similares** que asocian un valor del back a una traducción → dentro del componente para acceder a `t()`. Reutilizado en `ProfessionalsPage` y `PrivateChatPage`.
+- **2026-05-24** — **Auditoría completa + Sprint 1 + Sprint 2 aplicados.**
+  - **Audit:** se hizo una auditoría profunda (arquitectura, código, React, UX, seguridad, CSS, performance, coherencia). Diagnóstico: la app le miente al usuario sistemáticamente (fallback silencioso al mock, errores silenciados en envíos, features que simulan funcionar). Decisiones del usuario: back conectado en 1-2 semanas; privacidad = marketing; mood "conectar a back ahora"; idioma "i18n mínimo Español/English/Euskera"; modo compacto "borrar"; like de eventos "persistir + contador".
+  - **Sprint 1 (10 tareas):**
+    - **Bugs:** corregido `joinedSet` de CommunityListPage (el leave sobre `joined:true` no se veía); sanitizado `emoji` en `divIcon` de Leaflet (XSS latente); bundleados iconos de Leaflet locales (antes unpkg).
+    - **Seguridad/UX:** `<RequireRole>` en `/moderacion`, `/modregister` (redirect a `/loginmod`), `/eventos/nuevo`; `<NotFoundPage>` con catch-all `*`; botón "Contactar" en `ProfessionalsPage` deshabilitado con label "Próximamente".
+    - **Honestidad:** flag `VITE_USE_MOCK_FALLBACK` (`lib/env.ts`) — solo cae al mock si está activo; banner global "Modo demostración" (`components/layout/DemoModeBanner.tsx` con store en `lib/demoMode.ts` + hook `useDemoMode`); errores propagados en `sendBottle`, `sendLetter`, `updateUsername` (antes silenciados).
+    - **Filtro de palabras:** `lib/bannedWords.ts` con CRUD + persistencia local + `maskBannedWords(text)` regex unicode-aware; hook `useBannedWords` con `useSyncExternalStore`; aplicado al renderizar en CommunityChatPage, DashboardPage, BottleMessagePage popups y MapPage popups.
+    - **Bundle:** quitados `react-bootstrap`, `bootstrap`, `sass`. `PageState` reescrito con spinner CSS propio (~80KB menos en el bundle).
+  - **Sprint 2 (12 tareas):**
+    - **Mecánicos:** lazy load `/mapa` y `/moderacion` con `React.lazy + Suspense`; `_setUserFromToken` removido del context y sustituido por `loginAsMod`; `useCommunityChat` reescrito con `useApi + optimisticMutation` (de 86 LOC a 43); `MOCK_*` importados directamente en componentes sustituidos por hooks (`useCommunityMembers`, `useDashboardMessages`, `useFloatingBottles`, `useModerationMembers`). Campos `unread` y `pinnedNote` movidos a `ApiCommunity`; tipos `ChatMember`, `DashboardMessage`, `ModMember`, `BottleStory` renombrados a `ApiChatMember`/etc. y movidos a `types/api.ts`. Borrados `MOCK_JOINED_COMMUNITY_IDS`, `MOCK_UNREAD_COUNTS`, `MOCK_PINNED_NOTES`, `MOCK_DASHBOARD_EVENT` (este último: DashboardPage ahora usa `useEvents().data[0]`).
+    - **Features que mienten (decisiones caso a caso):** **mood selector** ahora llama a `POST /api/users/me/mood` (`submitMood` en `services/profile.ts`) con propagación de errores y demo mode; **selector de idioma** sustituido por i18n real con `i18next + react-i18next` (Español/English/Euskera, persistido en `sys_lang`, init antes del primer render); **modo compacto** borrado (toggle eliminado); **like de eventos** ahora persiste en `localStorage` (`lib/eventInterests.ts` con `toggle/isInterested`) y muestra contador `interestedCount + (interested ? 1 : 0)` junto al corazón en `EventListPage` y `EventDetailPage`. `MOCK_EVENTS` extendido con `interestedCount` por evento.
+    - **God components rotos:**
+      - `SettingsPage`: 436 LOC → 90 LOC. 8 sub-componentes en `components/settings/` (`AccountSection`, `ModProfileSection`, `PrivacySection`, `NotificationsSection`, `AppearanceSection`, `LanguageSection`, `SecuritySection`, `HelpSection`) + `Toggle` movido aquí. Hook `useSavedFlash` extraído para el patrón "✓ Guardado" temporal.
+      - `ModerationPage`: 349 LOC → 47 LOC. 3 sub-componentes en `components/moderation/` (`ReportsSection`, `MembersSection`, `BannedWordsSection`).
+      - `EventDetailPage`: 435 LOC → 148 LOC. Formulario embebido extraído a `components/events/EventFormSection.tsx` (encapsula editor + view + voting + text responses).
+    - **Inline styles → CSS Modules** en `BottleMessagePage` (img bottle), `CommunityChatPage` (not-found state), `MapPage` (cursor crosshair vía className), `ModRegisterPage` (success block), `ProfilePage` (prefLabel capitalize), `SettingsPage` (campo error/success, password fields). Solo quedan `width: ${pct}%` (dinámico) en EventFormSection y `padding: '2rem'` en el placeholder de PrivateChatPage.
+    - **i18n:** infraestructura completa + traducción de Navbar, Footer, LandingPage hero, DashboardPage banner, LoginPage, SettingsPage (sidebar + Idioma). El resto de pantallas internas queda en español hardcoded hasta Sprint 3.
+  - **Convenciones nuevas (todas documentadas arriba):** flag `VITE_USE_MOCK_FALLBACK`, `markDemoMode`, stores singleton vía `useSyncExternalStore`, `optimisticMutation`, errores de escritura siempre propagados, `<RequireRole>` para rutas restringidas, `<NotFoundPage>` + catch-all, lazy-load por `React.lazy`, `maskBannedWords` en cualquier surface con texto de usuario, i18n con `t()`, persistencia local con keys `sys_*`, sub-componentes en `components/<area>/`, `useSavedFlash`, contador `interestedCount + propio`.
+- **2026-05-23** — **Modo oscuro: ajustes en islas temáticas y pills semánticos.** Cuatro pasadas posteriores sobre el rollout del dark mode:
+  - **`/botella` ("océano de noche")** — `BottleMessagePage.module.css`: bg de la página, olas (SVGs inline con fills `#1b3a5a`/`#244a6b`), header, textarea, botones enviar/recibir, popup overlay y sombras de las botellas flotantes pasan a una paleta azul profundo. El botón "Lanzar al mar" deshabilitado se sobreescribe específicamente a `bg #1F2A3A` + texto `#6F8AA8` para evitar el contraste pobre de `var(--border)`/`var(--lite)` sobre el bg azul oscuro.
+  - **`/maquina-del-tiempo` ("pergamino de noche")** — `TimeMachinePage.module.css`: el papel cream `#fffdf7` (`.paperWrapper`, `.confirmBox`) pasa a `#26211B` (marrón oscuro cálido, distinguible del card lavanda); las líneas del papel pasan a un tinte melocotón faint (`rgba(245,168,130,0.10)`) en lugar de lavanda.
+  - **Pills semánticos** — `ProfessionalsPage`, `CommunityListPage`, `ModerationPage`. Patrón establecido: en oscuro los pills/botones con color semántico se sobreescriben a "bg profundo + texto pastel claro":
+    - **Verde** (en línea, disponible ahora, resuelto): `bg #163524` + texto `#7ED9A1`
+    - **Ámbar** (hoy/16:00, pendiente, reportes, Avisar): `bg #3A2917` + texto `#F0B86B`
+    - **Rojo** (Banear): `bg #3B1A1A` + texto `#F08A86`
+    - Clases afectadas: `.pillNow`, `.pillToday`, `.onlinePill`, `.pill_pending`, `.pill_resolved`, `.actionBtnResolve`, `.actionBtnWarn`, `.memberReports`, `.warnBtn`, `.banBtn`. Para `.pill_resolved` y `.actionBtnResolve` solo se cambia el `color:` porque el bg ya viene de `var(--green-lt)` (que `variables.css` redefine para oscuro a `#1F2F22`).
+  - **Pendiente similar (no tocado todavía)**: `.actionBtnDismiss` (gris) y la sección filtro de moderación con `#fff4e5`/`#fff0ee` (statBox warn, filterActionBtn). Si se tocan, aplicar el mismo patrón ámbar.
+  - **Convención nueva (paleta de pills semánticos en oscuro):** los tres tríos (verde/ámbar/rojo) de arriba quedan como referencia para futuros pills con tinte de color. No usar el verde `#2d7d46` o el ámbar `#b45309` directamente sobre los fondos `--green-lt`/`#fff4e5` del modo claro sin pensar en su versión oscura.
+- **2026-05-25** — **2FA TOTP (Google Authenticator) en el flujo de moderadores/administradores.** Implementado contra un contrato HTTP definido como si el back ya lo soportara; mientras tanto el front simula el lado servidor con la lib `otpauth`.
+  - **Libs nuevas:** `otpauth` (~10KB, genera/valida TOTP) y `qrcode` + `@types/qrcode` (renderiza QR a data URL).
+  - **Contrato HTTP nuevo** (en `types/api.ts`): `RegisterModEnrollment { secret, otpauthUri, email }`, `LoginModChallenge { requires2fa, challengeId }`, `VerifyTotpPayload { email, code }`, `VerifyLoginPayload { challengeId, code }`. Endpoints: `POST /api/auth/register/mod` ahora devuelve `RegisterModEnrollment` (antes 204), `POST /api/auth/register/mod/verify` (nuevo), `POST /api/auth/login/mod` ahora devuelve `LoginModChallenge` (no token), `POST /api/auth/login/mod/verify` (nuevo, devuelve `AuthResponse`).
+  - **Mock TOTP server-side** en `frontend/src/lib/totp.ts`: `generateMockEnrollment(email, username, role)` crea un secreto Base32 con `OTPAuth.Secret`, construye el `otpauth://` URI (issuer `ShareYourStory`, label = email, SHA1/6/30), guarda `{ id, username, role, secret }` en `localStorage` con clave `sys_mod_account_<email>`. `verifyMockCode(email, code)` valida con `totp.validate({ window: 1 })`. El challenge del login se guarda en una `Map<challengeId, {email}>` en memoria de `services/auth.ts` (si recargas entre paso 1 y 2, se pierde — comportamiento esperado en 2FA).
+  - **AuthContext:** `loginAsMod(email, password)` ya no loguea — devuelve `LoginModChallenge`. Nuevo método `verifyLoginAsMod(challengeId, code)` que valida el TOTP y sí setea la sesión. Patrón "dos pasos" delegado a la página, que controla la fase con un `useState<'credentials'|'totp'>`.
+  - **Componente reutilizable:** `components/auth/TotpPanel.tsx` (+ `.module.css`). Acepta prop opcional `enroll: {secret, otpauthUri}` — si está, renderiza QR (vía `QRCode.toDataURL`, 220×220) + botón "¿No puedes escanear?" que despliega el secreto Base32. Si no, solo el input de 6 dígitos. Input con `inputMode="numeric"`, `autoComplete="one-time-code"`, regex que filtra a dígitos y trunca a 6. Submit deshabilitado hasta tener 6 dígitos. Errores se renderizan inline; el input se vacía y refoquea tras error.
+  - **ModRegisterPage:** ahora con state machine `phase: 'form'|'enroll'|'success'`. Form → submit → registerMod devuelve enrollment → fase enroll con TotpPanel → verifyModRegistration → fase success (igual que antes). Botón "Volver al formulario" cancela el enrolamiento en cualquier momento.
+  - **ModLoginPage:** state machine `phase: 'credentials'|'totp'`. Credentials → loginAsMod devuelve challengeId → fase TOTP con TotpPanel sin `enroll` → verifyLoginAsMod → navega a `/moderacion`. Botón "Volver" reinicia el flujo.
+  - **i18n:** namespace nuevo `totp` con ~14 keys × 3 idiomas.
+  - **Convenciones nuevas:**
+    - **Flujos de auth con 2FA = state machine en la página, no en el contexto.** El AuthContext expone primitivas `loginAsMod` y `verifyLoginAsMod`; la página orquesta los pasos con un `useState<Phase>`. Patrón replicable si se añade 2FA al login de usuarios normales más adelante.
+    - **Cuando el back asuma el 2FA:** los `catch (e) { if (!isNetworkError(e) || !ALLOW_MOCK_FALLBACK) throw e; ... }` de `services/auth.ts` siguen funcionando sin tocar. `lib/totp.ts` queda como código muerto y se puede borrar.

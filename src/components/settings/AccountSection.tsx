@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../context/AuthContext'
 import { useSavedFlash } from '../../hooks/useSavedFlash'
+import { getRoleLabel } from '../../lib/roles'
 import { Section } from '../ui/Section'
 import { Card } from '../ui/Card'
 import { Input } from '../ui/Input'
@@ -28,12 +29,7 @@ export function AccountSection() {
     }
   }
 
-  const roleLabel =
-    user?.role === 'ANON'       ? t('common.anon') :
-    user?.role === 'USER'       ? t('common.registered') :
-    user?.role === 'MODERATOR'  ? t('common.moderator') :
-    user?.role === 'ADMIN'      ? t('common.administrator') :
-    (user?.role ?? '')
+  const roleLabel = getRoleLabel(user?.role, t)
 
   return (
     <Section title={t('settings.section_cuenta')}>

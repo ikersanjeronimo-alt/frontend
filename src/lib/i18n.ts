@@ -54,6 +54,7 @@ const resources = {
         moderator:    'Moderador',
         administrator:'Administrador',
         comingSoon:   'Próximamente',
+        errSend:      'No se pudo enviar el mensaje.',
       },
       nav: {
         moderacion:    'Moderación',
@@ -256,6 +257,7 @@ const resources = {
         specPsq:      'Psiquiatra',
       },
       privateChat: {
+        noMessages:   'Todavía no hay mensajes. ¡Escribe el primero!',
         notFoundTitle:'Profesional no encontrado',
         notFoundMsg:  'Este profesional no existe o ya no está disponible.',
         seeAll:       'Ver todos los profesionales',
@@ -341,6 +343,7 @@ const resources = {
         noTopics:     'Sin temas seleccionados',
       },
       moderation: {
+        deleteConfirm:'¿Eliminar?',
         title:        'Panel de moderación',
         subtitle:     'Gestiona reportes, revisa contenido y mantén la comunidad segura.',
         tabReports:   'Reportes',
@@ -519,6 +522,7 @@ const resources = {
         host: 'with', members: 'members', online: 'online', anon: 'Anonymous user',
         registered: 'Registered', moderator: 'Moderator', administrator: 'Administrator',
         comingSoon: 'Coming soon',
+        errSend: 'Could not send the message.',
       },
       nav: {
         moderacion: 'Moderation', comunidades: 'Communities', profesionales: 'Professional help',
@@ -653,6 +657,7 @@ const resources = {
         specPsi: 'Psychologist', specTer: 'Therapist', specPsq: 'Psychiatrist',
       },
       privateChat: {
+        noMessages: 'No messages yet. Say hello!',
         notFoundTitle: 'Professional not found',
         notFoundMsg: 'This professional does not exist or is no longer available.',
         seeAll: 'See all professionals',
@@ -716,6 +721,7 @@ const resources = {
         editTopics: 'Edit →', noTopics: 'No topics selected',
       },
       moderation: {
+        deleteConfirm: 'Delete?',
         title: 'Moderation panel',
         subtitle: 'Manage reports, review content and keep the community safe.',
         tabReports: 'Reports', tabMembers: 'Members', tabFilter: 'Word filter',
@@ -840,6 +846,7 @@ const resources = {
         anon: 'Erabiltzaile anonimoa', registered: 'Erregistratua',
         moderator: 'Moderatzailea', administrator: 'Administratzailea',
         comingSoon: 'Laster',
+        errSend:    'Ezin izan da mezua bidali.',
       },
       nav: {
         moderacion: 'Moderazioa', comunidades: 'Komunitateak',
@@ -979,6 +986,7 @@ const resources = {
         specPsi: 'Psikologoa', specTer: 'Terapeuta', specPsq: 'Psikiatra',
       },
       privateChat: {
+        noMessages:    'Oraindik ez dago mezurik. Idatzi lehena!',
         notFoundTitle: 'Profesionala ez da aurkitu',
         notFoundMsg: 'Profesional hau ez dago edo ez dago eskuragarri.',
         seeAll: 'Ikusi profesional guztiak',
@@ -1047,6 +1055,7 @@ const resources = {
         editTopics: 'Editatu →', noTopics: 'Hautatutako gairik ez',
       },
       moderation: {
+        deleteConfirm: 'Ezabatu?',
         title: 'Moderazio panela',
         subtitle: 'Kudeatu txostenak, berrikusi edukia eta mantendu komunitatea seguru.',
         tabReports: 'Txostenak', tabMembers: 'Kideak', tabFilter: 'Hitz-iragazkia',

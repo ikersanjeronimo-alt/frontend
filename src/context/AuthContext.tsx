@@ -1,9 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import * as authService from '../services/auth'
-import { isNetworkError } from '../services/api'
-import { ALLOW_MOCK_FALLBACK } from '../lib/env'
-import { markDemoMode } from '../lib/demoMode'
 import { authBus } from '../lib/authBus'
 import { tokenStorage } from '../services/storage'
 import type { LoginModChallenge } from '../types/api'
@@ -36,9 +33,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Inicialización: pedir identidad anónima al back. Si está caído y estamos en
-  // modo demo (ALLOW_MOCK_FALLBACK), creamos identidad local; si no, dejamos al
-  // usuario sin sesión y propagamos el error al UI (banner global).
+  // Inicialización: pedir identidad anónima al back.
+  // Si falla, user queda en null y las pantallas dependientes lo gestionan.
   useEffect(() => {
     let cancelled = false
     const init = async () => {
@@ -48,14 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         tokenStorage.set(token)
         setUser({ ...u, token })
       } catch {
-        if (cancelled) return
-        if (ALLOW_MOCK_FALLBACK) {
-          markDemoMode()
-          const mock = createMockAnonUser()
-          tokenStorage.set(mock.token)
-          setUser(mock)
-        }
-        // si no, user queda en null y las pantallas dependientes lo gestionan
+        // back caído o error: user queda en null
       } finally {
         if (!cancelled) setIsLoading(false)
       }
@@ -69,37 +58,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // effect montara, lo recibimos en el primer subscribe.
   useEffect(() => {
     return authBus.onExpired(() => {
-      if (!ALLOW_MOCK_FALLBACK) {
-        // En modo no-demo: borramos sesión y dejamos null. La app reaccionará
-        // (rutas protegidas redirigen, ANON queda sin acceso).
-        setUser(null)
-        return
-      }
-      markDemoMode()
-      const mock = createMockAnonUser()
-      tokenStorage.set(mock.token)
-      setUser(mock)
+      tokenStorage.clear()
+      setUser(null)
     })
   }, [])
 
   const login = useCallback(async (username: string, password: string) => {
-    try {
-      const { token, user: u } = await authService.login(username, password)
-      tokenStorage.set(token)
-      setUser({ ...u, token })
-    } catch (e) {
-      if (!isNetworkError(e) || !ALLOW_MOCK_FALLBACK) throw e
-      markDemoMode()
-      const mock = createMockUserFromCredentials(username)
-      tokenStorage.set(mock.token)
-      setUser(mock)
-    }
+    const { token, user: u } = await authService.login(username, password)
+    tokenStorage.set(token)
+    setUser({ ...u, token })
   }, [])
 
   const loginAsMod = useCallback(async (email: string, password: string) => {
-    // Login de moderador en dos pasos por el 2FA. Este primer paso valida
-    // credenciales y devuelve un challengeId; no toca todavía la sesión.
-    // El fallback al mock vive dentro de services/auth.ts.
     return authService.loginMod(email, password)
   }, [])
 
@@ -110,29 +80,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const register = useCallback(async (username: string, password: string) => {
-    try {
-      const anonToken = tokenStorage.get()
-      const { token, user: u } = await authService.register(username, password, anonToken)
-      tokenStorage.set(token)
-      setUser({ ...u, token })
-    } catch (e) {
-      if (!isNetworkError(e) || !ALLOW_MOCK_FALLBACK) throw e
-      markDemoMode()
-      const mock = createMockUserFromCredentials(username)
-      tokenStorage.set(mock.token)
-      setUser(mock)
-    }
+    const anonToken = tokenStorage.get()
+    const { token, user: u } = await authService.register(username, password, anonToken)
+    tokenStorage.set(token)
+    setUser({ ...u, token })
   }, [])
 
   const updateUsername = useCallback(async (username: string) => {
-    // Optimistic con rollback. Errores de red se silencian solo en modo demo;
-    // errores del servidor propagan al UI para que el usuario los vea.
     const previous = user?.username
     setUser(prev => prev ? { ...prev, username } : null)
     try {
       await authService.updateUsername(username)
     } catch (e) {
-      if (isNetworkError(e) && ALLOW_MOCK_FALLBACK) { markDemoMode(); return }
       if (previous) setUser(prev => prev ? { ...prev, username: previous } : null)
       throw e
     }
@@ -140,18 +99,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     tokenStorage.clear()
-    // Re-iniciar sesión anónima en background.
     authService.initAnonymous()
       .then(({ token, user: u }) => {
         tokenStorage.set(token)
         setUser({ ...u, token })
       })
       .catch(() => {
-        if (!ALLOW_MOCK_FALLBACK) { setUser(null); return }
-        markDemoMode()
-        const mock = createMockAnonUser()
-        tokenStorage.set(mock.token)
-        setUser(mock)
+        setUser(null)
       })
   }, [])
 
@@ -166,32 +120,4 @@ export function useAuth() {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth debe usarse dentro de <AuthProvider>')
   return ctx
-}
-
-function randomUsername(): string {
-  const num = Math.floor(Math.random() * 9000) + 1000
-  return `anonimo${num}`
-}
-
-function createMockAnonUser(): AuthUser {
-  return {
-    id:       crypto.randomUUID(),
-    username: randomUsername(),
-    role:     'ANON',
-    token:    `mock_${crypto.randomUUID()}`,
-  }
-}
-
-/**
- * Construye un usuario mock cuando el backend está caído. Solo se usa como
- * fallback para que el front funcione en local sin back. El rol asumido es
- * USER — la app de moderación pasa por /loginmod (con back real obligatorio).
- */
-function createMockUserFromCredentials(username: string): AuthUser {
-  return {
-    id:       crypto.randomUUID(),
-    username,
-    role:     'USER',
-    token:    `mock_${crypto.randomUUID()}`,
-  }
 }

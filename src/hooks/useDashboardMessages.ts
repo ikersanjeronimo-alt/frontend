@@ -5,9 +5,5 @@ import type { ApiDashboardMessage } from '../types/api'
 const EMPTY: ApiDashboardMessage[] = []
 
 export function useDashboardMessages() {
-  return useApi(
-    getRecentMessages,
-    EMPTY,
-    () => import('../mocks/data').then(m => m.MOCK_DASHBOARD_MESSAGES),
-  )
+  return useApi(getRecentMessages, EMPTY)
 }

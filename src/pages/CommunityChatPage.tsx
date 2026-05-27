@@ -6,6 +6,7 @@ import { useCommunityChat } from '../hooks/useCommunityChat'
 import { useCommunityMembers } from '../hooks/useCommunityMembers'
 import { useBannedWords } from '../hooks/useBannedWords'
 import { maskBannedWords } from '../lib/bannedWords'
+import { initials } from '../lib/initials'
 import { SleepingCat } from '../components/ui/SleepingCat'
 import { catFor } from '../components/ui/catPalette'
 import {
@@ -27,6 +28,7 @@ export function CommunityChatPage() {
   const { words: bannedWords }      = useBannedWords()
   const [input, setInput]           = useState('')
   const [showPanel, setShowPanel]   = useState(false)
+  const [sendError, setSendError]   = useState<string | null>(null)
 
   const cat = catFor('/comunidades-chat')
 
@@ -34,7 +36,7 @@ export function CommunityChatPage() {
     return (
       <ChatLayout>
         <ChatMain>
-          <ChatHeader onBack={() => navigate('/comunidades')} name={t('communities.notFoundTitle')} />
+          <ChatHeader onBack={() => navigate('/comunidades')} backAriaLabel={t('common.back')} name={t('communities.notFoundTitle')} />
           <div className={styles.notFound}>
             <p className={styles.notFoundMsg}>{t('communities.notFoundMsg')}</p>
             <button type="button" className={styles.notFoundBtn} onClick={() => navigate('/comunidades')}>
@@ -48,11 +50,16 @@ export function CommunityChatPage() {
 
   const pinned = community.pinnedNote
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const text = input.trim()
     if (!text) return
-    void sendMessage(text)
-    setInput('')
+    setSendError(null)
+    try {
+      await sendMessage(text)
+      setInput('')
+    } catch {
+      setSendError(t('common.errSend'))
+    }
   }
 
   const joinedCommunities = communities.filter(c => c.joined)
@@ -86,6 +93,7 @@ export function CommunityChatPage() {
 
         <ChatHeader
           onBack={() => navigate('/comunidades')}
+          backAriaLabel={t('common.back')}
           name={community.name}
           meta={`${community.online} ${t('common.online')} · ${t('communities.modPrefix')} ${community.mod}`}
           onInfoToggle={() => setShowPanel(p => !p)}
@@ -103,12 +111,12 @@ export function CommunityChatPage() {
           {messages.map((m, i) => {
             const prev = messages[i - 1]
             const showUsername = !m.own && (!prev || prev.username !== m.username || prev.own)
-            const initials = m.username.slice(0, 2).toUpperCase()
+            const avatar = initials(m.username)
             return (
               <ChatBubble
                 key={m.id}
                 side={m.own ? 'own' : 'other'}
-                avatar={!m.own ? (showUsername ? initials : '') : undefined}
+                avatar={!m.own ? (showUsername ? avatar : '') : undefined}
                 username={showUsername && !m.own ? m.username : undefined}
                 time={m.time}
               >
@@ -125,6 +133,7 @@ export function CommunityChatPage() {
           placeholder={t('communities.inputPh')}
           ariaLabel={t('communities.inputAria')}
         />
+        {sendError && <p role="alert" className={styles.sendError}>{sendError}</p>}
       </ChatMain>
 
       <ChatPanel visible={showPanel}>

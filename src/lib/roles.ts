@@ -24,3 +24,15 @@ export function isLoggedIn(u: AuthUser | null): boolean {
 }
 
 export const MOD_ROLES: UserRole[] = ['MODERATOR', 'ADMIN']
+
+type TFn = (key: string) => string
+
+export function getRoleLabel(role: string | undefined, t: TFn): string {
+  switch (role) {
+    case 'ANON':      return t('common.anon')
+    case 'USER':      return t('common.registered')
+    case 'MODERATOR': return t('common.moderator')
+    case 'ADMIN':     return t('common.administrator')
+    default:          return role ?? ''
+  }
+}

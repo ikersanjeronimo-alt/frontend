@@ -8,7 +8,6 @@ export function useCommunityMembers(communityId: string) {
   return useApi(
     () => getActiveMembers(communityId),
     EMPTY,
-    () => import('../mocks/data').then(m => m.MOCK_CHAT_MEMBERS),
     [communityId],
   )
 }

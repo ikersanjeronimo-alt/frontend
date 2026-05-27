@@ -13,12 +13,9 @@ import {
   ChatLayout, ChatSidebar, ChatSidebarItem, ChatSidebarExplore,
   ChatMain, ChatHeader, ChatMessages, ChatBubble, ChatComposer, ChatPanel,
 } from '../components/chat/ChatLayout'
+import { initials } from '../lib/initials'
 import type { ApiProfessional } from '../types/api'
 import styles from './PrivateChatPage.module.css'
-
-function initials(name: string): string {
-  return name.split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase()
-}
 
 function AvailabilityPill({ p }: { p: ApiProfessional }) {
   const { t } = useTranslation()
@@ -46,6 +43,7 @@ export function PrivateChatPage() {
   const { words: bannedWords } = useBannedWords()
   const [input, setInput] = useState('')
   const [showPanel, setShowPanel] = useState(false)
+  const [sendError, setSendError] = useState<string | null>(null)
 
   const SPECIALTY_LABELS: Record<string, string> = {
     psicologo:  t('professionals.specPsi'),
@@ -102,11 +100,16 @@ export function PrivateChatPage() {
     )
   }
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const text = input.trim()
     if (!text) return
-    void sendMessage(text)
-    setInput('')
+    setSendError(null)
+    try {
+      await sendMessage(text)
+      setInput('')
+    } catch {
+      setSendError(t('common.errSend'))
+    }
   }
 
   return (
@@ -126,6 +129,9 @@ export function PrivateChatPage() {
         />
 
         <ChatMessages scrollDep={messages.length}>
+          {messages.length === 0 && (
+            <p className={styles.emptyMsg}>{t('privateChat.noMessages')}</p>
+          )}
           {messages.map(m => {
             const isUser = m.from === 'user'
             return (
@@ -149,6 +155,7 @@ export function PrivateChatPage() {
           ariaLabel={t('privateChat.inputAria')}
           sendAriaLabel={t('privateChat.send')}
         />
+        {sendError && <p role="alert" className={styles.sendError}>{sendError}</p>}
       </ChatMain>
 
       <ChatPanel visible={showPanel}>
