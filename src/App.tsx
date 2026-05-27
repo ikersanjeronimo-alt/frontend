@@ -1,7 +1,6 @@
 import { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
-import { DemoModeBanner } from './components/layout/DemoModeBanner'
 import { MainLayout } from './components/layout/MainLayout'
 import { BareLayout } from './components/layout/BareLayout'
 import { RequireRole } from './components/auth/RequireRole'
@@ -41,7 +40,6 @@ export default function App() {
     <ErrorBoundary>
     <BrowserRouter>
       <AuthProvider>
-        <DemoModeBanner />
         <Suspense fallback={<PageState loading />}>
           <Routes>
 

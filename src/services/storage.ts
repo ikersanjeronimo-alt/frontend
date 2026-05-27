@@ -14,12 +14,11 @@
  */
 
 const KEYS = {
-  token:           'sys_token',
-  theme:           'sys_theme',
-  lang:            'sys_lang',
-  bannedWords:     'sys_banned_words',
-  eventInterests:  'sys_event_interests',
-  modAccount:      'sys_mod_account_',  // prefijo + email
+  token:          'sys_token',
+  theme:          'sys_theme',
+  lang:           'sys_lang',
+  bannedWords:    'sys_banned_words',
+  eventInterests: 'sys_event_interests',
 } as const
 
 // ── Helpers internos ──────────────────────────────────────────
@@ -95,14 +94,3 @@ export const eventInterestsStorage = {
   set(ids: string[]): void { setJson(KEYS.eventInterests, ids) },
 }
 
-// ── Cuentas mod del mock TOTP (key dinámica por email) ─────────
-// El value es un blob opaco — el módulo consumidor lo tipa y valida.
-
-export const modAccountStorage = {
-  get<T>(email: string, validate: (v: unknown) => v is T): T | null {
-    return getJson(KEYS.modAccount + email.toLowerCase(), validate)
-  },
-  set<T>(email: string, account: T): void {
-    setJson(KEYS.modAccount + email.toLowerCase(), account)
-  },
-}
