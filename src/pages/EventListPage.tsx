@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useEvents } from '../hooks/useEvents'
@@ -17,6 +18,43 @@ export function EventListPage() {
   const { isMod } = useRole()
   const navigate = useNavigate()
   const { toggle, isInterested } = useEventInterests()
+
+  const [activeEventId, setActiveEventId] = useState<string | null>(null)
+  const cardRefs = useRef<Map<string, HTMLElement>>(new Map())
+
+  const updateActive = useCallback(() => {
+    const viewportCenter = window.innerHeight / 2
+    let closestId: string | null = null
+    let closestDist = Infinity
+    cardRefs.current.forEach((el, id) => {
+      const rect = el.getBoundingClientRect()
+      const dist = Math.abs((rect.top + rect.height / 2) - viewportCenter)
+      if (dist < closestDist) { closestDist = dist; closestId = id }
+    })
+    setActiveEventId(closestId)
+  }, [])
+
+  useEffect(() => {
+    let rafId: number | null = null
+    const onScroll = () => {
+      if (rafId !== null) return
+      rafId = requestAnimationFrame(() => { updateActive(); rafId = null })
+    }
+    const initRaf = requestAnimationFrame(updateActive)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      cancelAnimationFrame(initRaf)
+      if (rafId !== null) cancelAnimationFrame(rafId)
+    }
+  }, [updateActive])
+
+  // Re-evaluar cuando los eventos cargan (los refs aún no existían en el mount)
+  useEffect(() => {
+    if (events.length === 0) return
+    const rafId = requestAnimationFrame(updateActive)
+    return () => cancelAnimationFrame(rafId)
+  }, [events.length, updateActive])
 
   const toggleLike = async (id: string, ev: React.MouseEvent) => {
     ev.preventDefault()
@@ -58,10 +96,12 @@ export function EventListPage() {
         {events.map((e, i) => {
           const liked = isInterested(e.id)
           const count = (e.interestedCount ?? 0) + (liked ? 1 : 0)
+          const isActive = activeEventId === e.id
           return (
             <article
               key={e.id}
-              className={`${styles.card} animate-fadeInUp delay-${Math.min(i + 1, 6)}`}
+              ref={el => { if (el) cardRefs.current.set(e.id, el); else cardRefs.current.delete(e.id) }}
+              className={`${styles.card} ${isActive ? styles.cardActive : ''} animate-fadeInUp delay-${Math.min(i + 1, 6)}`}
             >
               <Link
                 to={`/eventos/${e.id}`}
@@ -84,7 +124,18 @@ export function EventListPage() {
                 </div>
                 <h3 className={styles.cardTitle}>{e.title}</h3>
                 <p className={styles.cardHost}>{t('common.host')} {e.host} · {e.duration}</p>
-                <p className={styles.cardDesc}>{e.desc}</p>
+                <p className={`${styles.cardDesc} ${isActive ? styles.cardDescFull : ''}`}>{e.desc}</p>
+
+                <div className={styles.cardExtra} aria-hidden={!isActive}>
+                  <div className={styles.cardExtraInner}>
+                    {e.tags.length > 0 && (
+                      <div className={styles.cardTags}>
+                        {e.tags.map(tag => <span key={tag} className={styles.cardTag}>{tag}</span>)}
+                      </div>
+                    )}
+                    <span className={styles.cardSpots}>{e.spots}/{e.total} {t('events.spotsLabel')}</span>
+                  </div>
+                </div>
               </div>
             </article>
           )
