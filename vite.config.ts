@@ -22,6 +22,9 @@ export default defineConfig({
       },
     },
   },
+  define: {
+    global: 'globalThis',
+  },
   // `npm run preview` sirve el build de produccion (dist/) en el puerto 4173.
   // host: true => escucha en 0.0.0.0 para que el devcontainer lo exponga al host Windows.
   preview: {

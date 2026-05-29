@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate, NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { loginMod, verifyModLogin } from '../services/auth'
+import { type ApiError } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { IconEye, IconEyeOff } from '../components/ui/Icons'
 import { TotpPanel } from '../components/auth/TotpPanel'
@@ -11,12 +13,11 @@ import styles from './LoginPage.module.css'
 type Phase = 'credentials' | 'totp'
 
 export function ModLoginPage() {
-  const { loginAsMod, verifyLoginAsMod } = useAuth()
+  const { loginAsModWithToken } = useAuth()
   const navigate = useNavigate()
   const { t } = useTranslation()
 
   const [phase, setPhase]   = useState<Phase>('credentials')
-  const [challengeId, setChallengeId] = useState<string | null>(null)
   const [email, setEmail]   = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading]   = useState(false)
@@ -38,25 +39,38 @@ export function ModLoginPage() {
 
     setLoading(true)
     try {
-      const challenge = await loginAsMod(email.trim(), password.trim())
-      setChallengeId(challenge.challengeId)
+      await loginMod(email.trim(), password.trim())
       setPhase('totp')
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('login.errUnexpected'))
+      const apiErr = err as ApiError
+      if (apiErr.status === 406) {
+        setError(t('modLogin.errCredentials') || 'Usuario o contraseña inválidos.')
+      } else {
+        setError(apiErr.message || t('login.errUnexpected'))
+      }
     } finally {
       setLoading(false)
     }
   }
 
   const handleVerify = async (code: string) => {
-    if (!challengeId) return
-    await verifyLoginAsMod(challengeId, code)
-    navigate('/moderacion')
+    try {
+      const authResponse = await verifyModLogin(email.trim(), code)
+      loginAsModWithToken(authResponse.token, authResponse.user)
+      navigate('/moderacion')
+    } catch (err) {
+      const apiErr = err as ApiError
+      if (apiErr.status === 406) {
+        throw new Error(t('totp.errCode') || 'El código de verificación es inválido.')
+      } else if (apiErr.status === 400) {
+        throw new Error(t('totp.errEmail') || 'El email no existe.')
+      }
+      throw err
+    }
   }
 
   const handleCancelTotp = () => {
     setPhase('credentials')
-    setChallengeId(null)
     setPassword('')
   }
 

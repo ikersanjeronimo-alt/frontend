@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { registerMod, verifyModRegistration } from '../services/auth'
-import type { ModRole, Profession, Specialization, RegisterModEnrollment } from '../types/api'
+import { registerMod, get2faQR, verifyModRegistration } from '../services/auth'
+import { type ApiError } from '../services/api'
+import type { ModRole, Profession, Specialization } from '../types/api'
 import { IconEye, IconEyeOff } from '../components/ui/Icons'
 import { Select } from '../components/ui/Select'
 import { TotpPanel } from '../components/auth/TotpPanel'
@@ -25,8 +26,13 @@ export function ModRegisterPage() {
 
   const [mode, setMode]         = useState<Mode>('moderador')
   const [phase, setPhase]       = useState<Phase>('form')
-  const [enrollment, setEnrollment] = useState<RegisterModEnrollment | null>(null)
+  
+  // Email registrado (para 2FA)
+  const [enrolledEmail, setEnrolledEmail] = useState('')
+  const [otpauthUri, setOtpauthUri] = useState<string | null>(null)
+  const [qrLoading, setQrLoading] = useState(false)
 
+  // Form fields
   const [firstName, setFirstName]     = useState('')
   const [lastName, setLastName] = useState('')
   const [username, setUsername] = useState('')
@@ -50,7 +56,28 @@ export function ModRegisterPage() {
     setProfession('')
     setSpecialization('')
     setPassword('')
+    setOtpauthUri(null)
   }
+
+  // Cargar QR cuando entra en fase 'enroll'
+  useEffect(() => {
+    if (phase === 'enroll' && enrolledEmail && !otpauthUri && !qrLoading) {
+      const loadQR = async () => {
+        setQrLoading(true)
+        try {
+          const qrUri = await get2faQR(enrolledEmail)
+          setOtpauthUri(qrUri)
+        } catch (err) {
+          const apiErr = err as ApiError
+          setError(apiErr.message || t('login.errUnexpected'))
+          setPhase('form')
+        } finally {
+          setQrLoading(false)
+        }
+      }
+      loadQR()
+    }
+  }, [phase, enrolledEmail, otpauthUri, qrLoading, t])
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -79,11 +106,12 @@ export function ModRegisterPage() {
 
     setLoading(true)
     try {
-      const result = await registerMod({
+      const emailTrimmed = email.trim()
+      await registerMod({
         name: firstName.trim(),
         lastName: lastName.trim(),
         username: username.trim(),
-        email: email.trim(),
+        email: emailTrimmed,
         password: password.trim(),
         role,
         ...(mode === 'moderador' ? {
@@ -92,20 +120,35 @@ export function ModRegisterPage() {
           ...(specialization ? { specialization: specialization } : {}),
         } : {}),
       })
-      setEnrollment(result)
+      setEnrolledEmail(emailTrimmed)
       setPhase('enroll')
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('login.errUnexpected'))
+      const apiErr = err as ApiError
+      if (apiErr.status === 409) {
+        setError(t('modRegister.errEmailDuplicate') || 'Este email ya está registrado.')
+      } else {
+        setError(apiErr.message || t('login.errUnexpected'))
+      }
     } finally {
       setLoading(false)
     }
   }
 
   const handleVerify = async (code: string) => {
-    if (!enrollment) return
-    await verifyModRegistration({ email: enrollment.email, code })
-    setPhase('success')
-    resetForm()
+    if (!enrolledEmail) return
+    try {
+      await verifyModRegistration({ email: enrolledEmail, code })
+      setPhase('success')
+      resetForm()
+    } catch (err) {
+      const apiErr = err as ApiError
+      if (apiErr.status === 406) {
+        throw new Error(t('totp.errCode') || 'El código de verificación es inválido.')
+      } else if (apiErr.status === 400) {
+        throw new Error(t('totp.errEmail') || 'El email no existe.')
+      }
+      throw err
+    }
   }
 
   return (
@@ -146,7 +189,7 @@ export function ModRegisterPage() {
           </div>
         )}
 
-        {phase === 'enroll' && enrollment && (
+        {phase === 'enroll' && (
           <div className={styles.tabs}>
             <button className={`${styles.tab} ${styles.tabActive}`} disabled>
               {t('totp.enrollTitle')}
@@ -164,7 +207,7 @@ export function ModRegisterPage() {
             </p>
             <button
               className={`${styles.submitBtn} hover-lift`}
-              onClick={() => { setEnrollment(null); setPhase('form') }}
+              onClick={() => { setOtpauthUri(null); setPhase('form') }}
             >
               {t('modRegister.another')}
             </button>
@@ -177,14 +220,20 @@ export function ModRegisterPage() {
           </div>
         )}
 
-        {phase === 'enroll' && enrollment && (
+        {phase === 'enroll' && otpauthUri && (
           <TotpPanel
-            enroll={{ secret: enrollment.secret, otpauthUri: enrollment.otpauthUri }}
+            enroll={{ secret: '', otpauthUri }}
             onVerify={handleVerify}
-            onCancel={() => { setEnrollment(null); setPhase('form') }}
+            onCancel={() => { setOtpauthUri(null); setPhase('form') }}
             submitLabel={t('totp.confirmEnroll')}
             cancelLabel={t('totp.cancelEnroll')}
           />
+        )}
+
+        {phase === 'enroll' && qrLoading && (
+          <div className={styles.form}>
+            <p>{t('totp.qrLoading') || 'Cargando QR...'}</p>
+          </div>
         )}
 
         {phase === 'form' && (

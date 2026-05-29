@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import * as authService from '../services/auth'
 import { authBus } from '../lib/authBus'
 import { tokenStorage } from '../services/storage'
-import type { LoginModChallenge } from '../types/api'
+import type { ApiUser } from '../types/api'
 
 export type UserRole = 'ANON' | 'USER' | 'MODERATOR' | 'ADMIN'
 
@@ -19,10 +19,10 @@ interface AuthContextValue {
   isLoading: boolean
   updateUsername: (username: string) => Promise<void>
   login: (username: string, password: string) => Promise<void>
-  /** Paso 1 del login mod: valida email+password y devuelve un challenge para el 2FA. NO loguea aún. */
-  loginAsMod: (email: string, password: string) => Promise<LoginModChallenge>
-  /** Paso 2 del login mod: valida el código TOTP y loguea al usuario si OK. */
-  verifyLoginAsMod: (challengeId: string, code: string) => Promise<void>
+  /** Validar email+password y navegar a 2FA. NO loguea aún. */
+  loginAsMod: (email: string, password: string) => Promise<void>
+  /** Loguear directamente con token (después de validar código TOTP). */
+  loginAsModWithToken: (token: string, userInfo: ApiUser) => void
   register: (username: string, password: string) => Promise<void>
   logout: () => void
 }
@@ -70,13 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const loginAsMod = useCallback(async (email: string, password: string) => {
-    return authService.loginMod(email, password)
+    await authService.loginMod(email, password)
   }, [])
 
-  const verifyLoginAsMod = useCallback(async (challengeId: string, code: string) => {
-    const { token, user: u } = await authService.verifyModLogin({ challengeId, code })
+  const loginAsModWithToken = useCallback((token: string, userInfo: ApiUser) => {
     tokenStorage.set(token)
-    setUser({ ...u, token })
+    setUser({ ...userInfo, token })
   }, [])
 
   const register = useCallback(async (username: string, password: string) => {
@@ -110,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, loginAsMod, verifyLoginAsMod, register, updateUsername, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, loginAsMod, loginAsModWithToken, register, updateUsername, logout }}>
       {children}
     </AuthContext.Provider>
   )
