@@ -1,14 +1,13 @@
 import { apiFetch } from './api'
 import { tokenStorage } from './storage'
+import { decodeJWT } from '../lib/jwt'
 import type {
   AuthResponse,
   ApiUser,
   UserRole,
   RegisterModPayload,
-  RegisterModEnrollment,
-  LoginModChallenge,
+  // RegisterModEnrollment,
   VerifyTotpPayload,
-  VerifyLoginPayload,
 } from '../types/api'
 
 // ── Mapping de roles backend ↔ frontend ─────────────────────
@@ -84,36 +83,57 @@ export async function updateUsername(username: string): Promise<void> {
 
 // ── Flujo moderadores con 2FA TOTP ─────────────────────────
 
-export async function registerMod(payload: RegisterModPayload): Promise<RegisterModEnrollment> {
-  const r = await apiFetch<{ secret: string; otpauthUri: string }>(
-    '/api/auth/register/mod',
-    { method: 'POST', body: JSON.stringify(payload) },
-  )
-  if (!r?.secret || !r?.otpauthUri) {
-    throw new Error('El servidor no ha devuelto la información de 2FA.')
+export async function registerMod(payload: RegisterModPayload): Promise<{ email: string }> {
+  await apiFetch<void>('/api/auth/register/mod', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  return { email: payload.email }
+}
+
+export async function get2faQR(email: string): Promise<string> {
+  const response = await apiFetch<{ otpauthUri: string }>(`/api/auth/register/mod/2fa/qr?email=${encodeURIComponent(email)}`, {
+    method: 'GET',
+  })
+  if (!response?.otpauthUri || typeof response.otpauthUri !== 'string') {
+    throw new Error('El servidor no ha devuelto la información de QR.')
   }
-  return { secret: r.secret, otpauthUri: r.otpauthUri, email: payload.email }
+  return response.otpauthUri
 }
 
 export async function verifyModRegistration(payload: VerifyTotpPayload): Promise<void> {
-  await apiFetch<void>('/api/auth/register/mod/verify', {
+  await apiFetch<void>('/api/auth/register/mod/2fa/qr', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
 }
 
-export async function loginMod(email: string, password: string): Promise<LoginModChallenge> {
-  const r = await apiFetch<{ challengeId: string; requires2fa: true }>(
-    '/api/auth/login/mod',
-    { method: 'POST', body: JSON.stringify({ email, password }) },
-  )
-  return { requires2fa: true, challengeId: r.challengeId }
+export async function loginMod(email: string, password: string): Promise<{ email: string }> {
+  await apiFetch<void>('/api/auth/login/mod', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  })
+  return { email }
 }
 
-export async function verifyModLogin(payload: VerifyLoginPayload): Promise<AuthResponse> {
-  const r = await apiFetch<BackendAuthResponse>('/api/auth/login/mod/verify', {
+export async function verifyModLogin(email: string, code: string): Promise<AuthResponse> {
+  const r = await apiFetch<{ token: string }>('/api/auth/login/mod/2fa/code', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ email, code }),
   })
-  return adaptAuthResponse(r)
+  if (!r?.token) {
+    throw new Error('El servidor no ha devuelto el token.')
+  }
+
+  const payload = decodeJWT(r.token)
+  if (!payload) {
+    throw new Error('No se pudo decodificar el token.')
+  }
+
+  const user: ApiUser = {
+    id: payload.id || payload.sub || '',
+    username: payload.username || payload.email || email,
+    role: (payload.role as UserRole) || 'MODERATOR',
+  }
+  return { token: r.token, user }
 }
