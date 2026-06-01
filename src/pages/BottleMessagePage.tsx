@@ -14,7 +14,7 @@ type Step = 'write' | 'sent' | 'received'
 
 const MAX_CHARS = 400
 
-interface ReceivedBottle { text: string; time: string }
+interface ReceivedBottle { text: string}
 
 export function BottleMessagePage() {
   const { t } = useTranslation()
@@ -48,7 +48,7 @@ export function BottleMessagePage() {
     setSendError('')
     try {
       const b = await receiveBottle()
-      setReceived({ text: b.text, time: b.time })
+      setReceived({ text: b.message})
       setStep('received')
     } catch (e) {
       setSendError(e instanceof Error ? e.message : t('bottle.errReceive'))
@@ -173,7 +173,6 @@ export function BottleMessagePage() {
             <h2 className={styles.resultTitle}>{t('bottle.receivedTitle')}</h2>
             <div className={styles.receivedNote}>
               <p className={styles.receivedText}>"{maskBannedWords(received.text, bannedWords)}"</p>
-              <span className={styles.receivedTime}>{received.time}</span>
             </div>
             <p className={styles.resultText}>{t('bottle.receivedNote')}</p>
             <div className={styles.resultActions}>

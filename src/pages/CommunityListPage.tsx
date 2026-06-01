@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCommunities } from '../hooks/useCommunities'
 import { joinCommunity, leaveCommunity } from '../services/communities'
+import type { ApiCommunity } from '../types/api'
 import { PageState } from '../components/ui/PageState'
 import { IconSearch } from '../components/ui/Icons'
 import { SleepingCat } from '../components/ui/SleepingCat'
@@ -26,11 +27,13 @@ export function CommunityListPage() {
   ], [t])
 
   const filtered = useMemo(() => communities.filter(c => {
-    const matchesFilter = filter === 'all' || c.category === filter
+    const matchesFilter = filter === 'all' || c.category === filter.toUpperCase()
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) ||
                           c.desc.toLowerCase().includes(search.toLowerCase())
     return matchesFilter && matchesSearch
   }), [communities, filter, search])
+
+  console.log(filtered)
 
   const toggleJoin = (id: string, e: React.MouseEvent) => {
     e.preventDefault()
@@ -38,9 +41,9 @@ export function CommunityListPage() {
     const current = communities.find(c => c.id === id)
     if (!current) return
     const wasJoined = current.joined
-    setCommunities(prev => prev.map(c => c.id === id ? { ...c, joined: !wasJoined } : c))
+    setCommunities((prev: ApiCommunity[]) => prev.map(c => c.id === id ? { ...c, joined: !wasJoined } : c))
     void (wasJoined ? leaveCommunity(id) : joinCommunity(id)).catch(() => {
-      setCommunities(prev => prev.map(c => c.id === id ? { ...c, joined: wasJoined } : c))
+      setCommunities((prev: ApiCommunity[]) => prev.map(c => c.id === id ? { ...c, joined: wasJoined } : c))
     })
   }
 

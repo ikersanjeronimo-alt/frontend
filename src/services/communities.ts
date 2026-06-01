@@ -1,8 +1,13 @@
 import { apiFetch } from './api'
 import type { ApiCommunity, ApiMessage, ApiChatMember } from '../types/api'
 
-export function getCommunities(): Promise<ApiCommunity[]> {
-  return apiFetch<ApiCommunity[]>('/api/communities')
+export async function getCommunities(): Promise<ApiCommunity[]> {
+  const communities = await apiFetch<any[]>('/api/communities')
+  return communities.map(c => ({
+    ...c,
+    id: String(c.id), // Convertir ID a string
+    joined: c.joined ?? false, // Asegurar joined existe
+  }))
 }
 
 export function joinCommunity(id: string): Promise<void> {

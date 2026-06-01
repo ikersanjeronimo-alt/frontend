@@ -47,7 +47,11 @@ export function LoginPage() {
       }
       navigate('/dashboard')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error inesperado.')
+      if (err instanceof Error && 'status' in err && (err as { status?: number }).status === 403) {
+        setError('Este acceso es solo para usuarios normales. Moderadores y administradores deben entrar desde /loginmod.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Error inesperado.')
+      }
     } finally {
       setLoading(false)
     }

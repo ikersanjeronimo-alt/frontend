@@ -22,9 +22,11 @@ export function TimeMachinePage() {
 
   const deliveryDate = new Date()
   deliveryDate.setFullYear(deliveryDate.getFullYear() + DELIVERY_YEARS)
-  const deliveryStr = deliveryDate.toLocaleDateString('es-ES', {
-    day: 'numeric', month: 'long', year: 'numeric',
-  })
+
+
+  const deliveryStr = [ String(deliveryDate.getDate()).padStart(2, '0'),
+                        String(deliveryDate.getMonth() + 1).padStart(2, '0'),
+                        deliveryDate.getFullYear()].join('-')
 
   const canContinue = letter.trim().length >= 20 && email.trim().length > 0
 
@@ -32,7 +34,7 @@ export function TimeMachinePage() {
     setSendError('')
     setSending(true)
     try {
-      await sendLetter(letter, email)
+      await sendLetter(letter, email, deliveryStr)
       setStep('sent')
     } catch (e) {
       setSendError(e instanceof Error ? e.message : t('time.errSend'))

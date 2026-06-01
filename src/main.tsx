@@ -4,10 +4,17 @@ import './index.css'
 import './lib/i18n'
 import App from './App.tsx'
 import { applyTheme, getInitialTheme } from './lib/theme'
-import { initStories } from './lib/wsClient'
+import { initWS } from './lib/wsClient'
+import { initStoriesWS } from './services/storiesWS.ts'
+import { initEventsWS } from './services/eventsWS.ts'
+import { initCommunitiesWS } from './services/communitiesWS.ts'
 
-// Conecta webSocket + carga initial stories UNA sola vez
-initStories()
+// Conecta webSocket
+initWS()
+initStoriesWS()
+initEventsWS()
+initCommunitiesWS()
+
 // Aplicar tema antes del primer render para evitar parpadeo.
 applyTheme(getInitialTheme())
 

@@ -1,8 +1,8 @@
 import { apiFetch } from './api'
 
-export function sendLetter(letter: string, email: string): Promise<void> {
-  return apiFetch<void>('/api/letters', {
+export function sendLetter(message: string, email: string, deliveryDate: string): Promise<void> {
+  return apiFetch<void>('/api/timeMachine', {
     method: 'POST',
-    body: JSON.stringify({ letter, email }),
+    body: JSON.stringify({ message, email , deliveryDate}),
   })
 }

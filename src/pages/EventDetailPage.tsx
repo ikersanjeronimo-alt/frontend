@@ -1,8 +1,7 @@
-import { useRef } from 'react'
+// import { useRef } from 'react'
 import type { ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useEvents } from '../hooks/useEvents'
 import { useEventInterests } from '../hooks/useEventInterests'
 import { markInterest } from '../services/events'
 import { silentMutation } from '../lib/silentMutation'
@@ -16,6 +15,7 @@ import {
 import { SleepingCat } from '../components/ui/SleepingCat'
 import { catFor } from '../components/ui/catPalette'
 import styles from './EventDetailPage.module.css'
+import { useEventStore } from '../store/eventsStore'
 
 export function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>()
@@ -30,17 +30,21 @@ export function EventDetailPage() {
     { icon: <IconQuestion size={18} />, text: t('events.expectQs') },
   ]
 
-  const { data: events, loading, error } = useEvents()
+  // const { data: events, loading, error } = useEvents()
+  // const event = eventId ? events.find(e => e.id === eventId) : undefined
+  // const notFound = !loading && !error && !event
+
+  const events = useEventStore(state => state.events)
   const event = eventId ? events.find(e => e.id === eventId) : undefined
-  const notFound = !loading && !error && !event
+  const notFound = !event
 
   const { toggle, isInterested } = useEventInterests()
   const liked = eventId ? isInterested(eventId) : false
   // Captura el estado inicial para que el delta optimista sea correcto:
   // si el usuario ya había marcado interés, interestedCount del servidor ya lo incluye.
-  const likedOnMount = useRef(liked)
+  // const likedOnMount = useRef(liked)
 
-  if (loading || error || notFound || !event) {
+  if (!event) {
     return (
       <div className={styles.page}>
         <div className={styles.backRow}>
@@ -48,10 +52,7 @@ export function EventDetailPage() {
             {t('events.backAll')}
           </button>
         </div>
-        <PageState
-          loading={loading}
-          error={error ?? (notFound ? t('events.notFound') : null)}
-        />
+        <PageState error={notFound ? t('events.notFound') : null} />
       </div>
     )
   }
@@ -99,9 +100,9 @@ export function EventDetailPage() {
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>{t('events.topics')}</h2>
             <div className={styles.tags}>
-              {event.tags.map(t => (
+              {/* {event.tags.map(t => (
                 <span key={t} className={styles.tag}>{t}</span>
-              ))}
+              ))} */}
             </div>
           </div>
 
@@ -151,7 +152,7 @@ export function EventDetailPage() {
             >
               <IconHeart filled={liked} size={18} />
               <span>{liked ? t('events.interestedYes') : t('events.interestedNo')}</span>
-              <span className={styles.heartCount}>· {(event.interestedCount ?? 0) + (liked === likedOnMount.current ? 0 : liked ? 1 : -1)}</span>
+              {/* <span className={styles.heartCount}>· {(event.interestedCount ?? 0) + (liked === likedOnMount.current ? 0 : liked ? 1 : -1)}</span> */}
             </button>
 
           </div>

@@ -1,10 +1,10 @@
 import { apiFetch } from './api'
 import type { ApiBottle, ApiBottleStory } from '../types/api'
 
-export function sendBottle(text: string): Promise<void> {
+export function sendBottle(message: string): Promise<void> {
   return apiFetch<void>('/api/bottles', {
     method: 'POST',
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ message }),
   })
 }
 

@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useEvents } from '../hooks/useEvents'
 import { useRole } from '../hooks/useRole'
 import { useEventInterests } from '../hooks/useEventInterests'
 import { markInterest } from '../services/events'
@@ -11,10 +10,13 @@ import { IconHeart } from '../components/ui/Icons'
 import { SleepingCat } from '../components/ui/SleepingCat'
 import { catFor } from '../components/ui/catPalette'
 import styles from './EventListPage.module.css'
+import { useEventStore } from '../store/eventsStore'
 
 export function EventListPage() {
   const { t } = useTranslation()
-  const { data: events, loading, error } = useEvents()
+  // const { data: events, loading, error } = useEvents()
+
+  const events = useEventStore(state => state.events)
   const { isMod } = useRole()
   const navigate = useNavigate()
   const { toggle, isInterested } = useEventInterests()
@@ -90,12 +92,13 @@ export function EventListPage() {
         />
       </div>
 
-      <PageState loading={loading} error={error} empty={!loading && events.length === 0} emptyMessage={t('events.emptyMsg')} />
+      <PageState empty={events.length === 0} emptyMessage={t('events.emptyMsg')} />
+      {/* <PageState loading={loading} error={error} empty={!loading && events.length === 0} emptyMessage={t('events.emptyMsg')} /> */}
 
       <div className={styles.list}>
         {events.map((e, i) => {
           const liked = isInterested(e.id)
-          const count = (e.interestedCount ?? 0) + (liked ? 1 : 0)
+          const count = e.interestedCount ?? 0
           const isActive = activeEventId === e.id
           return (
             <article
@@ -128,9 +131,9 @@ export function EventListPage() {
 
                 <div className={styles.cardExtra} aria-hidden={!isActive}>
                   <div className={styles.cardExtraInner}>
-                    {e.tags.length > 0 && (
+                    {(e.tags?.length != undefined && e.tags.length > 0) && (
                       <div className={styles.cardTags}>
-                        {e.tags.map(tag => <span key={tag} className={styles.cardTag}>{tag}</span>)}
+                        {e?.tags?.map(tag => <span key={tag} className={styles.cardTag}>{tag}</span>)}
                       </div>
                     )}
                     <span className={styles.cardSpots}>{e.spots}/{e.total} {t('events.spotsLabel')}</span>

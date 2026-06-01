@@ -45,6 +45,8 @@ export function ModLoginPage() {
       const apiErr = err as ApiError
       if (apiErr.status === 406) {
         setError(t('modLogin.errCredentials') || 'Usuario o contraseña inválidos.')
+      } else if (apiErr.status === 403) {
+        setError('Debes tener el 2FA activado y ser moderador o administrador para entrar por aqu�.')
       } else {
         setError(apiErr.message || t('login.errUnexpected'))
       }
@@ -61,9 +63,9 @@ export function ModLoginPage() {
     } catch (err) {
       const apiErr = err as ApiError
       if (apiErr.status === 406) {
-        throw new Error(t('totp.errCode') || 'El código de verificación es inválido.')
+        throw new Error(t('totp.errCode') || 'El código de verificación es inválido.', { cause: err })
       } else if (apiErr.status === 400) {
-        throw new Error(t('totp.errEmail') || 'El email no existe.')
+        throw new Error(t('totp.errEmail') || 'El email no existe.', { cause: err })
       }
       throw err
     }
@@ -159,3 +161,4 @@ export function ModLoginPage() {
     </div>
   )
 }
+

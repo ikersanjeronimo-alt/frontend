@@ -62,37 +62,38 @@ export interface ApiMessage {
 }
 
 export interface ApiEvent {
-  id: string
+  id: string | number
   title: string
-  host: string
+  host?: string
   date: string
-  time: string
-  duration: string
-  spots: number
-  total: number
+  time?: string
+  duration?: string
+  spots?: number
+  total?: number
   tags: string[]
-  desc: string
-  joined: boolean
+  desc?: string
+  description?: string
+  place?: string
+  joined?: boolean
+  reaction?: number
+  topic?: string
   /** Número de personas que han marcado "Me interesa". No incluye al usuario actual. */
   interestedCount?: number
 }
 
 export interface ApiStory {
   id: string
-  lat: number
-  lng: number
+  latitude: number
+  longitude: number
   username: string
-  text: string
+  message: string
   time: string
   emoji: string
   own?: boolean
 }
 
 export interface ApiBottle {
-  id: string
-  text: string
-  username: string
-  time: string
+  message: string
 }
 
 export interface ApiPrivateMessage {
