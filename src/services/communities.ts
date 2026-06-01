@@ -27,3 +27,18 @@ export function sendMessage(communityId: string, text: string): Promise<ApiMessa
 export function getActiveMembers(communityId: string): Promise<ApiChatMember[]> {
   return apiFetch<ApiChatMember[]>(`/api/communities/${communityId}/members/active`)
 }
+
+export interface CreateCommunityPayload {
+  name: string
+  desc: string
+  emoji: string
+  category: string
+  mod: string
+}
+
+export function createCommunity(payload: CreateCommunityPayload): Promise<ApiCommunity> {
+  return apiFetch<ApiCommunity>('/api/communities', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}

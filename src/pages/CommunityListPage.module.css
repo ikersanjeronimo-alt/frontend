@@ -44,6 +44,21 @@
   }
 }
 
+.createBtn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  margin-top: 12px;
+  transition: background 0.2s;
+}
+.createBtn:hover { background: var(--primary-dk); }
+
 .title {
   font-size: 28px;
   font-weight: 800;

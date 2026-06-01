@@ -189,6 +189,7 @@ Estado tras la armonización del 2FA mod (2026-05-25):
 - `ModerationPage` — protegida con `<RequireRole roles={['MODERATOR', 'ADMIN']}>` desde Sprint 1.
 - `CommunityChatPage` — si el `:comunidadId` no existe en los mocks, muestra "Comunidad no encontrada" con CTA a `/comunidades`.
 - `EventCreatePage` y el form embebido de `EventDetailPage` (`EventFormSection`) — **simulan publicar/guardar sin backend real**. Documentado como deuda; cuando el back tenga `POST /api/events` y `POST /api/events/:id/form*` se conectan con `useApi` + `optimisticMutation`.
+- `CommunityCreatePage` (`/comunidades/nueva`, solo MOD/ADMIN) — **simula publicar sin backend real**. Campos: nombre, descripción, emoji, categoría, moderador/a. TODO marcado para `POST /api/communities` cuando el back lo implemente.
 
 ---
 
@@ -367,6 +368,21 @@ Commits recientes (con tag):
 ---
 
 ## Última actualización
+
+- **2026-05-27** — **Eliminación de simulaciones de backend en el frontend.**
+
+  Tras limpiar los mocks de datos, se eliminó también todo el código que simulaba lógica de servidor:
+
+  - **`lib/totp.ts` y `lib/totp.test.ts` borrados**: generación y validación de secretos TOTP, almacenamiento en localStorage de cuentas de moderador. El back ya implementa los 4 endpoints del flujo 2FA.
+  - **`lib/demoMode.ts` borrado**: singleton que rastreaba si la app había caído al mock. Ya sin consumidores.
+  - **`lib/env.ts` borrado**: constante `ALLOW_MOCK_FALLBACK` (leída de `VITE_USE_MOCK_FALLBACK`). Ya sin importadores.
+  - **`hooks/useDemoMode.ts` borrado**: hook React para el banner de demo mode.
+  - **`components/layout/DemoModeBanner.tsx` y `.module.css` borrados**: el banner "Modo demostración" que aparecía cuando el back estaba caído.
+  - **`App.tsx`**: quitado el import y el `<DemoModeBanner />`.
+  - **`services/storage.ts`**: borrado `modAccountStorage` (almacenaba cuentas TOTP en localStorage) y la clave `sys_mod_account_` del mapa `KEYS`.
+  - **`.env`**: eliminada la variable `VITE_USE_MOCK_FALLBACK` (ya no la lee nadie).
+
+  **Estado resultante:** el frontend no contiene ninguna simulación de lógica de servidor. Todos los errores (red, servidor) se propagan al UI.
 
 - **2026-05-27** — **Eliminación completa de mocks. Preparación para backend real.**
 

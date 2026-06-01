@@ -16,8 +16,9 @@ import { ProfilePage }       from './pages/ProfilePage'
 import { SettingsPage }      from './pages/SettingsPage'
 import { ProfessionalsPage } from './pages/ProfessionalsPage'
 import { PrivateChatPage }   from './pages/PrivateChatPage'
-import { CommunityListPage } from './pages/CommunityListPage'
-import { CommunityChatPage } from './pages/CommunityChatPage'
+import { CommunityListPage }   from './pages/CommunityListPage'
+import { CommunityCreatePage } from './pages/CommunityCreatePage'
+import { CommunityChatPage }   from './pages/CommunityChatPage'
 import { EventListPage }     from './pages/EventListPage'
 import { EventDetailPage }   from './pages/EventDetailPage'
 import { EventCreatePage }   from './pages/EventCreatePage'
@@ -52,6 +53,7 @@ export default function App() {
               <Route path="/configuracion"       element={<SettingsPage />} />
               <Route path="/profesionales"       element={<ProfessionalsPage />} />
               <Route path="/comunidades"         element={<CommunityListPage />} />
+              <Route path="/comunidades/nueva"  element={<RequireRole roles={['MODERATOR', 'ADMIN']}><CommunityCreatePage /></RequireRole>} />
               <Route path="/eventos"             element={<EventListPage />} />
               <Route path="/eventos/nuevo"       element={<RequireRole roles={['MODERATOR', 'ADMIN']}><EventCreatePage /></RequireRole>} />
               <Route path="/eventos/:eventId"    element={<EventDetailPage />} />

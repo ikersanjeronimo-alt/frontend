@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCommunities } from '../hooks/useCommunities'
 import { joinCommunity, leaveCommunity } from '../services/communities'
+import { useRole } from '../hooks/useRole'
 import { PageState } from '../components/ui/PageState'
 import { IconSearch } from '../components/ui/Icons'
 import { SleepingCat } from '../components/ui/SleepingCat'
@@ -12,6 +13,8 @@ import styles from './CommunityListPage.module.css'
 export function CommunityListPage() {
   const { t } = useTranslation()
   const { data: communities, setData: setCommunities, loading, error } = useCommunities()
+  const { isMod } = useRole()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
 
@@ -52,6 +55,14 @@ export function CommunityListPage() {
           <h1 className={styles.title}>{t('communities.title')}</h1>
           <p className={styles.subtitle}>{t('communities.subtitle')}</p>
         </div>
+        {isMod && (
+          <button
+            className={styles.createBtn}
+            onClick={() => navigate('/comunidades/nueva')}
+          >
+            {t('communities.createBtn')}
+          </button>
+        )}
         <SleepingCat
           color={catFor('/comunidades').color}
           seed={catFor('/comunidades').seed}
