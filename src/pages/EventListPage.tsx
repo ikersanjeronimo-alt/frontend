@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '../context/AuthContext'
 import { useRole } from '../hooks/useRole'
 import { useEventInterests } from '../hooks/useEventInterests'
 import { markInterest } from '../services/events'
-import { silentMutation } from '../lib/silentMutation'
 import { PageState } from '../components/ui/PageState'
 import { IconHeart } from '../components/ui/Icons'
 import { SleepingCat } from '../components/ui/SleepingCat'
@@ -17,9 +17,11 @@ export function EventListPage() {
   // const { data: events, loading, error } = useEvents()
 
   const events = useEventStore(state => state.events)
+  const { user } = useAuth()
   const { isMod } = useRole()
   const navigate = useNavigate()
   const { toggle, isInterested } = useEventInterests()
+  const canLike = user?.role !== 'ANON'
 
   const [activeEventId, setActiveEventId] = useState<string | null>(null)
   const cardRefs = useRef<Map<string, HTMLElement>>(new Map())
@@ -62,10 +64,16 @@ export function EventListPage() {
     ev.preventDefault()
     ev.stopPropagation()
     const nowInterested = toggle(id)
-    // Si falla por servidor (no demo), revertimos el toggle local. silentMutation
-    // marca demo mode automáticamente en network error + flag.
-    const err = await silentMutation(markInterest(id, nowInterested))
-    if (err) toggle(id)
+    try {
+      const saved = await markInterest(id, nowInterested)
+      useEventStore.getState().updateEvent({
+        ...saved,
+        id: String(saved.id),
+        interested: nowInterested,
+      })
+    } catch {
+      toggle(id)
+    }
   }
 
   return (
@@ -116,6 +124,7 @@ export function EventListPage() {
                 className={`${styles.heartBtn} ${liked ? styles.heartBtnActive : ''}`}
                 onClick={ev => { void toggleLike(e.id, ev) }}
                 aria-label={liked ? t('events.liked') : t('events.notLiked')}
+                disabled={!canLike}
               >
                 <IconHeart filled={liked} size={18} />
                 <span className={styles.heartCount}>{count}</span>

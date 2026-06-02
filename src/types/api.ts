@@ -16,6 +16,7 @@ export interface ApiCommunity {
   emoji: string
   name: string
   mod: string
+  modUserId?: string | null
   desc: string
   members: number
   online: number
@@ -25,9 +26,11 @@ export interface ApiCommunity {
   unread?: number
   /** Nota fijada por el moderador, si la hay. */
   pinnedNote?: string
+  chatClosed?: boolean
 }
 
 export interface ApiChatMember {
+  userId: string
   username: string
   initials: string
 }
@@ -59,6 +62,7 @@ export interface ApiMessage {
   text: string
   time: string
   own: boolean
+  action?: 'DELETE'
 }
 
 export interface ApiEvent {
@@ -79,6 +83,8 @@ export interface ApiEvent {
   topic?: string
   /** Número de personas que han marcado "Me interesa". No incluye al usuario actual. */
   interestedCount?: number
+  /** Estado del usuario actual para este evento. */
+  interested?: boolean
 }
 
 export interface ApiStory {
@@ -102,6 +108,13 @@ export interface ApiPrivateMessage {
   from: 'user' | 'professional'
   text: string
   time: string
+}
+
+export interface ApiPrivateConversation {
+  userId: string
+  username: string
+  lastMessage: string
+  lastTime: string
 }
 
 export interface ApiProfessional {

@@ -2,9 +2,9 @@
 import type { ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '../context/AuthContext'
 import { useEventInterests } from '../hooks/useEventInterests'
 import { markInterest } from '../services/events'
-import { silentMutation } from '../lib/silentMutation'
 import { PageState } from '../components/ui/PageState'
 import { EventFormSection } from '../components/events/EventFormSection'
 import { useRole } from '../hooks/useRole'
@@ -20,6 +20,7 @@ import { useEventStore } from '../store/eventsStore'
 export function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>()
   const navigate    = useNavigate()
+  const { user }    = useAuth()
   const { isMod }   = useRole()
   const { t }       = useTranslation()
 
@@ -40,6 +41,7 @@ export function EventDetailPage() {
 
   const { toggle, isInterested } = useEventInterests()
   const liked = eventId ? isInterested(eventId) : false
+  const canLike = user?.role !== 'ANON'
   // Captura el estado inicial para que el delta optimista sea correcto:
   // si el usuario ya había marcado interés, interestedCount del servidor ya lo incluye.
   // const likedOnMount = useRef(liked)
@@ -60,8 +62,16 @@ export function EventDetailPage() {
   const handleToggleInterest = async () => {
     if (!eventId) return
     const nowInterested = toggle(eventId)
-    const err = await silentMutation(markInterest(eventId, nowInterested))
-    if (err) toggle(eventId)  // rollback en error de servidor
+    try {
+      const saved = await markInterest(eventId, nowInterested)
+      useEventStore.getState().updateEvent({
+        ...saved,
+        id: String(saved.id),
+        interested: nowInterested,
+      })
+    } catch {
+      toggle(eventId)
+    }
   }
 
   return (
@@ -149,6 +159,7 @@ export function EventDetailPage() {
             <button
               className={`${styles.heartBtnLarge} ${liked ? styles.heartBtnLargeActive : ''}`}
               onClick={() => { void handleToggleInterest() }}
+              disabled={!canLike}
             >
               <IconHeart filled={liked} size={18} />
               <span>{liked ? t('events.interestedYes') : t('events.interestedNo')}</span>

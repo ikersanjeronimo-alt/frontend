@@ -14,6 +14,7 @@ export interface Event {
   desc?:            string
   joined?:          boolean
   interestedCount?: number
+  interested?:      boolean
 }
 
 interface EventState {
@@ -32,14 +33,18 @@ export const useEventStore = create<EventState>((set) => ({
     setEvents:  (events) => set({ events }),
     addEvent:     (event)   => set(state => ({
         events: state.events.some(s => s.id === event.id)
-        ? state.events
+        ? state.events.map(existing => existing.id === event.id
+            ? { ...existing, ...event, interested: event.interested ?? existing.interested }
+            : existing)
         : [...state.events, event]
     })),
     removeEvent:  (id)      => set(state => ({
     events: state.events.filter(e => e.id !== id)
     })),
     updateEvent:  (event)   => set(state => ({
-        events: state.events.map(e => e.id === event.id ? event : e)
+        events: state.events.map(e => e.id === event.id
+          ? { ...e, ...event, interested: event.interested ?? e.interested }
+          : e)
     })),
     setConnected: (connected) => set({ connected }),
 }))

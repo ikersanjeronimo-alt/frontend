@@ -2,6 +2,8 @@ import type { Client } from '@stomp/stompjs'
 import { onConnect, onDisconnect } from '../lib/wsClient'
 import { useCommunitiesStore } from '../store/communitiesStore'
 import { getCommunities } from '../services/communities'
+import { restoreAuthFromToken } from './auth'
+import { tokenStorage } from './storage'
 import type { ApiCommunity } from '../types/api'
 
 const TOPIC = '/topic/communities'
@@ -37,7 +39,7 @@ export function initCommunitiesWS(): void {
 
 function handleCommunityMessage(payload: CommunityMessage): void {
   const store = useCommunitiesStore.getState()
-  const community = normalizeCommunity(payload.community)
+  const community = normalizeCommunity(payload.community, getCurrentUserId())
 
   switch (payload.action) {
     case 'CREATE':
@@ -45,7 +47,10 @@ function handleCommunityMessage(payload: CommunityMessage): void {
       console.log('[communities] Community created:', community.id)
       break
     case 'UPDATE':
-      store.updateCommunity(community)
+      {
+        const current = store.communities.find(c => c.id === community.id)
+        store.updateCommunity(current ? { ...community, joined: current.joined } : community)
+      }
       console.log('[communities] Community updated:', community.id)
       break
     case 'DELETE':
@@ -74,17 +79,39 @@ async function fetchInitialCommunities() {
   }
 }
 
-function normalizeCommunity(raw: any): ApiCommunity {
+function normalizeCommunity(raw: any, currentUserId: string | null = null): ApiCommunity {
+  return normalizeCommunityWithUser(raw, currentUserId)
+}
+
+function normalizeCommunityWithUser(raw: any, currentUserId: string | null): ApiCommunity {
+  const modUserId = raw.modUserId != null ? String(raw.modUserId) : null
+  const joinedFromBackend = Boolean(raw.joined ?? false)
+  const joined = joinedFromBackend || (
+    currentUserId != null
+    && modUserId != null
+    && modUserId === currentUserId
+  )
+
   return {
     id: String(raw.id),
     emoji: raw.emoji ?? '🌐',
     name: raw.name ?? 'Sin nombre',
     mod: raw.mod ?? 'Desconocido',
+    modUserId,
     desc: raw.desc ?? '',
     members: raw.members ?? 0,
     online: raw.online ?? 0,
     category: raw.category ?? 'GENERAL',
-    joined: raw.joined ?? false,
+    joined,
     pinnedNote: raw.pinnedNote,
+    chatClosed: Boolean(raw.chatClosed ?? false),
   }
+}
+
+function getCurrentUserId(): string | null {
+  const token = tokenStorage.get()
+  if (!token) {
+    return null
+  }
+  return restoreAuthFromToken(token)?.user.id ?? null
 }

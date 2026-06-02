@@ -164,9 +164,10 @@ interface ChatBubbleProps {
   username?: string
   time: string
   children: ReactNode
+  actions?: ReactNode
 }
 
-export function ChatBubble({ side, avatar, username, time, children }: ChatBubbleProps) {
+export function ChatBubble({ side, avatar, username, time, children, actions }: ChatBubbleProps) {
   const isOwn = side === 'own'
   return (
     <div className={`${styles.messageGroup} ${isOwn ? styles.messageGroupOwn : ''}`}>
@@ -175,6 +176,7 @@ export function ChatBubble({ side, avatar, username, time, children }: ChatBubbl
         {username && <span className={styles.bubbleUsername}>{username}</span>}
         <div className={`${styles.bubble} ${isOwn ? styles.bubbleOwn : styles.bubbleOther}`}>
           {children}
+          {actions && <div className={styles.bubbleActions}>{actions}</div>}
         </div>
         <span className={styles.bubbleTime}>{time}</span>
       </div>
@@ -191,9 +193,10 @@ interface ChatComposerProps {
   placeholder: string
   ariaLabel?: string
   sendAriaLabel?: string
+  disabled?: boolean
 }
 
-export function ChatComposer({ value, onChange, onSend, placeholder, ariaLabel, sendAriaLabel }: ChatComposerProps) {
+export function ChatComposer({ value, onChange, onSend, placeholder, ariaLabel, sendAriaLabel, disabled }: ChatComposerProps) {
   const handleKeyDown = (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -211,12 +214,13 @@ export function ChatComposer({ value, onChange, onSend, placeholder, ariaLabel, 
         onChange={e => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
         rows={1}
+        disabled={disabled}
       />
       <button
         type="button"
         className={styles.sendBtn}
         onClick={onSend}
-        disabled={!value.trim()}
+        disabled={disabled || !value.trim()}
         aria-label={sendAriaLabel}
       >
         ➤

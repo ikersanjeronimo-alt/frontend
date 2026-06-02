@@ -18,6 +18,7 @@ interface EventMessage {
     topic?: string
     tags?: string[]
     interestedCount?: number
+    interested?: boolean
     [key: string]: unknown
   }
 }
@@ -79,6 +80,7 @@ async function fetchInitialEvents() {
             date: s.date,
             place: s.place ?? '',
             interestedCount: s.reaction ?? s.interestedCount ?? 0,
+            interested: s.interested ?? undefined,
             tags: s.tags ?? (s.topic ? [s.topic] : []),
         }))
         

@@ -1,7 +1,6 @@
 import { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
-import { DemoModeBanner } from './components/layout/DemoModeBanner'
 import { MainLayout } from './components/layout/MainLayout'
 import { BareLayout } from './components/layout/BareLayout'
 import { RequireRole } from './components/auth/RequireRole'
@@ -17,8 +16,9 @@ import { ProfilePage }       from './pages/ProfilePage'
 import { SettingsPage }      from './pages/SettingsPage'
 import { ProfessionalsPage } from './pages/ProfessionalsPage'
 import { PrivateChatPage }   from './pages/PrivateChatPage'
-import { CommunityListPage } from './pages/CommunityListPage'
-import { CommunityChatPage } from './pages/CommunityChatPage'
+import { CommunityListPage }   from './pages/CommunityListPage'
+import { CommunityCreatePage } from './pages/CommunityCreatePage'
+import { CommunityChatPage }   from './pages/CommunityChatPage'
 import { EventListPage }     from './pages/EventListPage'
 import { EventDetailPage }   from './pages/EventDetailPage'
 import { EventCreatePage }   from './pages/EventCreatePage'
@@ -41,7 +41,6 @@ export default function App() {
     <ErrorBoundary>
     <BrowserRouter>
       <AuthProvider>
-        <DemoModeBanner />
         <Suspense fallback={<PageState loading />}>
           <Routes>
 
@@ -54,6 +53,7 @@ export default function App() {
               <Route path="/configuracion"       element={<SettingsPage />} />
               <Route path="/profesionales"       element={<ProfessionalsPage />} />
               <Route path="/comunidades"         element={<CommunityListPage />} />
+              <Route path="/comunidades/nueva"  element={<RequireRole roles={['MODERATOR', 'ADMIN']}><CommunityCreatePage /></RequireRole>} />
               <Route path="/eventos"             element={<EventListPage />} />
               <Route path="/eventos/nuevo"       element={<RequireRole roles={['MODERATOR', 'ADMIN']}><EventCreatePage /></RequireRole>} />
               <Route path="/eventos/:eventId"    element={<EventDetailPage />} />
@@ -70,8 +70,9 @@ export default function App() {
             <Route element={<BareLayout />}>
               <Route path="/login"                     element={<LoginPage />} />
               <Route path="/loginmod"                  element={<ModLoginPage />} />
-              {/* TODO: restaurar <RequireRole roles={['MODERATOR','ADMIN']} redirectTo="/loginmod"> cuando exista un admin sembrado en el back. Abierto temporalmente para poder crear el primer admin durante las pruebas del 2FA. */}
-              <Route path="/modregister"               element={<ModRegisterPage />} />
+              <Route path="/modregister"               element={<RequireRole roles={['ADMIN']}><ModRegisterPage initialMode="moderador" lockMode backTo="/configuracion" /></RequireRole>} />
+              <Route path="/admin/moderadores/nuevo"    element={<RequireRole roles={['ADMIN']}><ModRegisterPage initialMode="moderador" lockMode backTo="/configuracion" /></RequireRole>} />
+              <Route path="/chat/inbox/:userId?"       element={<PrivateChatPage />} />
               <Route path="/chat/:professionalId"      element={<PrivateChatPage />} />
               <Route path="/comunidades/:comunidadId"  element={<CommunityChatPage />} />
             </Route>

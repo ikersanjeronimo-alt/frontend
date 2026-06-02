@@ -17,8 +17,8 @@ export function leaveEvent(id: string): Promise<void> {
   return apiFetch<void>(`/api/events/${id}/join`, { method: 'DELETE' })
 }
 
-export function markInterest(id: string, on: boolean): Promise<void> {
-  return apiFetch<void>(`/api/events/${id}/interest`, {
+export function markInterest(id: string, on: boolean): Promise<ApiEvent> {
+  return apiFetch<ApiEvent>(`/api/events/${id}/interest`, {
     method: on ? 'POST' : 'DELETE',
   })
 }

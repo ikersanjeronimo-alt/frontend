@@ -2,6 +2,7 @@ import type { Client } from '@stomp/stompjs'
 import { getClient, onConnect } from '../lib/wsClient'
 import type { ApiMessage } from '../types/api'
 import { useCommunityChatStore } from '../store/communityChatStore'
+import { updateCommunityOnline } from './communities'
 
 const subscriptions: Map<string, () => void> = new Map()
 
@@ -32,8 +33,12 @@ function subscribe(client: Client, communityId: string): void {
 
   const unsubscribe = client.subscribe(topic, (message) => {
     try {
-      const msg: ApiMessage = JSON.parse(message.body)
-      useCommunityChatStore.getState().addMessage(communityId, msg)
+      const payload: ApiMessage = JSON.parse(message.body)
+      if (payload.action === 'DELETE') {
+        useCommunityChatStore.getState().removeMessage(communityId, payload.id)
+      } else {
+        useCommunityChatStore.getState().addMessage(communityId, payload)
+      }
     } catch (err) {
       console.error(`[communityChat/${communityId}] Error parsing message:`, err)
     }
@@ -41,6 +46,9 @@ function subscribe(client: Client, communityId: string): void {
 
   subscriptions.set(communityId, unsubscribe)
   console.log(`[communityChat] Subscribed to ${topic}`)
+  void updateCommunityOnline(communityId, 1).catch(err => {
+    console.error(`[communityChat/${communityId}] Error updating online +1:`, err)
+  })
 }
 
 export function unsubscribeCommunityChat(communityId: string): void {
@@ -49,5 +57,8 @@ export function unsubscribeCommunityChat(communityId: string): void {
     unsubscribe()
     subscriptions.delete(communityId)
     console.log(`[communityChat] Unsubscribed from ${communityId}`)
+    void updateCommunityOnline(communityId, -1).catch(err => {
+      console.error(`[communityChat/${communityId}] Error updating online -1:`, err)
+    })
   }
 }

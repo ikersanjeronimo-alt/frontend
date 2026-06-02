@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCommunities } from '../hooks/useCommunities'
 import { joinCommunity, leaveCommunity } from '../services/communities'
-import type { ApiCommunity } from '../types/api'
+import { useCommunitiesStore } from '../store/communitiesStore'
+import { useRole } from '../hooks/useRole'
 import { PageState } from '../components/ui/PageState'
 import { IconSearch } from '../components/ui/Icons'
 import { SleepingCat } from '../components/ui/SleepingCat'
@@ -13,8 +14,12 @@ import styles from './CommunityListPage.module.css'
 export function CommunityListPage() {
   const { t } = useTranslation()
   const { data: communities, setData: setCommunities, loading, error } = useCommunities()
+  const updateStoreCommunity = useCommunitiesStore(state => state.updateCommunity)
+  const { isMod, isAnon } = useRole()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
+  const [pendingIds, setPendingIds] = useState<Record<string, boolean>>({})
 
   const FILTERS = useMemo(() => [
     { id: 'all',         label: t('communities.categories.all') },
@@ -27,23 +32,31 @@ export function CommunityListPage() {
   ], [t])
 
   const filtered = useMemo(() => communities.filter(c => {
-    const matchesFilter = filter === 'all' || c.category === filter.toUpperCase()
+    const matchesFilter = filter === 'all' || c.category === filter
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) ||
                           c.desc.toLowerCase().includes(search.toLowerCase())
     return matchesFilter && matchesSearch
   }), [communities, filter, search])
 
-  console.log(filtered)
-
   const toggleJoin = (id: string, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    if (isAnon) {
+      navigate('/login')
+      return
+    }
+    if (pendingIds[id]) return
     const current = communities.find(c => c.id === id)
     if (!current) return
     const wasJoined = current.joined
-    setCommunities((prev: ApiCommunity[]) => prev.map(c => c.id === id ? { ...c, joined: !wasJoined } : c))
-    void (wasJoined ? leaveCommunity(id) : joinCommunity(id)).catch(() => {
-      setCommunities((prev: ApiCommunity[]) => prev.map(c => c.id === id ? { ...c, joined: wasJoined } : c))
+    setPendingIds(prev => ({ ...prev, [id]: true }))
+    setCommunities(prev => prev.map(c => c.id === id ? { ...c, joined: !wasJoined, members: Math.max(0, c.members + (wasJoined ? -1 : 1)) } : c))
+    void (wasJoined ? leaveCommunity(id) : joinCommunity(id)).then(updated => {
+      updateStoreCommunity(updated)
+    }).catch(() => {
+      setCommunities(prev => prev.map(c => c.id === id ? { ...c, joined: wasJoined } : c))
+    }).finally(() => {
+      setPendingIds(prev => ({ ...prev, [id]: false }))
     })
   }
 
@@ -55,6 +68,14 @@ export function CommunityListPage() {
           <h1 className={styles.title}>{t('communities.title')}</h1>
           <p className={styles.subtitle}>{t('communities.subtitle')}</p>
         </div>
+        {isMod && (
+          <button
+            className={styles.createBtn}
+            onClick={() => navigate('/comunidades/nueva')}
+          >
+            {t('communities.createBtn')}
+          </button>
+        )}
         <SleepingCat
           color={catFor('/comunidades').color}
           seed={catFor('/comunidades').seed}
@@ -121,9 +142,16 @@ export function CommunityListPage() {
               <button
                 type="button"
                 className={`${styles.joinBtn} ${c.joined ? styles.joinBtnJoined : ''}`}
+                disabled={Boolean(pendingIds[c.id])}
                 onClick={e => toggleJoin(c.id, e)}
               >
-                {c.joined ? t('communities.joined') : t('communities.join')}
+                {pendingIds[c.id]
+                  ? t('common.loading')
+                  : isAnon
+                    ? t('login.submitLogin')
+                    : c.joined
+                      ? t('communities.joined')
+                      : t('communities.join')}
               </button>
             </div>
           </article>
