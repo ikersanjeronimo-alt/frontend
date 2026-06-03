@@ -39,6 +39,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false
     const init = async () => {
       try {
+        // Si hay token guardado, RESTAURAR la sesión real (cualquier rol). Antes
+        // se pedía siempre identidad anónima, lo que degradaba a usuarios/mods
+        // logueados a anónimo en cada recarga.
+        const saved = tokenStorage.get()
+        if (saved) {
+          try {
+            const u = await authService.getMe()
+            if (cancelled) return
+            setUser({ ...u, token: saved })
+            return
+          } catch {
+            // token inválido/expirado → continuar a identidad anónima
+          }
+        }
         const { token, user: u } = await authService.initAnonymous()
         if (cancelled) return
         tokenStorage.set(token)

@@ -27,10 +27,13 @@ export function isNetworkError(e: unknown): e is ApiError {
 export interface ApiFetchOptions extends RequestInit {
   /** Timeout en ms; por defecto 15s. Pasa 0 (o un signal externo) para desactivarlo. */
   timeoutMs?: number
+  /** Si true, un 401 no dispara `authBus.fireExpired()` (útil para la sonda de
+   *  restauración de sesión al arrancar, donde un 401 es esperado). */
+  suppressAuthExpired?: boolean
 }
 
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
-  const { timeoutMs = DEFAULT_TIMEOUT_MS, signal: callerSignal, ...rest } = options
+  const { timeoutMs = DEFAULT_TIMEOUT_MS, signal: callerSignal, suppressAuthExpired = false, ...rest } = options
   const token = tokenStorage.get()
 
   // Solo añadimos Content-Type si hay body — evita preflights CORS innecesarios
@@ -78,8 +81,9 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     if (!isAuthFlow) {
       tokenStorage.clear()
       // Notificar al AuthProvider via bus singleton — resistente a race
-      // conditions del orden de mount (ver lib/authBus.ts).
-      authBus.fireExpired()
+      // conditions del orden de mount (ver lib/authBus.ts). Se omite en la sonda
+      // de restauración de sesión, donde un 401 es esperado y no una expiración.
+      if (!suppressAuthExpired) authBus.fireExpired()
     }
     throw makeApiError(401, isAuthFlow ? 'Credenciales incorrectas.' : 'Sesión expirada.')
   }

@@ -20,6 +20,7 @@ export function ModLoginPage() {
   const [phase, setPhase]   = useState<Phase>('credentials')
   const [email, setEmail]   = useState('')
   const [password, setPassword] = useState('')
+  const [challengeId, setChallengeId] = useState('')
   const [loading, setLoading]   = useState(false)
   const [error, setError]   = useState('')
   const [showPass, setShowPass] = useState(false)
@@ -39,11 +40,12 @@ export function ModLoginPage() {
 
     setLoading(true)
     try {
-      await loginMod(email.trim(), password.trim())
+      const { challengeId: id } = await loginMod(email.trim(), password.trim())
+      setChallengeId(id)
       setPhase('totp')
     } catch (err) {
       const apiErr = err as ApiError
-      if (apiErr.status === 406) {
+      if (apiErr.status === 401) {
         setError(t('modLogin.errCredentials') || 'Usuario o contraseña inválidos.')
       } else {
         setError(apiErr.message || t('login.errUnexpected'))
@@ -55,15 +57,16 @@ export function ModLoginPage() {
 
   const handleVerify = async (code: string) => {
     try {
-      const authResponse = await verifyModLogin(email.trim(), code)
+      const authResponse = await verifyModLogin(challengeId, code)
       loginAsModWithToken(authResponse.token, authResponse.user)
       navigate('/moderacion')
     } catch (err) {
       const apiErr = err as ApiError
-      if (apiErr.status === 406) {
+      if (apiErr.status === 401) {
+        // Codigo TOTP invalido o challenge expirado.
         throw new Error(t('totp.errCode') || 'El código de verificación es inválido.')
       } else if (apiErr.status === 400) {
-        throw new Error(t('totp.errEmail') || 'El email no existe.')
+        throw new Error(t('totp.errCode') || 'El código de verificación es inválido.')
       }
       throw err
     }
@@ -72,6 +75,7 @@ export function ModLoginPage() {
   const handleCancelTotp = () => {
     setPhase('credentials')
     setPassword('')
+    setChallengeId('')
   }
 
   return (

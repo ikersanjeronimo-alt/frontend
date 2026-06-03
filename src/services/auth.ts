@@ -58,6 +58,17 @@ export async function initAnonymous(): Promise<AuthResponse> {
   return adaptAuthResponse(r)
 }
 
+/** Restaura la sesión a partir del token guardado (cualquier rol). Un 401 aquí
+ *  significa "no hay sesión válida", no "sesión expirada" — por eso suprime el bus. */
+export async function getMe(): Promise<ApiUser> {
+  const r = await apiFetch<BackendUser>('/api/users/me', { suppressAuthExpired: true })
+  return {
+    id: r.id,
+    username: r.username,
+    role: mapBackendRole(r.role),
+  }
+}
+
 export async function login(username: string, password: string): Promise<AuthResponse> {
   const r = await apiFetch<BackendAuthResponse>('/api/auth/login', {
     method: 'POST',
@@ -108,18 +119,21 @@ export async function verifyModRegistration(payload: VerifyTotpPayload): Promise
   })
 }
 
-export async function loginMod(email: string, password: string): Promise<{ email: string }> {
-  await apiFetch<void>('/api/auth/login/mod', {
+export async function loginMod(email: string, password: string): Promise<{ challengeId: string }> {
+  const r = await apiFetch<{ challengeId: string }>('/api/auth/login/mod', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   })
-  return { email }
+  if (!r?.challengeId) {
+    throw new Error('El servidor no ha devuelto el desafío de login.')
+  }
+  return { challengeId: r.challengeId }
 }
 
-export async function verifyModLogin(email: string, code: string): Promise<AuthResponse> {
+export async function verifyModLogin(challengeId: string, code: string): Promise<AuthResponse> {
   const r = await apiFetch<{ token: string }>('/api/auth/login/mod/2fa/code', {
     method: 'POST',
-    body: JSON.stringify({ email, code }),
+    body: JSON.stringify({ challengeId, code }),
   })
   if (!r?.token) {
     throw new Error('El servidor no ha devuelto el token.')
@@ -132,7 +146,7 @@ export async function verifyModLogin(email: string, code: string): Promise<AuthR
 
   const user: ApiUser = {
     id: payload.id || payload.sub || '',
-    username: payload.username || payload.email || email,
+    username: payload.username || payload.email || '',
     role: (payload.role as UserRole) || 'MODERATOR',
   }
   return { token: r.token, user }
