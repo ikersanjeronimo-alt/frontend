@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useModerationReports } from '../../hooks/useModerationReports'
-import { updateReport } from '../../services/moderation'
+import { updateReport, type ReportAction } from '../../services/moderation'
+import type { ApiReport } from '../../types/api'
 import { PageState } from '../ui/PageState'
 import styles from './ReportsSection.module.css'
 
@@ -20,11 +21,12 @@ export function ReportsSection() {
   const filtered = reports.filter(r => filter === 'all' || r.status === filter)
   const pendingCount = reports.filter(r => r.status === 'pending').length
 
-  const updateStatus = (id: string, status: 'resolved' | 'dismissed') => {
+  const applyAction = (id: string, action: ReportAction) => {
     const prev = reports.find(r => r.id === id)
-    setReports(all => all.map(r => r.id === id ? { ...r, status } : r))
+    const newStatus: ApiReport['status'] = action === 'dismiss' ? 'dismissed' : 'resolved'
+    setReports(all => all.map(r => r.id === id ? { ...r, status: newStatus } : r))
     setSelected(null)
-    updateReport(id, status).catch(() => {
+    updateReport(id, action).catch(() => {
       if (prev) setReports(all => all.map(r => r.id === id ? { ...r, status: prev.status } : r))
     })
   }
@@ -86,21 +88,21 @@ export function ReportsSection() {
                   <button
                     type="button"
                     className={`${styles.actionBtn} ${styles.actionBtnResolve}`}
-                    onClick={() => updateStatus(r.id, 'resolved')}
+                    onClick={() => applyAction(r.id, 'resolve')}
                   >
                     {t('moderation.resolve')}
                   </button>
                   <button
                     type="button"
                     className={`${styles.actionBtn} ${styles.actionBtnWarn}`}
-                    onClick={() => updateStatus(r.id, 'resolved')}
+                    onClick={() => applyAction(r.id, 'warn')}
                   >
                     {t('moderation.warn')}
                   </button>
                   <button
                     type="button"
                     className={`${styles.actionBtn} ${styles.actionBtnDismiss}`}
-                    onClick={() => updateStatus(r.id, 'dismissed')}
+                    onClick={() => applyAction(r.id, 'dismiss')}
                   >
                     {t('moderation.dismiss')}
                   </button>

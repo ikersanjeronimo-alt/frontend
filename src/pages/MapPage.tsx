@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { useBannedWords } from '../hooks/useBannedWords'
 import { maskBannedWords } from '../lib/bannedWords'
 import { createStory } from '../services/stories'
+import { reportStory } from '../services/moderation'
 import { silentMutation } from '../lib/silentMutation'
 import { SleepingCat } from '../components/ui/SleepingCat'
 import { catFor } from '../components/ui/catPalette'
@@ -64,11 +65,23 @@ export function MapPage() {
   const [draft, setDraft]           = useState('')
   const [submitted, setSubmitted]   = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [reportedIds, setReportedIds] = useState<Set<string>>(new Set())
   const resetTimer = useRef<number | null>(null)
 
   useEffect(() => () => {
     if (resetTimer.current !== null) window.clearTimeout(resetTimer.current)
   }, [])
+
+  const handleReport = (id: string) => {
+    setReportedIds(prev => new Set(prev).add(id))
+    void reportStory(id, t('map.reportReason')).catch(() => {
+      setReportedIds(prev => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+    })
+  }
 
   const handleMapClick = (lat: number, lng: number) => {
     setPending({ lat, lng })
@@ -130,6 +143,17 @@ export function MapPage() {
             <Popup className={styles.popup} maxWidth={280}>
               <div className={styles.popupInner}>
                 <p className={styles.popupText}>{maskBannedWords(s.text, bannedWords)}</p>
+                {reportedIds.has(s.id) ? (
+                  <span className={styles.popupReported}>{t('map.reported')}</span>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.popupReportBtn}
+                    onClick={() => handleReport(s.id)}
+                  >
+                    {t('map.report')}
+                  </button>
+                )}
               </div>
             </Popup>
           </Marker>

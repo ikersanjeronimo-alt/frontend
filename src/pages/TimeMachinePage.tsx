@@ -20,15 +20,23 @@ export function TimeMachinePage() {
   const [sendError, setSendError] = useState('')
   const [sending, setSending]     = useState(false)
 
-  const deliveryDate = new Date()
-  deliveryDate.setFullYear(deliveryDate.getFullYear() + DELIVERY_YEARS)
+  // Fecha de entrega elegida por el usuario (input type=date → yyyy-MM-dd).
+  // Por defecto, dentro de DELIVERY_YEARS años; mínimo, mañana.
+  const toInputValue = (d: Date) => d.toISOString().slice(0, 10)
+  const todayInput = toInputValue(new Date())
+  const minDelivery = toInputValue(new Date(Date.now() + 24 * 60 * 60 * 1000))
 
+  const [deliveryInput, setDeliveryInput] = useState(() => {
+    const d = new Date()
+    d.setFullYear(d.getFullYear() + DELIVERY_YEARS)
+    return toInputValue(d)
+  })
 
-  const deliveryStr = [ String(deliveryDate.getDate()).padStart(2, '0'),
-                        String(deliveryDate.getMonth() + 1).padStart(2, '0'),
-                        deliveryDate.getFullYear()].join('-')
+  // El backend espera dd-MM-yyyy.
+  const deliveryStr = deliveryInput ? deliveryInput.split('-').reverse().join('-') : ''
+  const isFutureDate = !!deliveryInput && deliveryInput > todayInput
 
-  const canContinue = letter.trim().length >= 20 && email.trim().length > 0
+  const canContinue = letter.trim().length >= 20 && email.trim().length > 0 && isFutureDate
 
   const handleSend = async () => {
     setSendError('')
@@ -105,6 +113,20 @@ export function TimeMachinePage() {
               <p className={styles.emailNote}>
                 {t('time.emailNote')}
               </p>
+            </div>
+
+            <div className={styles.emailRow}>
+              <label className={styles.emailLabel} htmlFor="tm-date">
+                {t('time.sendOnDay')}
+              </label>
+              <input
+                id="tm-date"
+                className={styles.emailInput}
+                type="date"
+                min={minDelivery}
+                value={deliveryInput}
+                onChange={e => setDeliveryInput(e.target.value)}
+              />
             </div>
 
             <button

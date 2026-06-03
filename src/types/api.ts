@@ -50,10 +50,12 @@ export interface ApiBottleStory {
 }
 
 export interface ApiModerationMember {
+  id: string
   username: string
   community: string
   joined: string
   reports: number
+  banned: boolean
 }
 
 export interface ApiMessage {
@@ -129,12 +131,12 @@ export interface ApiProfessional {
 
 export interface ApiReport {
   id: string
-  type: 'message' | 'profile'
+  type: 'story' | 'message'
   reporter: string
   reported: string
   content: string
   reason: string
-  community: string
+  community: string | null
   time: string
   status: 'pending' | 'resolved' | 'dismissed'
 }
