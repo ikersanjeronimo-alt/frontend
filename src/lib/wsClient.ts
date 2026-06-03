@@ -1,5 +1,6 @@
 import { Client, type IFrame } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
+import { tokenStorage } from '../services/storage'
 
 const WS_URL      = import.meta.env.VITE_WS_URL ?? 'http://localhost:8080/ws'
 const onConnectCallbacks: ((client: Client) => void)[] = []
@@ -26,7 +27,16 @@ export function initWS():void{
 
   client = new Client({
     webSocketFactory: () => new SockJS(WS_URL),
-        
+
+    // Se relee en cada (re)conexión: si el token anónimo aún no existía al
+    // arrancar, la reconexión automática lo recoge en cuanto está disponible.
+    beforeConnect: () => {
+      const token = tokenStorage.get()
+      if (client) {
+        client.connectHeaders = token ? { Authorization: `Bearer ${token}` } : {}
+      }
+    },
+
     onConnect: (frame: IFrame) => {
         console.log('[ws] Conectado, ejecutando callbacks:', onConnectCallbacks.length)
         console.log("[ws] Connected", frame)
