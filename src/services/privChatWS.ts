@@ -3,51 +3,53 @@ import { getClient, onConnect } from '../lib/wsClient'
 import type { ApiPrivateMessage } from '../types/api'
 import { usePrivateChatStore } from '../store/privateChatStore'
 
-const subscriptions: Map<string, () => void> = new Map()
+/**
+ * Suscripción ÚNICA a la cola personal del usuario (/user/queue/private). Spring
+ * solo entrega aquí los mensajes de las conversaciones del propio usuario, así que
+ * ya no se reciben conversaciones ajenas (antes se escuchaba el topic compartido
+ * por profesional). Cada mensaje trae los ids de la conversación para enrutarlo.
+ */
+interface IncomingPrivateMessage extends ApiPrivateMessage {
+  userId?: string
+  professionalId?: string
+}
 
-export function initPrivateChatWS(professionalId: string): void {
-  // Si ya hay suscripción para este chat, no hacer nada
-  if (subscriptions.has(professionalId)) {
-    return
-  }
+let subscribed = false
+
+export function initPrivateChatWS(): void {
+  if (subscribed) return
 
   const client = getClient()
-
-  // Si el cliente ya está conectado, suscribirse inmediatamente
   if (client?.connected) {
-    subscribe(client, professionalId)
+    subscribe(client)
   } else {
-    // Si no está conectado, hacerlo cuando se conecte
     onConnect((connectedClient: Client) => {
-      // Verificar que aún no hay suscripción (podría haberse creado en el intervalo)
-      if (!subscriptions.has(professionalId)) {
-        subscribe(connectedClient, professionalId)
-      }
+      if (!subscribed) subscribe(connectedClient)
     })
   }
 }
 
-function subscribe(client: Client, professionalId: string): void {
-  const topic = `/topic/privateChats/${professionalId}`
-
-  const unsubscribe = client.subscribe(topic, (message) => {
+function subscribe(client: Client): void {
+  client.subscribe('/user/queue/private', (message) => {
     try {
-      const msg: ApiPrivateMessage = JSON.parse(message.body)
-      usePrivateChatStore.getState().addMessage(professionalId, msg)
+      const raw: IncomingPrivateMessage = JSON.parse(message.body)
+      // Para el usuario, la conversación se identifica por el profesional
+      // (que es la clave del store). El profesional usa la bandeja (no el store).
+      const conversationId = raw.professionalId
+      if (!conversationId) return
+
+      const msg: ApiPrivateMessage = {
+        id: raw.id,
+        from: raw.from,
+        text: raw.text,
+        time: raw.time,
+      }
+      usePrivateChatStore.getState().addMessage(conversationId, msg)
     } catch (err) {
-      console.error(`[privateChat/${professionalId}] Error parsing message:`, err)
+      console.error('[privateChat] Error parsing message:', err)
     }
-  }).unsubscribe
+  })
 
-  subscriptions.set(professionalId, unsubscribe)
-  console.log(`[privateChat] Subscribed to ${topic}`)
-}
-
-export function unsubscribePrivateChat(professionalId: string): void {
-  const unsubscribe = subscriptions.get(professionalId)
-  if (unsubscribe) {
-    unsubscribe()
-    subscriptions.delete(professionalId)
-    console.log(`[privateChat] Unsubscribed from ${professionalId}`)
-  }
+  subscribed = true
+  console.log('[privateChat] Subscribed to /user/queue/private')
 }

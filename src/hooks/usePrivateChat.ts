@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react'
 import { useApi } from './useApi'
 import { getPrivateChat, sendPrivateMessage } from '../services/chats'
-import { initPrivateChatWS, unsubscribePrivateChat } from '../services/privChatWS'
+import { initPrivateChatWS } from '../services/privChatWS'
 import { usePrivateChatStore } from '../store/privateChatStore'
 import type { ApiPrivateMessage } from '../types/api'
 
@@ -19,15 +19,13 @@ export function usePrivateChat(professionalId: string) {
 
   useEffect(() => {
     if (!professionalId) return
-    initPrivateChatWS(professionalId)
+    // Suscripción global a la cola personal (idempotente); no se desuscribe por
+    // conversación porque la cola es del usuario, no de un hilo concreto.
+    initPrivateChatWS()
 
     const current = usePrivateChatStore.getState().messages[professionalId] ?? EMPTY
     if (current.length === 0 && apiMessages.length > 0) {
       setWsMessages(professionalId, apiMessages)
-    }
-
-    return () => {
-      unsubscribePrivateChat(professionalId)
     }
   }, [professionalId, apiMessages, setWsMessages])
 

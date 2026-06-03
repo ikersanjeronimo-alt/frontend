@@ -17,12 +17,16 @@ export const usePrivateChatStore = create<PrivateChatState>((set) => ({
       },
     })),
   addMessage: (professionalId: string, message: ApiPrivateMessage) =>
-    set(state => ({
-      messages: {
-        ...state.messages,
-        [professionalId]: state.messages[professionalId]
-          ? [...state.messages[professionalId], message]
-          : [message],
-      },
-    })),
+    set(state => {
+      const existing = state.messages[professionalId] ?? []
+      // Dedup por id: el emisor recibe su propio mensaje por la respuesta del POST
+      // y también por la cola WS; no debe duplicarse.
+      if (existing.some(m => m.id === message.id)) return state
+      return {
+        messages: {
+          ...state.messages,
+          [professionalId]: [...existing, message],
+        },
+      }
+    }),
 }))

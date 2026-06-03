@@ -16,6 +16,8 @@ import {
   ChatLayout, ChatSidebar, ChatSidebarItem, ChatSidebarExplore,
   ChatMain, ChatHeader, ChatMessages, ChatBubble, ChatComposer, ChatPanel,
 } from '../components/chat/ChatLayout'
+import chatStyles from '../components/chat/ChatLayout.module.css'
+import { reportPrivateMessage } from '../services/moderation'
 import { initials } from '../lib/initials'
 import type { ApiProfessional } from '../types/api'
 import styles from './PrivateChatPage.module.css'
@@ -52,6 +54,18 @@ export function PrivateChatPage() {
   const [input, setInput] = useState('')
   const [showPanel, setShowPanel] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
+  const [reportedMsgIds, setReportedMsgIds] = useState<Set<string>>(new Set())
+
+  const handleReportPrivate = (messageId: string) => {
+    setReportedMsgIds(prev => new Set(prev).add(messageId))
+    void reportPrivateMessage(messageId, t('map.reportReason')).catch(() => {
+      setReportedMsgIds(prev => {
+        const next = new Set(prev)
+        next.delete(messageId)
+        return next
+      })
+    })
+  }
 
   const SPECIALTY_LABELS: Record<string, string> = {
     psicologo: t('professionals.specPsi'),
@@ -216,12 +230,23 @@ export function PrivateChatPage() {
           {messages.map(m => {
             const isUser = m.from === 'user'
             const avatarName = isInboxMode ? inbox.selectedConversation?.username ?? 'Usuario' : activeProfessional?.name ?? 'Usuario'
+            const canReport = !isInboxMode && !isUser
             return (
               <ChatBubble
                 key={m.id}
                 side={isUser ? 'own' : 'other'}
                 avatar={!isUser ? initials(avatarName) : undefined}
                 time={m.time}
+                actions={canReport ? (
+                  <button
+                    type="button"
+                    className={chatStyles.bubbleActionBtn}
+                    onClick={() => handleReportPrivate(m.id)}
+                    disabled={reportedMsgIds.has(m.id)}
+                  >
+                    {reportedMsgIds.has(m.id) ? t('map.reported') : t('map.report')}
+                  </button>
+                ) : undefined}
               >
                 {maskBannedWords(m.text, bannedWords)}
               </ChatBubble>

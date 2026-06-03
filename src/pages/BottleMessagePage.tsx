@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { sendBottle, receiveBottle } from '../services/bottles'
 import { useBannedWords } from '../hooks/useBannedWords'
-import { useFloatingBottles } from '../hooks/useFloatingBottles'
 import { maskBannedWords } from '../lib/bannedWords'
 import { SleepingCat } from '../components/ui/SleepingCat'
 import { catFor } from '../components/ui/catPalette'
@@ -23,10 +22,8 @@ export function BottleMessagePage() {
   const [received, setReceived]       = useState<ReceivedBottle | null>(null)
   const [throwing, setThrowing]       = useState(false)
   const [receiving, setReceiving]     = useState(false)
-  const [openedBottle, setOpenedBottle] = useState<number | null>(null)
   const [sendError, setSendError]     = useState('')
   const { words: bannedWords }        = useBannedWords()
-  const { data: floatingBottles }     = useFloatingBottles()
 
   const handleSend = async () => {
     if (!message.trim() || throwing) return
@@ -68,32 +65,21 @@ export function BottleMessagePage() {
       <div className={`${styles.wave1}`} aria-hidden="true" />
       <div className={`${styles.wave2}`} aria-hidden="true" />
 
-      {/* Botellas flotantes decorativas */}
+      {/* Botellas flotantes: al clicarlas se recoge una botella del mar */}
       <div className={styles.sceneBottles}>
         {([0, 1, 2] as const).map(i => (
           <button
             key={i}
             type="button"
             className={`${styles.floatingBottle} ${styles[`bottle${i + 1}`]}`}
-            onClick={() => setOpenedBottle(i)}
-            aria-label={t('bottle.readStory')}
+            onClick={handleReceive}
+            disabled={receiving}
+            aria-label={t('bottle.receive')}
           >
             <img src="/bottle.png" alt="" width={FLOATING_SIZES[i]} className={styles.bottleImg} />
           </button>
         ))}
       </div>
-
-      {/* Popup historia al clicar botella */}
-      {openedBottle !== null && floatingBottles[openedBottle] && (
-        <div className={styles.bottlePopupOverlay} onClick={() => setOpenedBottle(null)}>
-          <div className={styles.bottlePopup} onClick={e => e.stopPropagation()}>
-            <button className={styles.bottlePopupClose} onClick={() => setOpenedBottle(null)} aria-label={t('bottle.popupClose')}>✕</button>
-            <p className={styles.bottlePopupTitle}>{t('bottle.popupTitle')}</p>
-            <p className={styles.bottlePopupText}>"{maskBannedWords(floatingBottles[openedBottle].text, bannedWords)}"</p>
-            <span className={styles.bottlePopupTime}>{floatingBottles[openedBottle].time}</span>
-          </div>
-        </div>
-      )}
 
       <div className={`${styles.card} animate-fadeInUp`}>
 

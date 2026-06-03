@@ -8,12 +8,14 @@ import { initWS } from './lib/wsClient'
 import { initStoriesWS } from './services/storiesWS.ts'
 import { initEventsWS } from './services/eventsWS.ts'
 import { initCommunitiesWS } from './services/communitiesWS.ts'
+import { initPrivateChatWS } from './services/privChatWS.ts'
 
 // Conecta webSocket
 initWS()
 initStoriesWS()
 initEventsWS()
 initCommunitiesWS()
+initPrivateChatWS()
 
 // Aplicar tema antes del primer render para evitar parpadeo.
 applyTheme(getInitialTheme())

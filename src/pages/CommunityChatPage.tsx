@@ -22,6 +22,7 @@ import {
   setCommunityChatClosed,
   setCommunityPinnedNote,
 } from '../services/communities'
+import { reportMessage } from '../services/moderation'
 import styles from './CommunityChatPage.module.css'
 
 export function CommunityChatPage() {
@@ -42,6 +43,18 @@ export function CommunityChatPage() {
   const [sendError, setSendError] = useState<string | null>(null)
   const [modError, setModError] = useState<string | null>(null)
   const [pinnedDraft, setPinnedDraft] = useState('')
+  const [reportedMsgIds, setReportedMsgIds] = useState<Set<string>>(new Set())
+
+  const handleReportMessage = (messageId: string) => {
+    setReportedMsgIds(prev => new Set(prev).add(messageId))
+    void reportMessage(messageId, t('map.reportReason')).catch(() => {
+      setReportedMsgIds(prev => {
+        const next = new Set(prev)
+        next.delete(messageId)
+        return next
+      })
+    })
+  }
 
   const cat = catFor('/comunidades-chat')
 
@@ -183,6 +196,25 @@ export function CommunityChatPage() {
           {messages.map((m) => {
             const isOwn = m.own || m.username === user?.username
             const canDelete = canModerate || isOwn
+            const reportBtn = !isOwn ? (
+              <button
+                type="button"
+                className={chatStyles.bubbleActionBtn}
+                onClick={() => handleReportMessage(m.id)}
+                disabled={reportedMsgIds.has(m.id)}
+              >
+                {reportedMsgIds.has(m.id) ? t('map.reported') : t('map.report')}
+              </button>
+            ) : null
+            const deleteBtn = canDelete ? (
+              <button
+                type="button"
+                className={chatStyles.bubbleActionBtn}
+                onClick={() => handleDeleteMessage(m.id)}
+              >
+                {t('common.delete')}
+              </button>
+            ) : null
             return (
               <ChatBubble
                 key={m.id}
@@ -190,15 +222,7 @@ export function CommunityChatPage() {
                 avatar={!isOwn ? initials(m.username) : undefined}
                 username={isOwn ? t('common.you') : m.username}
                 time={m.time}
-                actions={canDelete ? (
-                  <button
-                    type="button"
-                    className={chatStyles.bubbleActionBtn}
-                    onClick={() => handleDeleteMessage(m.id)}
-                  >
-                    {t('common.delete')}
-                  </button>
-                ) : undefined}
+                actions={(reportBtn || deleteBtn) ? <>{reportBtn}{deleteBtn}</> : undefined}
               >
                 {maskBannedWords(m.text, bannedWords)}
               </ChatBubble>

@@ -28,6 +28,13 @@ export function reportMessage(messageId: string, reason: string): Promise<unknow
   })
 }
 
+export function reportPrivateMessage(privateMessageId: string, reason: string): Promise<unknown> {
+  return apiFetch<unknown>('/api/moderation/reports', {
+    method: 'POST',
+    body: JSON.stringify({ privateMessageId: Number(privateMessageId), reason }),
+  })
+}
+
 export function getModerationMembers(): Promise<ApiModerationMember[]> {
   return apiFetch<ApiModerationMember[]>('/api/moderation/members')
 }
