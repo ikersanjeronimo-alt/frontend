@@ -1,43 +1,32 @@
-/**
- * "Me interesa" en eventos: set de IDs persistido en localStorage.
- * Cuando exista el back, sincronizar con POST/DELETE /api/events/:id/interest
- * y reemplazar el count optimista por el del servidor.
- */
-import { eventInterestsStorage } from '../services/storage'
+import { useCallback } from 'react'
+import { useEventStore } from '../store/eventsStore'
 
-type Listener = (ids: ReadonlySet<string>) => void
-
-const listeners = new Set<Listener>()
-let interests: Set<string> = new Set(eventInterestsStorage.get() ?? [])
-
-function persist(): void {
-  eventInterestsStorage.set([...interests])
+function setInterest(id: string, interested: boolean): void {
+  useEventStore.setState(state => ({
+    events: state.events.map(event => {
+      if (event.id !== id) return event
+      const currentCount = event.interestedCount ?? 0
+      const delta = interested === Boolean(event.interested) ? 0 : (interested ? 1 : -1)
+      return {
+        ...event,
+        interested,
+        interestedCount: Math.max(0, currentCount + delta),
+      }
+    }),
+  }))
 }
 
-function notify(): void {
-  listeners.forEach(l => l(interests))
-}
+export function useEventInterests() {
+  const toggle = useCallback((id: string) => {
+    const current = useEventStore.getState().events.find(event => event.id === id)?.interested ?? false
+    const next = !current
+    setInterest(id, next)
+    return next
+  }, [])
 
-export function getInterests(): ReadonlySet<string> {
-  return interests
-}
+  const isInterested = useCallback((id: string) => {
+    return useEventStore.getState().events.find(event => event.id === id)?.interested ?? false
+  }, [])
 
-export function subscribeInterests(fn: Listener): () => void {
-  listeners.add(fn)
-  return () => { listeners.delete(fn) }
-}
-
-export function isInterested(id: string): boolean {
-  return interests.has(id)
-}
-
-export function toggleInterest(id: string): boolean {
-  const next = new Set(interests)
-  const wasInterested = next.has(id)
-  if (wasInterested) next.delete(id)
-  else                next.add(id)
-  interests = next
-  persist()
-  notify()
-  return !wasInterested
+  return { toggle, isInterested }
 }

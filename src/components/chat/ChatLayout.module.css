@@ -271,6 +271,38 @@
   word-break: break-word;
 }
 
+.bubbleActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.bubbleActionBtn {
+  border: none;
+  background: rgba(255, 255, 255, 0.16);
+  color: inherit;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+
+.bubbleActionBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.26);
+}
+
+.bubbleOther .bubbleActionBtn {
+  background: rgba(24, 48, 74, 0.06);
+  color: var(--primary);
+}
+
+.bubbleOther .bubbleActionBtn:hover:not(:disabled) {
+  background: rgba(24, 48, 74, 0.1);
+}
+
 .bubbleOther {
   background: var(--primary-vlt);
   color: var(--dark);

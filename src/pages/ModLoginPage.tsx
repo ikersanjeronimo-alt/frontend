@@ -47,6 +47,8 @@ export function ModLoginPage() {
       const apiErr = err as ApiError
       if (apiErr.status === 401) {
         setError(t('modLogin.errCredentials') || 'Usuario o contraseña inválidos.')
+      } else if (apiErr.status === 403) {
+        setError('Debes tener el 2FA activado y ser moderador o administrador para entrar por aqu�.')
       } else {
         setError(apiErr.message || t('login.errUnexpected'))
       }
@@ -163,3 +165,4 @@ export function ModLoginPage() {
     </div>
   )
 }
+

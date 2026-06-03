@@ -16,6 +16,7 @@ export interface ApiCommunity {
   emoji: string
   name: string
   mod: string
+  modUserId?: string | null
   desc: string
   members: number
   online: number
@@ -25,9 +26,11 @@ export interface ApiCommunity {
   unread?: number
   /** Nota fijada por el moderador, si la hay. */
   pinnedNote?: string
+  chatClosed?: boolean
 }
 
 export interface ApiChatMember {
+  userId: string
   username: string
   initials: string
 }
@@ -59,40 +62,44 @@ export interface ApiMessage {
   text: string
   time: string
   own: boolean
+  action?: 'DELETE'
 }
 
 export interface ApiEvent {
-  id: string
+  id: string | number
   title: string
-  host: string
+  host?: string
   date: string
-  time: string
-  duration: string
-  spots: number
-  total: number
+  time?: string
+  duration?: string
+  spots?: number
+  total?: number
   tags: string[]
-  desc: string
-  joined: boolean
+  desc?: string
+  description?: string
+  place?: string
+  joined?: boolean
+  reaction?: number
+  topic?: string
   /** Número de personas que han marcado "Me interesa". No incluye al usuario actual. */
   interestedCount?: number
+  /** Estado del usuario actual para este evento. */
+  interested?: boolean
 }
 
 export interface ApiStory {
   id: string
-  lat: number
-  lng: number
+  latitude: number
+  longitude: number
   username: string
-  text: string
+  message: string
   time: string
   emoji: string
   own?: boolean
 }
 
 export interface ApiBottle {
-  id: string
-  text: string
-  username: string
-  time: string
+  message: string
 }
 
 export interface ApiPrivateMessage {
@@ -101,6 +108,13 @@ export interface ApiPrivateMessage {
   from: 'user' | 'professional'
   text: string
   time: string
+}
+
+export interface ApiPrivateConversation {
+  userId: string
+  username: string
+  lastMessage: string
+  lastTime: string
 }
 
 export interface ApiProfessional {

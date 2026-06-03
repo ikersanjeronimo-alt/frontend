@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCommunities } from '../hooks/useCommunities'
 import { joinCommunity, leaveCommunity } from '../services/communities'
+import { useCommunitiesStore } from '../store/communitiesStore'
 import { useRole } from '../hooks/useRole'
 import { PageState } from '../components/ui/PageState'
 import { IconSearch } from '../components/ui/Icons'
@@ -13,10 +14,12 @@ import styles from './CommunityListPage.module.css'
 export function CommunityListPage() {
   const { t } = useTranslation()
   const { data: communities, setData: setCommunities, loading, error } = useCommunities()
-  const { isMod } = useRole()
+  const updateStoreCommunity = useCommunitiesStore(state => state.updateCommunity)
+  const { isMod, isAnon } = useRole()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
+  const [pendingIds, setPendingIds] = useState<Record<string, boolean>>({})
 
   const FILTERS = useMemo(() => [
     { id: 'all',         label: t('communities.categories.all') },
@@ -38,12 +41,22 @@ export function CommunityListPage() {
   const toggleJoin = (id: string, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    if (isAnon) {
+      navigate('/login')
+      return
+    }
+    if (pendingIds[id]) return
     const current = communities.find(c => c.id === id)
     if (!current) return
     const wasJoined = current.joined
-    setCommunities(prev => prev.map(c => c.id === id ? { ...c, joined: !wasJoined } : c))
-    void (wasJoined ? leaveCommunity(id) : joinCommunity(id)).catch(() => {
+    setPendingIds(prev => ({ ...prev, [id]: true }))
+    setCommunities(prev => prev.map(c => c.id === id ? { ...c, joined: !wasJoined, members: Math.max(0, c.members + (wasJoined ? -1 : 1)) } : c))
+    void (wasJoined ? leaveCommunity(id) : joinCommunity(id)).then(updated => {
+      updateStoreCommunity(updated)
+    }).catch(() => {
       setCommunities(prev => prev.map(c => c.id === id ? { ...c, joined: wasJoined } : c))
+    }).finally(() => {
+      setPendingIds(prev => ({ ...prev, [id]: false }))
     })
   }
 
@@ -129,9 +142,16 @@ export function CommunityListPage() {
               <button
                 type="button"
                 className={`${styles.joinBtn} ${c.joined ? styles.joinBtnJoined : ''}`}
+                disabled={Boolean(pendingIds[c.id])}
                 onClick={e => toggleJoin(c.id, e)}
               >
-                {c.joined ? t('communities.joined') : t('communities.join')}
+                {pendingIds[c.id]
+                  ? t('common.loading')
+                  : isAnon
+                    ? t('login.submitLogin')
+                    : c.joined
+                      ? t('communities.joined')
+                      : t('communities.join')}
               </button>
             </div>
           </article>

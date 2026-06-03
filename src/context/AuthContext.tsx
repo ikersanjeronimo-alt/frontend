@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import * as authService from '../services/auth'
 import { authBus } from '../lib/authBus'
 import { tokenStorage } from '../services/storage'
-import type { ApiUser } from '../types/api'
+import type { ApiUser, AuthResponse } from '../types/api'
 
 export type UserRole = 'ANON' | 'USER' | 'MODERATOR' | 'ADMIN'
 
@@ -33,10 +33,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Inicialización: pedir identidad anónima al back.
-  // Si falla, user queda en null y las pantallas dependientes lo gestionan.
+  const applySession = useCallback((session: AuthResponse) => {
+    tokenStorage.set(session.token)
+    setUser({ ...session.user, token: session.token })
+  }, [])
+
   useEffect(() => {
     let cancelled = false
+    const initialToken = tokenStorage.get()
     const init = async () => {
       try {
         // Si hay token guardado, RESTAURAR la sesión real (cualquier rol). Antes
@@ -55,72 +59,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         const { token, user: u } = await authService.initAnonymous()
         if (cancelled) return
-        tokenStorage.set(token)
-        setUser({ ...u, token })
+        if (tokenStorage.get() !== initialToken) return
+        applySession(anon)
       } catch {
-        // back caído o error: user queda en null
+        if (!cancelled) {
+          setUser(null)
+        }
       } finally {
         if (!cancelled) setIsLoading(false)
       }
     }
     init()
     return () => { cancelled = true }
-  }, [])
+  }, [applySession])
 
-  // El apiFetch dispara este evento si el back devuelve 401 fuera del flujo
-  // de auth. El bus tiene buffer, así que si el 401 llegó antes de que este
-  // effect montara, lo recibimos en el primer subscribe.
   useEffect(() => {
     return authBus.onExpired(() => {
       tokenStorage.clear()
-      setUser(null)
+      void (async () => {
+        try {
+          const anon = await authService.initAnonymous()
+          applySession(anon)
+        } catch {
+          setUser(null)
+        }
+      })()
     })
-  }, [])
+  }, [applySession])
 
   const login = useCallback(async (username: string, password: string) => {
-    const { token, user: u } = await authService.login(username, password)
-    tokenStorage.set(token)
-    setUser({ ...u, token })
-  }, [])
+    const session = await authService.login(username, password)
+    applySession(session)
+  }, [applySession])
 
   const loginAsMod = useCallback(async (email: string, password: string) => {
     await authService.loginMod(email, password)
   }, [])
 
   const loginAsModWithToken = useCallback((token: string, userInfo: ApiUser) => {
-    tokenStorage.set(token)
-    setUser({ ...userInfo, token })
-  }, [])
+    applySession({ token, user: userInfo })
+  }, [applySession])
 
   const register = useCallback(async (username: string, password: string) => {
     const anonToken = tokenStorage.get()
-    const { token, user: u } = await authService.register(username, password, anonToken)
-    tokenStorage.set(token)
-    setUser({ ...u, token })
-  }, [])
+    const session = await authService.register(username, password, anonToken)
+    applySession(session)
+  }, [applySession])
 
   const updateUsername = useCallback(async (username: string) => {
-    const previous = user?.username
-    setUser(prev => prev ? { ...prev, username } : null)
     try {
-      await authService.updateUsername(username)
+      const session = await authService.updateUsername(username)
+      applySession(session)
     } catch (e) {
-      if (previous) setUser(prev => prev ? { ...prev, username: previous } : null)
       throw e
     }
-  }, [user?.username])
+  }, [applySession])
 
   const logout = useCallback(() => {
     tokenStorage.clear()
-    authService.initAnonymous()
-      .then(({ token, user: u }) => {
-        tokenStorage.set(token)
-        setUser({ ...u, token })
-      })
-      .catch(() => {
+    void (async () => {
+      try {
+        const anon = await authService.initAnonymous()
+        applySession(anon)
+      } catch {
         setUser(null)
-      })
-  }, [])
+      }
+    })()
+  }, [applySession])
 
   return (
     <AuthContext.Provider value={{ user, isLoading, login, loginAsMod, loginAsModWithToken, register, updateUsername, logout }}>

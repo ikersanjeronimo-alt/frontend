@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useRole } from '../hooks/useRole'
 import { useProfessionals } from '../hooks/useProfessionals'
 import { PageState } from '../components/ui/PageState'
 import { IconSearch, IconDot } from '../components/ui/Icons'
@@ -30,6 +31,7 @@ function AvailabilityPill({ a, at }: { a: Availability; at?: string }) {
 export function ProfessionalsPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const { isMod } = useRole()
   const { data: professionals, loading, error } = useProfessionals()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
@@ -76,6 +78,15 @@ export function ProfessionalsPage() {
           className={styles.pageCat}
         />
       </div>
+      {isMod && (
+        <button
+          type="button"
+          className={styles.contactBtn}
+          onClick={() => navigate('/chat/inbox')}
+        >
+          {t('privateChat.inboxTitle')}
+        </button>
+      )}
 
       <div className={styles.controls}>
         <div className={styles.searchWrapper}>

@@ -70,8 +70,9 @@ export default function App() {
             <Route element={<BareLayout />}>
               <Route path="/login"                     element={<LoginPage />} />
               <Route path="/loginmod"                  element={<ModLoginPage />} />
-              {/* TODO: restaurar <RequireRole roles={['MODERATOR','ADMIN']} redirectTo="/loginmod"> cuando exista un admin sembrado en el back. Abierto temporalmente para poder crear el primer admin durante las pruebas del 2FA. */}
-              <Route path="/modregister"               element={<ModRegisterPage />} />
+              <Route path="/modregister"               element={<RequireRole roles={['ADMIN']}><ModRegisterPage initialMode="moderador" lockMode backTo="/configuracion" /></RequireRole>} />
+              <Route path="/admin/moderadores/nuevo"    element={<RequireRole roles={['ADMIN']}><ModRegisterPage initialMode="moderador" lockMode backTo="/configuracion" /></RequireRole>} />
+              <Route path="/chat/inbox/:userId?"       element={<PrivateChatPage />} />
               <Route path="/chat/:professionalId"      element={<PrivateChatPage />} />
               <Route path="/comunidades/:comunidadId"  element={<CommunityChatPage />} />
             </Route>

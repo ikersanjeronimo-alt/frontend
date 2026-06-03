@@ -14,17 +14,23 @@ import styles from './LoginPage.module.css'
 type Mode = 'moderador' | 'admin'
 type Phase = 'form' | 'enroll' | 'success'
 
+interface ModRegisterPageProps {
+  initialMode?: Mode
+  lockMode?: boolean
+  backTo?: string
+}
+
 const PROFESSION_OPTIONS: readonly Profession[] = ['Psicólogo', 'Terapeuta', 'Psiquiatra']
 
 const SPECIALIZATION_OPTIONS: readonly Specialization[] = [
   'Ansiedad', 'Depresión', 'Estrés', 'Duelo', 'Autoestima', 'Relaciones',
 ]
 
-export function ModRegisterPage() {
+export function ModRegisterPage({ initialMode = 'moderador', lockMode = false, backTo = '/moderacion' }: ModRegisterPageProps) {
   const navigate = useNavigate()
   const { t } = useTranslation()
 
-  const [mode, setMode]         = useState<Mode>('moderador')
+  const [mode, setMode]         = useState<Mode>(initialMode)
   const [phase, setPhase]       = useState<Phase>('form')
   
   // Email registrado (para 2FA)
@@ -170,7 +176,7 @@ export function ModRegisterPage() {
           <span className={styles.logoText}>ShareYourStory</span>
         </NavLink>
 
-        {phase === 'form' && (
+        {phase === 'form' && !lockMode && (
           <div className={styles.tabs}>
             <button
               type="button"
@@ -213,7 +219,7 @@ export function ModRegisterPage() {
             </button>
             <button
               className={`${styles.forgotBtn} ${styles.backBtnBlock}`}
-              onClick={() => navigate('/moderacion')}
+              onClick={() => navigate(backTo)}
             >
               {t('modRegister.backPanel')}
             </button>

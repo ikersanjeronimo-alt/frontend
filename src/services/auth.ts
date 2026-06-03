@@ -35,6 +35,7 @@ function mapBackendRole(role: BackendRole): UserRole {
     case 'ADMINISTRATOR': return 'ADMIN'
     case 'USER':          return 'USER'
     case 'ANON':          return 'ANON'
+    default:              return 'ANON'
   }
 }
 
@@ -45,6 +46,23 @@ function adaptAuthResponse(r: BackendAuthResponse): AuthResponse {
     role:     mapBackendRole(r.user.role),
   }
   return { token: r.token, user }
+}
+
+export function restoreAuthFromToken(token: string): AuthResponse | null {
+  const payload = decodeJWT(token)
+  if (!payload) return null
+  if (typeof payload.exp === 'number' && payload.exp * 1000 <= Date.now()) {
+    return null
+  }
+
+  const role = mapBackendRole((payload.role as BackendRole) ?? 'ANON')
+  const user: ApiUser = {
+    id: String(payload.id || payload.sub || ''),
+    username: String(payload.username || payload.email || ''),
+    role,
+  }
+  if (!user.id || !user.username) return null
+  return { token, user }
 }
 
 // ── Endpoints ──────────────────────────────────────────────
@@ -85,11 +103,12 @@ export async function register(username: string, password: string, anonToken: st
   return adaptAuthResponse(r)
 }
 
-export async function updateUsername(username: string): Promise<void> {
-  await apiFetch<void>('/api/users/me/username', {
+export async function updateUsername(username: string): Promise<AuthResponse> {
+  const r = await apiFetch<BackendAuthResponse>('/api/users/me/username', {
     method: 'PATCH',
     body: JSON.stringify({ username }),
   })
+  return adaptAuthResponse(r)
 }
 
 // ── Flujo moderadores con 2FA TOTP ─────────────────────────
@@ -144,10 +163,12 @@ export async function verifyModLogin(challengeId: string, code: string): Promise
     throw new Error('No se pudo decodificar el token.')
   }
 
-  const user: ApiUser = {
-    id: payload.id || payload.sub || '',
-    username: payload.username || payload.email || '',
-    role: (payload.role as UserRole) || 'MODERATOR',
+  return restoreAuthFromToken(r.token) ?? {
+    token: r.token,
+    user: {
+      id: payload.id || payload.sub || '',
+      username: payload.username || payload.email || '',
+      role: (payload.role as UserRole) || 'MODERATOR',
+    },
   }
-  return { token: r.token, user }
 }

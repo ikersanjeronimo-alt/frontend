@@ -1,9 +1,19 @@
-import { useApi } from './useApi'
-import { getCommunities } from '../services/communities'
-import type { ApiCommunity } from '../types/api'
-
-const EMPTY: ApiCommunity[] = []
+import { useShallow } from 'zustand/react/shallow'
+import { useCommunitiesStore } from '../store/communitiesStore'
 
 export function useCommunities() {
-  return useApi(getCommunities, EMPTY)
+  const { communities, connected, setCommunities } = useCommunitiesStore(
+    useShallow(state => ({
+      communities: state.communities,
+      connected: state.connected,
+      setCommunities: state.setCommunities,
+    }))
+  )
+
+  return {
+    data: communities,
+    setData: setCommunities,
+    loading: !connected && communities.length === 0,
+    error: null,
+  }
 }
