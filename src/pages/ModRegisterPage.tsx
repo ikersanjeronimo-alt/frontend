@@ -132,6 +132,8 @@ export function ModRegisterPage({ initialMode = 'moderador', lockMode = false, b
       const apiErr = err as ApiError
       if (apiErr.status === 409) {
         setError(t('modRegister.errEmailDuplicate') || 'Este email ya está registrado.')
+      } else if (apiErr.status === 403) {
+        setError(t('modRegister.errForbidden') || 'Necesitas iniciar sesión como administrador para crear cuentas de moderación.')
       } else {
         setError(apiErr.message || t('login.errUnexpected'))
       }
