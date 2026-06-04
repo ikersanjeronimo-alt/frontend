@@ -13,7 +13,7 @@ Por eso esta guía valida:
 | Capa | Qué se valida | Validador |
 |---|---|---|
 | **HTML** | El HTML final que React renderiza en el navegador, una página por una | https://validator.w3.org/ |
-| **CSS** | El bundle CSS generado por Vite tras compilar SCSS + CSS Modules | https://jigsaw.w3.org/css-validator/ |
+| **CSS** | El bundle CSS generado por Vite a partir de los CSS Modules + variables globales | https://jigsaw.w3.org/css-validator/ |
 
 ---
 
@@ -22,16 +22,16 @@ Por eso esta guía valida:
 Antes de empezar la validación, hay que generar la versión de producción de la aplicación (la que se desplegará y la que vamos a validar).
 
 ```powershell
-cd frontend
+# desde la raíz del repo del frontend (ShareYourStory-PBL-frontend/)
 npm install     # solo si no se ha hecho antes
 npm run build   # compila TypeScript + genera el bundle en dist/
 ```
 
 Tras el build se obtiene:
 
-- `frontend/dist/index.html` — esqueleto inicial.
-- `frontend/dist/assets/*.css` — el CSS compilado (uno o varios ficheros con nombre tipo `index-abc123.css`).
-- `frontend/dist/assets/*.js` — el JavaScript compilado.
+- `dist/index.html` — esqueleto inicial.
+- `dist/assets/*.css` — el CSS compilado (uno o varios ficheros con nombre tipo `index-abc123.css`).
+- `dist/assets/*.js` — el JavaScript compilado.
 
 Para servir esa versión y poder navegar por todas las páginas:
 
@@ -110,11 +110,11 @@ Estos warnings son esperables y no representan un error real:
 
 ## 2. Validar el CSS
 
-Aquí se valida el CSS compilado (el resultado de procesar SCSS + CSS Modules), porque es lo que llega al navegador.
+Aquí se valida el CSS compilado (el resultado de procesar los CSS Modules + variables globales), porque es lo que llega al navegador.
 
 ### Pasos
 
-1. Tras `npm run build`, abrir la carpeta `frontend/dist/assets/`.
+1. Tras `npm run build`, abrir la carpeta `dist/assets/`.
 2. Localizar el o los ficheros con extensión `.css` (suelen llamarse `index-<hash>.css`).
 3. Abrir https://jigsaw.w3.org/css-validator/#validate_by_upload.
 4. En la pestaña **By file upload**, seleccionar el fichero `.css`.
@@ -130,9 +130,9 @@ Si interesa validar ficheros concretos del código fuente (por ejemplo `variable
 
 Los ficheros candidatos en el código fuente son:
 
-- `frontend/src/styles/variables.css` — variables globales de diseño.
-- `frontend/src/styles/animations.css` — animaciones reutilizables.
-- `frontend/src/pages/*.module.css` — estilos de cada página.
+- `src/styles/variables.css` — variables globales de diseño.
+- `src/styles/animations.css` — animaciones reutilizables.
+- `src/pages/*.module.css` — estilos de cada página.
 
 > **Nota:** Los CSS Modules del proyecto son CSS estándar, no SCSS. Se pueden pegar directamente en el validador sin compilar previamente.
 
@@ -182,7 +182,7 @@ Estos no son obligatorios para la validación W3C de HTML/CSS, pero suman puntos
 ## Resumen rápido (chuleta)
 
 ```powershell
-cd frontend
+# desde la raíz del repo del frontend (ShareYourStory-PBL-frontend/)
 npm run build
 npm run preview        # http://localhost:4173
 ```

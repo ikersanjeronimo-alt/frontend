@@ -1,6 +1,6 @@
 # CLAUDE.md — Contexto del proyecto ShareYourStory-PBL
 
-> Este fichero NO se sube al repo (está en `.gitignore`). Es el contexto persistente para Claude entre conversaciones.
+> Este fichero **sí está versionado** en el repo del frontend (no está en `.gitignore`, contra lo que decía esta nota antes). Es el contexto persistente para Claude entre conversaciones. No apuntes secretos aquí.
 
 ---
 
@@ -39,21 +39,24 @@
 
 Es un **PBL** (Project-Based Learning), por eso el alcance está más cerca de "demo funcional" que de producto en producción.
 
-**Estado actual:**
-- Frontend: 16 pantallas montadas con datos mock; integración con backend recién empezada.
-- Backend: muy verde — solo existe el endpoint `POST /api/auth/register/mod` y la entidad `User`. Casi todo está pendiente.
+**Estado actual (2026-06-03, tras el realineamiento front↔back):**
+- Frontend: 21 pantallas integradas contra el backend real (sin mocks; los mocks se eliminaron). Rama de tiempo real fusionada (stores zustand + servicios `*WS.ts`).
+- Backend: **funcional, no "verde"**. 47 endpoints repartidos en 11 controladores (auth+2FA, comunidades + membresía real, chat privado, eventos, historias, botellas, máquina del tiempo, profesionales, moderación, `users/me/*`), JWT real, WebSocket STOMP autenticado, rate limiting con bucket4j y `@RestControllerAdvice` global. **Solo compila / no se ha probado en ejecución end-to-end** (ver "Pendientes / Roadmap").
+- **Son DOS repos git independientes**: `ShareYourStory-PBL-backend/` y `ShareYourStory-PBL-frontend/`, cada uno con su `.git`.
 
 ---
 
 ## Stack
 
-### Backend (raíz del repo)
-- **Java 21** + **Spring Boot 4.1.0-SNAPSHOT** (snapshot, ojo con esto).
-- Módulos: `spring-boot-starter-webmvc`, `spring-boot-starter-data-jpa`, `spring-boot-starter-validation`, `spring-boot-starter-security`, `spring-boot-starter-oauth2-authorization-server`.
+### Backend (repo `ShareYourStory-PBL-backend/`)
+- **Java 21** + **Spring Boot 4.1.0-SNAPSHOT** (snapshot, ojo con esto — build no reproducible, ver Roadmap).
+- Módulos: `spring-boot-starter-webmvc`, `spring-boot-starter-data-jpa`, `spring-boot-starter-validation`, `spring-boot-starter-security`, **`spring-boot-starter-websocket`** (STOMP), **`spring-boot-starter-mail`** (máquina del tiempo). **`oauth2-authorization-server` y `lombok` se quitaron del `pom.xml`** (sin uso).
+- **`com.warrenstrange:googleauth`** (TOTP) + **`com.bucket4j:bucket4j-core`** (rate limiting).
 - **MySQL** (driver `mysql-connector-j`) — `ddl-auto=update`, base de datos `shareYourStory` en `mysql:3306`.
 - Maven wrapper (`mvnw` / `mvnw.cmd`).
-- Lombok comentado en `pom.xml` → **getters/setters a mano**.
+- **Sin Lombok** → getters/setters a mano.
 - Paquete raíz: `shareyourstory` (clase main: `ShareYourStoryApplication`).
+- **SMTP por variables de entorno** (`MAIL_HOST/MAIL_PORT/MAIL_USERNAME/MAIL_PASSWORD`, `application.properties:24-30`) — ya **no** hardcodeado. Ver Roadmap (revocar App Password comprometida que sigue en el historial git).
 
 ### Frontend (`frontend/`)
 - **React 19** + **TypeScript 6** + **Vite 8**.
@@ -61,8 +64,9 @@ Es un **PBL** (Project-Based Learning), por eso el alcance está más cerca de "
 - **CSS Modules** por página + variables globales en `src/styles/variables.css`.
 - **Leaflet / react-leaflet 5** para el mapa (iconos bundled localmente, no unpkg).
 - **i18next + react-i18next** para i18n (Español / English / Euskera).
-- Sin librería de estado global — `AuthContext` + stores singleton vía `useSyncExternalStore` para datos compartidos (demo mode, palabras prohibidas, eventos likeados).
-- Sin React Query/SWR — helper `useApi(fetcher, fallback, deps)` + `optimisticMutation` para mutaciones.
+- **Estado global con zustand ^5** (`src/store/`: `communitiesStore`, `communityChatStore`, `eventsStore`, `privateChatStore`, `storiesStore`) para los datos que llegan en tiempo real por WebSocket. Además `AuthContext` + stores singleton vía `useSyncExternalStore` para datos compartidos no-WS (palabras prohibidas, eventos likeados).
+- **Tiempo real con STOMP** sobre `lib/wsClient.ts` + servicios `src/services/*WS.ts` (`communitiesWS`, `communityChatWS`, `eventsWS`, `privChatWS`, `storiesWS`). La bandeja del profesional usa `usePrivateInbox`.
+- Sin React Query/SWR — helper `useApi(fetcher, initialData, deps)` + `optimisticMutation` para mutaciones puntuales (lecturas/escrituras no-WS).
 - **Sin Bootstrap** (Sprint 2: tirado `react-bootstrap`, `bootstrap`, `sass`; `PageState` reescrito con spinner CSS propio).
 
 ### Infra
@@ -74,80 +78,99 @@ Es un **PBL** (Project-Based Learning), por eso el alcance está más cerca de "
 
 ## Estructura del repo
 
+**Dos repos git independientes** bajo un directorio de trabajo común (`C:\Repos\workspace`):
+
 ```
-ShareYourStory-PBL/
-├── .devcontainer/        # compose.yml, devcontainer.json
-├── .mvn/                 # Maven wrapper
-├── frontend/             # App React (ver readme-frontend.md para detalle exhaustivo)
-├── src/main/java/shareyourstory/
-│   ├── ShareYourStoryApplication.java
-│   ├── auth/
-│   │   ├── config/SecurityConfig.java
-│   │   ├── controller/AuthController.java
-│   │   ├── dto/RegisterRequest.java
-│   │   └── service/AuthService.java
-│   └── domain/user/
-│       ├── model/        # User, Roles, ProfessionType, SpecializationType
-│       └── repository/UserRepository.java
-├── src/main/resources/
-│   ├── application.properties
-│   └── Static/index.html (vacío)
-├── pom.xml
-├── readme-frontend.md    # Documentación exhaustiva del frontend
-└── README.md             # Solo título
+workspace/
+├── .devcontainer/                 # compose.yml, devcontainer.json (orquesta los dos)
+├── ERS-ShareYourStory.md          # Especificación de requisitos (F1–F6)
+├── ShareYourStory-Diseno.docx     # Gemelo de la ERS (regenerable con gen-docx.js)
+├── gen-docx.js                    # Generador del .docx
+├── AUDITORIA.md / PROMPT-AUDITORIA.md
+│
+├── ShareYourStory-PBL-backend/    # repo git propio
+│   ├── src/main/java/shareyourstory/
+│   │   ├── ShareYourStoryApplication.java
+│   │   ├── auth/                  # AuthController, AuthService, JWT, SecurityConfig,
+│   │   │                          #   RateLimitFilter, RateLimitService, GoogleAuthService
+│   │   ├── config/                # GlobalExceptionHandler (@RestControllerAdvice), WebMvcConfig
+│   │   ├── websocket/             # WebSocketConfig, WebSocketService (STOMP)
+│   │   └── domain/                # community, event, bottle (incl. chat privado), storyMap,
+│   │                              #   timeMachine, moderation, user
+│   ├── src/main/resources/application.properties
+│   ├── db/                        # 01..07 modelo ER, SQL, procedimientos, triggers, replicación
+│   ├── pom.xml
+│   ├── README.md                  # (vacío — pendiente)
+│   └── RATE_LIMITING.md           # (pendiente de consolidar)
+│
+└── ShareYourStory-PBL-frontend/   # repo git propio (este CLAUDE.md vive aquí)
+    ├── src/                       # App React (ver readme-frontend.md para detalle)
+    ├── readme-frontend.md
+    ├── VALIDATION.md
+    └── CLAUDE.md                  # este fichero
 ```
 
 ---
 
 ## Backend: estado actual
 
-### Lo que existe
-- **`SecurityConfig`** — `/api/testJWT` requiere autenticación; el resto es `permitAll`. CSRF off, CORS abierto a `http://localhost:5173`. `BCryptPasswordEncoder` + `AuthenticationManager` registrados. `AuthTokenFilter` (JWT) en la cadena antes de `UsernamePasswordAuthenticationFilter`.
-- **`AuthController`** — flujo mod completo (4 endpoints "armonizados" con el front Sprint 3):
-  - `POST /api/auth/register/mod` → `RegisterModEnrollment { secret, otpauthUri, email }` — crea user, genera secreto TOTP, devuelve URI del QR para Google Authenticator.
-  - `POST /api/auth/register/mod/verify` → 204 — valida el primer código TOTP (no marca activación, ver TODO).
-  - `POST /api/auth/login/mod` → `LoginModChallengeResponse { challengeId, requires2fa: true }` — valida email+password con `AuthenticationManager` y devuelve un `challengeId` UUID con TTL 5 min en memoria.
-  - `POST /api/auth/login/mod/verify` → `AuthResponse { token, user }` — consume el challenge, valida el TOTP, devuelve JWT + `UserPublic`.
-  - **Endpoints viejos que siguen vivos** (el front no los usa): `GET /api/auth/register/mod/2fa/qr`, `POST /api/auth/register/mod/2fa/qr`, `POST /api/auth/login/mod/2fa/code`, `GET /api/testJWT`, `POST /api/mailTest`.
-  - `@ExceptionHandler` locales: `BadCredentialsException → 401`, `DataIntegrityViolationException → 409` (email duplicado).
-- **`AuthService`** — orquesta el flujo: `registerMod`, `verifyModRegistration`, `loginMod`, `verifyModLogin`. Map `ConcurrentHashMap<challengeId, ChallengeData>` en memoria con TTL 5 min para los challenges del 2FA. **El proceso reiniciado pierde los challenges en curso** (esperado).
-- **DTOs del flujo mod (records)**: `RegisterModRequest` (acepta `name, lastName, username, password, email, company, role, profession?, specialization?` — los dos últimos se aceptan pero **NO se persisten**), `RegisterModEnrollment`, `VerifyTotpRequest`, `LoginModRequest`, `LoginModChallengeResponse`, `VerifyLoginRequest`, `AuthResponse`, `UserPublic`. La clase vieja `RegisterRequest` (no record) queda como código muerto post-merge.
-- **`JWTService`** — firma HS256 con `security.jwt.secret-key` de `application.properties`, expiration 1h (`security.jwt.expiration-time`). Subject = email del user.
-- **`AuthTokenFilter`** — extrae `Bearer <token>`, valida, carga `UserDetails` y mete el `Authentication` en el `SecurityContextHolder`.
-- **`GoogleAuthService`** — usa la lib `com.warrenstrange:googleauth`. `generateKey(email)` crea secreto, `isValid(secret, intCode)` valida, `getQR(email)` construye la URI otpauth.
-- **`UserService`** implementa `UserDetailsService` → carga por email.
-- **`User`** (entidad JPA, tabla `users`) implementa `UserDetails`: `id (Integer), name, lastName, username, password, email (único), company, role (Roles, EnumType.STRING), secretKey (único)`. `getAuthorities()` devuelve lista vacía (sin granted authorities reales todavía).
-- **`Roles`** enum: `ADMINISTRATOR, PROFESSIONAL`. (No hay `USER` ni `ANON` aún.)
-- **`ProfessionType` / `SpecializationType`** — entidades vacías (`id + name`), creadas pero sin lógica ni FK desde `User`.
-- **`UserRepository`** — `JpaRepository<User, Integer>` + `findByEmail`.
-- **Dominio `storyMap`** y **`timeMachine`** — controller/service/repo/model creados desde el back, pero el front no los llama todavía (el front sigue con mock para letters/map). `TimeMachine` usaba `@Getter/@Setter` de Lombok pero Lombok está comentado en `pom.xml` → corregido a getters/setters manuales.
+> ⚠️ **Esta sección se reescribió el 2026-06-03.** La versión anterior decía "backend muy verde, solo `register/mod` y `User`" y narraba un flujo 2FA hacia endpoints `/verify` que **nunca existieron**. Era falso. Lo de abajo está verificado contra el código real.
 
-### Bugs/cosas raras conocidas en el backend
-- El proyecto declara `oauth2-authorization-server` pero no está configurado.
-- Sigue sin autenticación real para usuarios anónimos/normales (todas las rutas no-mod son `permitAll`).
-- `TimeMachineService.createTimeMachine` tiene un bug: hace `newTimeMachine.setEmail(newTimeMachineData.deliveryDate())` — asigna deliveryDate al email. No bloquea porque el front no lo llama. Arreglar antes de probar `/maquina-del-tiempo` con back real.
-- `POST /api/auth/register/mod/2fa/qr` y `POST /api/auth/login/mod/2fa/code` siguen vivos como endpoints viejos (decisión usuario: no borrar). El primero además tiene la firma rota (`@RequestBody String email, int code`), no se arregla porque nadie lo llama.
-- `User.id` es `Integer` en Java y se serializa como número JSON; el front (`UserPublic.id: string`) lo recibe coerced, pero el DTO `UserPublic` ya lo expone como `String` para evitar líos de tipos.
+### Lo que existe (verificado)
 
-### Endpoints que el frontend ya espera (pendientes de implementar)
-El front **siempre intenta llamar al backend real**. Si el back está caído (network error), cada hook/servicio cae al mock local de `mocks/data.ts` y la app sigue funcionando para el demo. Si el back responde error de servidor (4xx/5xx fuera del flujo de auth), el error se propaga a la UI.
+**Auth (`auth/`)**
+- **`SecurityConfig`** — CORS a `http://localhost:5173` con métodos incl. **`PATCH`**. `/api/users/me/**` y `/api/testJWT` requieren autenticación (`SecurityConfig.java:49`); el resto pasa por la cadena con `AuthTokenFilter` (JWT) que puebla el `SecurityContext` si hay `Bearer` válido. `BCryptPasswordEncoder` + `AuthenticationManager`.
+- **`AuthController`** (rutas absolutas, sin `@RequestMapping` de clase):
+  - `POST /api/auth/anonymous` → `AuthResponse{token,user}`. Reusa la fila ANON si llega un `anonToken` válido; si no, crea una nueva (`AuthService.java:57`).
+  - `POST /api/auth/register` → **upgrade anónimo→usuario**: si llega un `anonToken` de un ANON, **promociona esa misma fila** a `USER` (conserva identidad/datos); si no, crea `USER` (`AuthService.java:78`).
+  - `POST /api/auth/login` → username+password; **bloquea staff** (deben usar loginmod).
+  - `POST /api/auth/register/mod` → crea PROFESSIONAL/ADMINISTRATOR. **Exige que el llamante sea ya `ADMINISTRATOR`** (403 si no, `AuthController.java:72`).
+  - `POST /api/auth/register/admin/bootstrap` → crea el **primer** ADMINISTRATOR (201) con 2FA activado; **409 si ya existe alguno** (`AuthController.java:80`).
+  - **2FA mod (contrato REAL, NO hay `/verify`)**: `GET /api/auth/register/mod/2fa/qr?email=` → URI otpauth para el QR. `POST /api/auth/register/mod/2fa/qr {email,code}` → valida el primer código y marca **`twoFactorEnabled=true`** (`AuthService.enableQR`). `POST /api/auth/login/mod {email,password}` → `LoginModChallengeResponse{challengeId,requires2fa}` (UUID con TTL 5 min en memoria). `POST /api/auth/login/mod/2fa/code {challengeId,code}` → `{token}` (consume challenge + valida TOTP).
+  - `GET /api/users/me` → restaura sesión al recargar (`AuthUserResponse{id,username,role}`); `PATCH /api/users/me/username`.
+- **`GlobalExceptionHandler`** (`config/`, `@RestControllerAdvice`): `BadCredentials/Authentication → 401`, `DataIntegrityViolation → 409`, `UsernameNotFound/NoSuchElement → 404`, `MethodArgumentNotValid → 400`. **Deliberadamente sin catch-all** para no pisar los status de Spring.
+- **`JWTService`** — HS256, subject = username; `AuthTokenFilter` captura firma inválida.
+- **`GoogleAuthService`** — lib `com.warrenstrange:googleauth` (genera secreto, valida TOTP, construye QR).
+- **Rate limiting** (`RateLimitFilter` + `RateLimitService`, bucket4j en memoria, por **IP** y además por **token** si hay `Bearer`; 429 JSON). Reglas (POST): `2fa` 5/min, `login` 10/min, `register`+`anonymous` 20/min, `mail` (timeMachine) 5/min, `content` (bottles, stories y cualquier `…/messages`) 30/min.
 
-Estado tras la armonización del 2FA mod (2026-05-25):
+**Modelo de usuario (`domain/user/`)**
+- **`UserRole`** enum: **`ANON | USER | PROFESSIONAL | ADMINISTRATOR`** (el front mapea `PROFESSIONAL→MODERATOR`, `ADMINISTRATOR→ADMIN` en `services/auth.ts`).
+- **`User`** (tabla `users`): `userId(Integer)`, `name`, `lastName`, `userName`(único), `nickName`(único, default=userName), `userPassword`, `companyName`, `mail`(único), `creationDate`, `profession`/`specialization` (**String, sí se persisten**), `professionRef`/`specializationRef` (**FK a entidades `Profession`/`Specialization` — muertas, ver Roadmap**), `role` (default ANON), `secretKey`, **`twoFactorEnabled`**, `topics`(CSV), **`warnings`**, **`banned`**. `getAuthorities()` devuelve `ROLE_<role>`.
 
-| Servicio | Endpoint | Backend implementado |
+**Dominios**
+- **`community`** — membresía real (`community_members`), DTOs (`id` String, mensaje con `time`/`own`, `modUserId`, `chatClosed`, `pinnedNote`, `unread`), endpoints `join/leave` (devuelven la comunidad), `online?delta=`, `pinned-note`, `chat-closed`, `members/active`, `kick`, borrar mensaje; autorización MOD/ADMIN.
+- **`bottle`** — alberga `Bottle` (botella al mar: `authorId`/`received`/`createdAt`) **y el chat privado** (`PrivateMessageController` en `/api/chats`, identidad por JWT sin `userId` del cliente, + bandeja `/inbox`).
+- **`event`** — `interest` (POST/DELETE devuelven el evento), `GET /{id}`; "Me interesa" = contador global.
+- **`storyMap`** — mapa de historias (`GET/POST /api/stories`).
+- **`timeMachine`** — la **fecha la elige el usuario** (`POST /api/timeMachine {message,email,deliveryDate}`, 201/400); scheduler entrega por `deliveryDate <= hoy` y borra tras enviar.
+- **`moderation`** — reportes de **historias, mensajes de comunidad y mensajes privados** (`ReportTargetType`); `resolve {action: resolve|warn|dismiss}` ("Avisar" es acción distinta); miembros reales (`/members`, `warn`/`ban`). Procedimientos almacenados `sp_resolve_report`, `fn_count_pending_reports` y trigger `trg_reports_audit` **se siguen usando** sin cambios.
+- **`users/me/*`** — `profile` (stats calculables + `topics`), `mod-profile` (GET/PATCH), `password`, `onboarding`, `dashboard/messages`. ⚠️ `settings` y `mood` se **aceptan pero no persisten** (sin consumidor); `ApiProfile.activity` se entrega **vacío** (no hay modelo de actividad).
+
+**WebSocket (`websocket/`)** — STOMP, broker simple `/topic`. Difusión por `/topic/storyMap`, `/topic/events`, `/topic/communities`, `/topic/communities/{id}` y **mensajes privados por cola de usuario `/user/queue/private`** (`convertAndSendToUser`). CONNECT autenticado por JWT. ⚠️ El comentario de `WebSocketConfig.java:42-43` aún describe el modelo viejo `/topic/privateChats/{id}` "a migrar", pero `WebSocketService.java:33` **ya usa** `/queue/private` (comentario obsoleto, ver Roadmap).
+
+### Inventario real de endpoints (47) ✕ consumo del frontend
+
+> Cruzado entre `@*Mapping` del backend y `apiFetch` de `src/services/*.ts` el 2026-06-03. **Casi todo está implementado.** Los únicos huecos son 2 desajustes, marcados ⚠️.
+
+| Servicio front | Endpoint(s) backend | Estado |
 |---|---|---|
-| `auth.ts` | `POST /api/auth/anonymous` | No |
-| `auth.ts` | `POST /api/auth/login` | No |
-| `auth.ts` | `POST /api/auth/register` | No |
-| `auth.ts` | `POST /api/auth/register/mod` | **Sí** — devuelve `RegisterModEnrollment` |
-| `auth.ts` | `POST /api/auth/register/mod/verify` | **Sí** — 204 si TOTP válido |
-| `auth.ts` | `POST /api/auth/login/mod` | **Sí** — devuelve `LoginModChallengeResponse` (challengeId UUID, TTL 5 min) |
-| `auth.ts` | `POST /api/auth/login/mod/verify` | **Sí** — devuelve `AuthResponse { token, user }` con JWT real |
-| `auth.ts` | `PATCH /api/users/me/username` | No |
-| `profile.ts` | `GET/PATCH /api/users/me/profile`, `/settings`, `/onboarding`, `/mod-profile`, `/password` | No |
-| `communities.ts` | `GET /api/communities`, `POST/DELETE /api/communities/:id/join`, mensajes | No |
-| `events.ts` | `GET /api/events`, `GET /api/events/:id`, `POST/DELETE /api/events/:id/join` | No |
-| `stories.ts`, `bottles.ts`, `letters.ts`, `professionals.ts`, `moderation.ts` | varios | No |
+| `auth.ts` | `POST /api/auth/anonymous`, `/login`, `/register` | ✅ |
+| `auth.ts` | `POST /api/auth/register/mod`, `GET+POST /register/mod/2fa/qr`, `POST /login/mod`, `POST /login/mod/2fa/code` | ✅ (2FA real por `/2fa/qr` + `/2fa/code`) |
+| `auth.ts` | `GET /api/users/me`, `PATCH /api/users/me/username` | ✅ |
+| `profile.ts` | `GET /profile`, `GET+PATCH /mod-profile`, `PATCH /password`, `POST /onboarding`, `PATCH /settings`, `POST /mood` | ✅ (`settings`/`mood` no persisten) |
+| `dashboard.ts` | `GET /api/users/me/dashboard/messages` | ✅ |
+| `communities.ts` | `GET+POST /api/communities`, `POST+DELETE /:id/join`, `GET+POST /:id/messages`, `DELETE /:id/messages/:msgId`, `GET /:id/members/active`, `DELETE /:id/members/:userId`, `POST /:id/online`, `PATCH /:id/pinned-note`, `PATCH /:id/chat-closed` | ✅ |
+| `chats.ts` | `GET+POST /api/chats/:id/messages`, `GET /inbox`, `GET+POST /inbox/:userId/messages` | ✅ |
+| `events.ts` | `GET /api/events`, `GET /:id`, `POST+DELETE /:id/interest` | ✅ |
+| `events.ts` | `POST+DELETE /api/events/:id/join` | ⚠️ **NO existe en el back** (solo `/interest`) → 404. `joinEvent`/`leaveEvent` rotos. Pendiente de código. |
+| `bottles.ts` | `POST /api/bottles`, `GET /received`, `GET /floating` | ✅ |
+| `stories.ts` | `GET+POST /api/stories` | ✅ |
+| `letters.ts` | `POST /api/timeMachine` | ✅ |
+| `professionals.ts` | `GET /api/professionals` | ✅ |
+| `moderation.ts` | `GET+POST /reports`, `POST /reports/:id/resolve`, `GET /members`, `POST /members/:id/warn`, `POST /members/:id/ban` | ✅ |
+| `types/api.ts` | `VerifyTotpPayload`/`VerifyLoginPayload` + comentarios hacia `/verify` | ⚠️ **Tipos/comentarios muertos**: el back nunca tuvo `/verify`. Pendiente de código (es `.ts`). |
+
+**Backend implementado pero SIN consumidor en el front** (existe, nadie lo llama desde `services/`): `GET /api/testJWT`, `PUT+DELETE /api/communities/:id`, `PUT+DELETE /api/events/:id`, `GET /api/moderation/reports/pending`, `GET /api/moderation/reports/:id/audit`, `GET /api/moderation/stats`, `POST /api/auth/register/admin/bootstrap` (se invoca desde la página de bootstrap, no desde un service).
 
 ---
 
@@ -200,9 +223,11 @@ Estado tras la armonización del 2FA mod (2026-05-25):
 | `VITE_BACKEND_URL` | `frontend/.env` | `http://localhost:8080` | URL del backend para el proxy de Vite |
 | `VITE_USE_MOCK_FALLBACK` | `frontend/.env` | `true` (dev), `false` (prod) | Si `true`, los errores de red caen al mock y se activa el banner "Modo demostración". Cuando el back funcione, poner `false` para que los errores propaguen al UI |
 | `PORT` | (opcional, frontend) | `5173` | Puerto del dev server |
-| `spring.datasource.url` | `application.properties` | `jdbc:mysql://mysql:3306/shareYourStory` | Apunta al servicio `mysql` del compose |
-| `spring.datasource.username` | `application.properties` | `root` | |
-| `spring.datasource.password` | `application.properties` | `pasahitza` | Solo dev |
+| `DB_URL` | `application.properties` | `jdbc:mysql://mysql:3306/shareYourStory` | Apunta al servicio `mysql` del compose |
+| `DB_USERNAME` | `application.properties` | `app_rw` | Usuario de **mínimo privilegio**, NO `root` (creado por `db/02`) |
+| `DB_PASSWORD` | `application.properties` | `app_rw_pwd` | Solo dev |
+| `JWT_SECRET` / `JWT_EXPIRATION` | `application.properties` | (clave dev) / `3600000` | Definir `JWT_SECRET` en producción |
+| `MAIL_USERNAME` / `MAIL_PASSWORD` | `application.properties` | (vacío) | App Password de Gmail por entorno (ver Roadmap) |
 
 ---
 
@@ -268,6 +293,8 @@ npm run test:watch  # Vitest, modo watch
 ---
 
 ## Cosas pendientes / TODO conocidos
+
+> ⚠️ **Histórico (anterior al 2026-06-03).** Muchos `[ ]` de "Backend" de aquí abajo (implementar `/api/auth/anonymous`, `/login`, `/register`, `users/me/*`, comunidades, eventos, etc.) **YA están implementados** tras el realineamiento. La fuente de verdad actual de pendientes es la sección **"Pendientes / Roadmap"** más abajo. Se conserva este bloque como registro de la evolución del proyecto, no como lista activa.
 
 ### Backend
 - [x] ~~Renombrar `passowrd` → `password` en `RegisterRequest`.~~ (hecho 2026-05-21)
@@ -344,6 +371,45 @@ npm run test:watch  # Vitest, modo watch
 
 ---
 
+## Pendientes / Roadmap (post-realineamiento front↔back, 2026-06-03)
+
+> Esta es la **lista activa** de pendientes. Cubre también cosas fuera del código.
+
+### 1. Urgente (manual, seguridad)
+- **Revocar la App Password de Gmail comprometida.** Estuvo hardcodeada en `EmailConfig.java` y **sigue en el historial git del backend** aunque el código actual ya lee `MAIL_USERNAME`/`MAIL_PASSWORD` del entorno (`application.properties:24-30`). Revocarla en la cuenta de Google y definir las variables por entorno antes de cualquier despliegue.
+
+### 2. Verificación end-to-end (nada probado en ejecución, solo compila)
+- Levantar front + back + MySQL y probar contra el back real: login/2FA mod, comunidades, **chat privado en tiempo real**, eventos, moderación, botella, máquina del tiempo.
+
+### 3. Base de datos existente (`ddl-auto=update` no basta)
+- `update` **no** relaja columnas `NOT NULL` a nullable (p. ej. `reports.story_id`) ni recrea constraints. En una BD ya creada hay que recrear o hacer `ALTER` puntual.
+- `db/04` (procedimientos/función) y `db/06` (trigger) **no** se ejecutan solos con el compose (solo se monta `db/02`). Hay que correrlos a mano tras el primer arranque.
+
+### 4. Infra / build
+- Spring Boot **`4.1.0-SNAPSHOT`** → build no reproducible. Fijar versión release.
+- Front: considerar `manualChunks` y alias `@/*` (deuda vieja).
+
+### 5. Funcional pendiente
+- **Bandeja del profesional** (`usePrivateInbox`) aún **no es tiempo real** (su cola `/user/queue/private` ya recibe, falta cablearla a la bandeja).
+- `settings`/`mood` **no persisten** en el back (decidir: persistir o quitar del UI).
+- `ApiProfile.activity` se entrega **vacío** (no hay modelo de actividad).
+- **Desajustes de contrato a resolver en código**: `events.ts` `joinEvent`/`leaveEvent` llaman a `/api/events/:id/join` (inexistente → 404); `types/api.ts` arrastra `VerifyTotpPayload`/`VerifyLoginPayload` y comentarios hacia `/verify` (muertos).
+
+### 6. Pulido / deuda
+- Estilos del botón "reportar" en el popup del mapa.
+- **Entidades muertas `Valoration` / `Profession` / `Specialization`** (referenciadas por FK en `User` vía `professionRef`/`specializationRef`) → limpieza coordinada back+BD.
+- `WebMvcConfig` vacío. Comentario obsoleto en `WebSocketConfig.java:42-43` (describe el modelo `/topic/privateChats` ya migrado a `/queue`).
+- Símbolos tipográficos `✓ ✕ ✎ ➤ ☰ ★` → SVG (deuda vieja). Google Fonts CDN (privacidad/render-blocking).
+
+### 7. Tests
+- Backend: solo `contextLoads` (no corre sin BD). Front: vitest de funciones puras. Falta **cobertura de contrato** (MockMvc por dominio) y de hooks — justo donde estaban los fallos.
+
+### 8. Seguridad futura (producción)
+- Challenges de 2FA y buckets de rate limit **en memoria** (se pierden al reiniciar, no se comparten entre instancias) → Redis/tabla.
+- Token JWT en `localStorage` (decisión PBL: privacidad = marketing).
+
+---
+
 ## Branches
 
 - `main` — branch principal.
@@ -368,6 +434,14 @@ Commits recientes (con tag):
 ---
 
 ## Última actualización
+
+- **2026-06-03** — **Realineamiento documental front↔back.** Tras una sesión grande de realineamiento de código (ver `AUDITORIA.md`), se puso al día este `CLAUDE.md` contra el **estado real** del backend (verificado endpoint a endpoint):
+  - Reescrita la mentira *"backend muy verde, solo `register/mod` y `User`"*: el back tiene **47 endpoints en 11 controladores**, JWT real, WebSocket STOMP autenticado, rate limiting (bucket4j), `@RestControllerAdvice` global, membresía de comunidades, chat privado en `/api/chats`, moderación con 3 tipos de reporte, etc.
+  - **Purgada la ficción del 2FA `/verify`**: el contrato real es `GET/POST /api/auth/register/mod/2fa/qr` + `POST /api/auth/login/mod/2fa/code` con `challengeId`. Los endpoints `/verify` **nunca existieron**. (Los tipos `VerifyTotpPayload`/`VerifyLoginPayload` de `types/api.ts` quedan como código muerto → Roadmap.)
+  - Corregido el stack: **dos repos git independientes**; back sin `lombok`/`oauth2-authorization-server` (quitados) y con `websocket`/`mail`/`bucket4j`/`googleauth`; front con **zustand ^5** (`store/`) + servicios `*WS.ts` sobre `lib/wsClient.ts`.
+  - Sustituida la tabla "Endpoints que el frontend ya espera (No)" por el **inventario real cruzado**, marcando 2 desajustes (`events/:id/join` inexistente; tipos `/verify` muertos).
+  - Añadida la sección **"Pendientes / Roadmap"** (8 grupos: App Password Gmail, verificación e2e, BD/`ddl-auto`, infra/build, funcional pendiente, pulido/deuda, tests, seguridad producción) como lista activa; el viejo bloque "Cosas pendientes / TODO" queda marcado como histórico.
+  - **Solo se tocó documentación** (este `.md`). Ningún cambio de código.
 
 - **2026-05-27** — **Eliminación de simulaciones de backend en el frontend.**
 

@@ -7,14 +7,18 @@ Documentación técnica del frontend de ShareYourStory. Explica qué hay impleme
 ## Arrancar en local
 
 ```bash
-cd frontend
+# desde la raíz de este repo (ShareYourStory-PBL-frontend/)
 npm install
 npm run dev
 ```
 
-La app queda disponible en `http://localhost:5173`.
+La app queda disponible en `http://localhost:5173`. El backend (repo hermano
+`ShareYourStory-PBL-backend/`) se espera en `http://localhost:8080` (proxy de Vite `/api/*`).
 
 > **Prerequisito:** Node.js 20+.
+>
+> **Nota:** este repo ES el frontend (ya no hay subcarpeta `frontend/`). El backend vive en un
+> repo git independiente.
 
 ---
 
@@ -28,17 +32,27 @@ La app queda disponible en `http://localhost:5173`.
 | Estilos | CSS Modules + variables CSS globales | — |
 | Enrutamiento | React Router DOM | v7 |
 | Mapa | Leaflet + react-leaflet | 1.9 / 4.x |
+| Estado global | Zustand | 5 |
+| Tiempo real | STOMP sobre WebSocket (`@stomp/stompjs`) | — |
 | i18n | i18next + react-i18next | — |
 | Tipografía | Inter (Google Fonts) | — |
 
 No hay dependencia de Bootstrap ni ningún framework CSS externo. Todos los estilos son CSS Modules por componente más un sistema de tokens CSS globales.
 
+El estado de los datos que llegan en tiempo real (chat de comunidades, chat privado, eventos,
+historias del mapa, lista de comunidades) vive en **stores de zustand** (`src/store/`),
+alimentados por los servicios WebSocket (`src/services/*WS.ts`). El resto de lecturas/escrituras
+puntuales pasan por `apiFetch` + `useApi`.
+
 ---
 
 ## Estructura de carpetas
 
+> Este repo ES el frontend; no hay subcarpeta `frontend/`. La raíz contiene `src/`, `public/`,
+> `index.html`, `vite.config.ts`, `package.json`, etc.
+
 ```
-frontend/
+ShareYourStory-PBL-frontend/
 ├── public/
 ├── src/
 │   ├── assets/               # Imágenes y SVGs estáticos
@@ -46,18 +60,22 @@ frontend/
 │   │   ├── auth/             # TotpPanel (2FA)
 │   │   ├── chat/             # ChatLayout y sub-componentes reutilizables
 │   │   ├── events/           # EventFormSection
-│   │   ├── layout/           # Navbar, Footer, MainLayout, BareLayout, DemoModeBanner
+│   │   ├── layout/           # Navbar, Footer, MainLayout, BareLayout
 │   │   ├── moderation/       # ReportsSection, MembersSection, BannedWordsSection
 │   │   ├── settings/         # AccountSection, ModProfileSection, AppearanceSection, …
 │   │   └── ui/               # PageState, ErrorBoundary, SleepingCat, Icons, Select, …
 │   ├── context/
-│   │   └── AuthContext.tsx         # Estado global de autenticación
-│   ├── hooks/                # useApi, useAuth, useRole, useCommunities, useEvents, …
-│   ├── lib/                  # i18n, roles, initials, bannedWords, eventInterests, authBus, …
-│   ├── mocks/
-│   │   └── data.ts           # Única fuente de datos mock (importación siempre dinámica)
+│   │   └── AuthContext.tsx         # Estado global de autenticación (restaura sesión al recargar)
+│   ├── hooks/                # useApi, useAuth, useRole, useCommunities, useEvents,
+│   │                         #   usePrivateChat, usePrivateInbox, …
+│   ├── lib/                  # i18n, roles, initials, bannedWords, eventInterests, authBus,
+│   │                         #   wsClient (STOMP/SockJS), theme, …
+│   ├── store/                # Stores zustand alimentados por WebSocket:
+│   │                         #   communitiesStore, communityChatStore, eventsStore,
+│   │                         #   privateChatStore, storiesStore
 │   ├── pages/                # Una página = un .tsx + un .module.css
-│   ├── services/             # apiFetch, auth, communities, events, profile, storage, …
+│   ├── services/             # apiFetch, auth, communities, events, profile, storage, chats,
+│   │                         #   moderation, … + servicios WebSocket *WS.ts
 │   ├── styles/
 │   │   ├── variables.css           # Tokens CSS (colores, sombras, tipografía)
 │   │   └── animations.css          # Keyframes y clases de animación
@@ -65,12 +83,15 @@ frontend/
 │   │   └── api.ts            # Tipos compartidos del contrato con el backend
 │   ├── App.tsx               # Configuración del router y layouts anidados
 │   ├── index.css             # Reset CSS + imports de estilos globales
-│   └── main.tsx              # Punto de entrada de React
+│   └── main.tsx              # Punto de entrada (restaura tema y sesión antes del render)
 ├── index.html
 ├── vite.config.ts
 ├── tsconfig.app.json
 └── package.json
 ```
+
+> Ya **no existe** `src/mocks/data.ts` ni el `DemoModeBanner`: se eliminaron todos los mocks y
+> la app habla siempre con el backend real (los errores se propagan al UI).
 
 ---
 
@@ -152,11 +173,20 @@ const { user, isLoading, login, register, logout, updateUsername, loginAsMod, ve
 | `logout()` | función | Limpia sesión y genera usuario anónimo nuevo |
 | `updateUsername(username)` | función | Actualiza el username sin recargar |
 | `loginAsMod(email, password)` | función | Paso 1 del login de moderadores. Llama a `POST /api/auth/login/mod`, devuelve `{ challengeId, requires2fa }`. No establece sesión todavía. |
-| `verifyLoginAsMod(challengeId, code)` | función | Paso 2 del login de moderadores (2FA TOTP). Llama a `POST /api/auth/login/mod/verify`, establece sesión si el código es válido. |
+| `verifyLoginAsMod(challengeId, code)` | función | Paso 2 del login de moderadores (2FA TOTP). Llama a `POST /api/auth/login/mod/2fa/code` con `{ challengeId, code }`, establece sesión si el código es válido. |
 
-Login y register usan **username + contraseña** (sin email). Si el backend no está disponible, cae a mock local automáticamente.
+Login y register usan **username + contraseña** (sin email). **No hay mock local**: si el backend
+falla, el error se propaga al UI.
 
-El usuario anónimo recibe un JWT en `POST /api/auth/anonymous`. El frontend lo guarda en `localStorage` (`sys_token`) y lo envía en cada petición. Al registrarse, se pasa el `anonToken` para que el backend migre el historial.
+El usuario anónimo recibe un JWT en `POST /api/auth/anonymous`. El frontend lo guarda en
+`localStorage` (`sys_token`) y lo envía en cada petición. Al **registrarse**, se pasa el
+`anonToken` para que el backend **promocione la misma cuenta anónima a usuario** (upgrade
+anónimo→usuario, conservando identidad y datos). Al recargar, la sesión se restaura con
+`GET /api/users/me` (`restoreAuthFromToken`), en vez de degradar a anónimo.
+
+> ⚠️ El flujo 2FA NO usa endpoints `/verify` (eso fue una narrativa de diseño que nunca se
+> implementó). El contrato real es `/register/mod/2fa/qr` (enrolamiento) y `/login/mod/2fa/code`
+> (login). Los tipos `VerifyTotpPayload`/`VerifyLoginPayload` de `types/api.ts` son código muerto.
 
 ---
 
@@ -188,15 +218,15 @@ Acceso o creación de cuenta.
 - "¿La olvidaste?" link visible solo en modo login.
 - Error inline en pill roja.
 - Submit con 800ms de delay simulado → `login()` → navega a `/dashboard`.
-- Botón "🔒 Continuar de forma anónima" → `/dashboard` sin credenciales.
+- Botón "Continuar de forma anónima" (con icono SVG de candado) → `/dashboard` sin credenciales.
 
 ### 04. DashboardPage — `/dashboard`
 Hub principal post-login.
 
 - Banner de bienvenida con username del usuario.
-- **Selector de estado de ánimo:** 5 emojis (😔 😟 😐 🙂 😊). El seleccionado se resalta y aparece un mensaje de confirmación personalizado.
-- **Columna izquierda:** Lista de comunidades activas (con badge de mensajes no leídos), mensajes recientes.
-- **Columna derecha:** Card de próximo evento, grid de 3 acciones rápidas (Botella, Máquina del tiempo, Mapa), consejo del día de un profesional.
+- **Selector de estado de ánimo:** 5 iconos SVG line-art (`IconMoodVeryBad…VeryGood`, no emojis). El seleccionado se resalta y aparece un mensaje de confirmación. Llama a `POST /api/users/me/mood` (que el backend **acepta pero no persiste** todavía).
+- **Columna izquierda:** Lista de comunidades activas (con badge de mensajes no leídos), mensajes recientes (`GET /api/users/me/dashboard/messages`).
+- **Columna derecha:** Card de próximo evento (`useEvents().data[0]`), grid de 3 acciones rápidas (Botella, Máquina del tiempo, Mapa).
 
 ### 05. ProfilePage — `/perfil`
 Perfil del usuario.
@@ -260,8 +290,9 @@ Chat en tiempo real dentro de una comunidad.
 Listado de eventos y talleres.
 
 - Filtros por tipo: Todos / Talleres / Sesiones / Charlas.
-- Cards horizontales: emoji, tipo (pill con color propio), fecha, título, moderador, descripción recortada a 2 líneas, barra de progreso de plazas, botón "Apuntarse" / "✓ Apuntado".
-- Los datos se obtienen mediante el hook `useEvents()` (con fallback al mock centralizado en `mocks/data.ts`).
+- Cards horizontales: emoji, tipo (pill con color propio), fecha, título, moderador, descripción recortada a 2 líneas, barra de progreso de plazas, botón de interés ("Me interesa").
+- Los datos se obtienen mediante el hook `useEvents()` (`GET /api/events`). "Me interesa" usa
+  `POST/DELETE /api/events/:id/interest` (contador global `interestedCount` + estado local en `lib/eventInterests.ts`).
 
 ### 12. EventDetailPage — `/eventos/:eventId`
 Vista completa de un evento.
@@ -272,20 +303,22 @@ Vista completa de un evento.
 - Botón CTA alterna entre "Apuntarse", "✓ Apuntado" y "Completo" (deshabilitado).
 
 ### 13. TimeMachinePage — `/maquina-del-tiempo`
-El usuario escribe una carta que recibirá por email en 5 años.
+El usuario escribe una carta que recibirá por email en la fecha que **él mismo elige**.
 
 - **Flujo:** `write` → `confirm` → `sent`.
-- `deliveryDate` = fecha actual + 5 años, formateada con `toLocaleDateString('es-ES')`.
+- **La fecha de entrega la elige el usuario** mediante un selector (ya **no** son "5 años fijos").
+  Se envía a `POST /api/timeMachine { message, email, deliveryDate }`; el backend responde 201/400
+  y un scheduler entrega cuando `deliveryDate <= hoy`.
 - Textarea estilo carta con líneas decorativas absolutas.
-- `MAX_CHARS = 1000`, mínimo 20 caracteres + email válido para continuar.
-- **Animación de lanzamiento:** emoji de sobre con `@keyframes launch` (translateY + rotate + fadeOut) al pasar a estado `sent`.
+- `MAX_CHARS = 1000`, mínimo 20 caracteres + email válido + fecha válida para continuar.
+- **Animación de lanzamiento** al pasar a estado `sent`.
 
 ### 14. BottleMessagePage — `/botella`
 Mensajes anónimos enviados a un usuario aleatorio.
 
 - **Fondo:** Gradiente de océano (azul profundo → azul claro).
 - **Ondas animadas:** Dos capas SVG con `@keyframes wave` en bucle (la segunda con `animation-delay`).
-- **Flujo:** `write` → lanzamiento (animación de botella) → `sent` → "Recoger una botella" → `received` (mensaje aleatorio de 3 mocks).
+- **Flujo:** `write` → lanzamiento (animación de botella) → `sent` → "Recoger una botella" → `received`. Envío con `POST /api/bottles`; recoger con `GET /api/bottles/received` (excluye la propia, marca recibida, 404 si no hay). El fondo muestra botellas flotantes (`GET /api/bottles/floating`); clic en una = recogerla.
 - `MAX_CHARS = 400`.
 - Los botones de recepción se deshabilitan mientras la petición está en vuelo para evitar dobles solicitudes.
 
@@ -297,7 +330,8 @@ Mapa mundial de historias anónimas.
 - **Marcadores:** `L.divIcon` con HTML inline — círculo de color + emoji (escapado para prevenir XSS). 2 tipos: historia publicada (lavanda) y marcador pendiente mientras se escribe (melocotón).
 - **Añadir historia:** FAB activa modo click → clic en el mapa crea `pendingMarker` + panel de escritura → envío agrega la story al estado.
 - `MapClickHandler` es un componente hijo que usa el hook `useMapEvents` (necesario porque `useMapEvents` solo funciona dentro de `MapContainer`).
-- 12 historias mock distribuidas por el mundo.
+- Historias reales desde `GET /api/stories`; crear historia con `POST /api/stories`. El estado y las altas en tiempo real se gestionan vía `storiesStore` (zustand) + `storiesWS`.
+- Botón de reportar una historia en el popup → `POST /api/moderation/reports`.
 - Stats bar en esquina inferior: total de historias en el mapa.
 
 ### 16. EventCreatePage — `/eventos/nuevo`
@@ -305,7 +339,8 @@ Formulario de creación de evento. Solo accesible para `MODERATOR` y `ADMIN` (gu
 
 - Campos: título, descripción, tipo (Taller/Sesión/Charla), fecha, hora, formato (Online/Presencial), aforo, tags.
 - Validación inline. Al enviar muestra mensaje de éxito + redirige a `/eventos` a los 1.8 s.
-- **Sin backend real todavía** — simula el envío. Se conectará a `POST /api/events` cuando exista.
+- El backend ya tiene `POST /api/events` (crear) y `PUT/DELETE /api/events/:id` (editar/borrar),
+  restringidos a `PROFESSIONAL`/`ADMINISTRATOR`.
 
 ### 17. ModLoginPage — `/loginmod`
 Login de moderadores y administradores con autenticación en dos factores (TOTP).
@@ -329,9 +364,16 @@ Panel de control para moderadores.
 - **Stats row:** 4 cards (Pendientes, Resueltos hoy, Comunidades, Miembros) con colores naranja/verde/lavanda.
 - **Alert badge** en el header cuando hay reportes pendientes.
 - **3 secciones** con nav de pills:
-  - **Reportes:** Filtros (Todos / Pendientes / Resueltos / Descartados), lista de reportes expandibles. Clic en un reporte pendiente → botones inline (Resolver, Avisar, Descartar). Borde izquierdo de color según estado.
-  - **Miembros:** Tabla de miembros con avatar, info, badge de reportes acumulados, botones Avisar/Banear.
-  - **Filtro automático:** 4 stats cards (palabras bloqueadas, advertencias hoy, bloqueados hoy, precisión %).
+  - **Reportes:** Filtros (Todos / Pendientes / Resueltos / Descartados), lista de reportes expandibles (de historias, mensajes de comunidad y mensajes privados). Clic en un reporte pendiente → botones inline (Resolver, **Avisar**, Descartar). "Avisar" es una acción distinta (`action: warn` → incrementa los avisos del autor). `GET /api/moderation/reports`, `POST /api/moderation/reports/:id/resolve`.
+  - **Miembros:** Tabla de miembros reales (`GET /api/moderation/members`) con avatar, info, badge de reportes acumulados, botones Avisar/Banear (`POST /members/:id/warn|ban`, flags `warnings`/`banned`).
+  - **Filtro automático:** CRUD de **palabras prohibidas** con vista previa de la censura (estado local en `lib/bannedWords.ts`; la censura en render se aplica con `maskBannedWords`). Endpoints server-side pendientes (ver CLAUDE.md → Roadmap).
+
+### 20. CommunityCreatePage — `/comunidades/nueva`
+Creación de comunidad. Solo `MODERATOR`/`ADMIN` (guard `<RequireRole>`). Campos: nombre,
+descripción, emoji, categoría, moderador/a. Envía a `POST /api/communities`.
+
+### 21. NotFoundPage — ruta catch-all `*`
+Página 404 con CTA al home. Capturada por la ruta `*` al final de `<Routes>` en `App.tsx`.
 
 ---
 
@@ -341,9 +383,9 @@ Panel de control para moderadores.
 
 - Sticky en top con `z-index: 100`.
 - **Logo** (NavLink a `/`) a la izquierda.
-- **Links centrales:** Comunidades, Eventos, Mapa, Botella, Máquina del tiempo, Ayuda profesional.
-- **Username chip** a la derecha: muestra el username del usuario o "Anónimo". Clic → edición inline con Enter para guardar y Escape para cancelar. Llama a `updateUsername()`.
-- **Botón "Entrar"** → `/login`. Solo visible si no hay sesión.
+- **Links centrales dependientes del rol** (`useRole()`): ANON/USER ven Comunidades, Eventos, Mapa, Botella, Máquina del tiempo, Ayuda profesional. MODERATOR/ADMIN ven Moderación, Comunidades, Eventos, Profesionales.
+- **A la derecha:** si es ANON, chip de username editable (lápiz). Si hay sesión (USER/MOD/ADMIN), botón circular con `IconUser` → `/configuracion` + nombre estático → `/dashboard` (la **edición de username ya no es inline en el navbar**: vive en `/configuracion → Mi cuenta`).
+- **Botón "Entrar"** → `/login`. Oculto cuando hay sesión (`isLoggedIn`).
 - **Hamburger** en móvil (<992px): despliega menú vertical con los mismos links.
 
 ### Footer (`src/components/layout/Footer.tsx`)
@@ -356,23 +398,55 @@ Panel de control para moderadores.
 
 ---
 
-## Datos mock y TODOs de integración
+## Integración con el backend
 
-Actualmente **toda la data es local** — arrays y objetos TypeScript hardcodeados en cada página. Cuando el backend esté listo, hay que sustituir:
+La app habla **siempre con el backend real** (no quedan mocks). Toda llamada HTTP pasa por
+`apiFetch` (`src/services/api.ts`), que añade `Authorization: Bearer <sys_token>`, timeout de 15 s,
+distingue error de red de error de servidor y dispara `authBus.fireExpired()` ante un 401 fuera de
+`/api/auth/*`. El contrato JSON con el backend vive en **`src/types/api.ts`** (camelCase, mismos
+nombres de campo que el back).
 
-| Página | Endpoint a conectar |
+### Servicios HTTP (`src/services/*.ts`)
+
+| Servicio | Endpoints |
 |---|---|
-| LoginPage | `POST /api/auth/login`, `POST /api/auth/register` |
-| AuthContext | `POST /api/auth/anonymous`, `GET /api/auth/me` |
-| CommunityListPage | `GET /api/communities` |
-| CommunityChatPage | `GET /api/communities/:id/messages`, WebSocket STOMP |
-| EventListPage / EventDetailPage | `GET /api/events`, `POST /api/events/:id/join` |
-| ProfessionalsPage | `GET /api/professionals` |
-| MapPage | `GET /api/stories`, `POST /api/stories` |
-| TimeMachinePage | `POST /api/letters` |
-| BottleMessagePage | `POST /api/bottles`, `GET /api/bottles/received` |
-| ModerationPage | `GET /api/reports`, `PATCH /api/reports/:id` |
-| ProfilePage | `GET /api/users/me`, `PATCH /api/users/me/username` |
+| `auth.ts` | `POST /api/auth/anonymous`, `/login`, `/register`; flujo mod (`/register/mod`, `/register/mod/2fa/qr`, `/login/mod`, `/login/mod/2fa/code`); `GET /api/users/me`; `PATCH /api/users/me/username` |
+| `profile.ts` | `GET /api/users/me/profile`; `GET+PATCH /mod-profile`; `PATCH /password`; `POST /onboarding`; `PATCH /settings`; `POST /mood` |
+| `dashboard.ts` | `GET /api/users/me/dashboard/messages` |
+| `communities.ts` | `GET+POST /api/communities`; `POST+DELETE /:id/join`; `GET+POST /:id/messages`; `DELETE /:id/messages/:msgId`; `GET /:id/members/active`; `POST /:id/online`; `PATCH /:id/pinned-note`; `PATCH /:id/chat-closed`; `DELETE /:id/members/:userId` |
+| `chats.ts` | `GET+POST /api/chats/:id/messages`; `GET /inbox`; `GET+POST /inbox/:userId/messages` |
+| `events.ts` | `GET /api/events`; `GET /:id`; `POST+DELETE /:id/interest` |
+| `bottles.ts` | `POST /api/bottles`; `GET /received`; `GET /floating` |
+| `stories.ts` | `GET+POST /api/stories` |
+| `letters.ts` | `POST /api/timeMachine` |
+| `professionals.ts` | `GET /api/professionals` |
+| `moderation.ts` | `GET+POST /api/moderation/reports`; `POST /reports/:id/resolve`; `GET /members`; `POST /members/:id/warn|ban` |
+
+> ⚠️ **Desajuste pendiente de código:** `events.ts` aún expone `joinEvent`/`leaveEvent` apuntando a
+> `POST/DELETE /api/events/:id/join`, **que no existe** en el backend (solo `/interest`) → 404.
+
+### Tiempo real (WebSocket STOMP)
+
+`lib/wsClient.ts` abre un cliente `@stomp/stompjs` sobre `SockJS` (`VITE_WS_URL`, por defecto
+`http://localhost:8080/ws`), autenticado con el JWT. Los servicios `*WS.ts` se suscriben a los
+destinos del backend y vuelcan los mensajes en los **stores de zustand** (`src/store/`):
+
+| Store | Servicio WS | Destino STOMP |
+|---|---|---|
+| `communitiesStore` | `communitiesWS` | `/topic/communities` |
+| `communityChatStore` | `communityChatWS` | `/topic/communities/{id}` |
+| `eventsStore` | `eventsWS` | `/topic/events` |
+| `storiesStore` | `storiesWS` | `/topic/storyMap` |
+| `privateChatStore` | `privChatWS` | **`/user/queue/private`** (cola de usuario, privado) |
+
+La bandeja del profesional usa `usePrivateInbox` (`/api/chats/inbox`); su cola ya recibe mensajes
+pero **aún no está cableada a tiempo real** (ver CLAUDE.md → Roadmap).
+
+### Lectura/escritura puntual
+
+Los hooks `useX` (`src/hooks/use*.ts`) envuelven `useApi(fetcher, initialData, deps)` para las
+lecturas; `optimisticMutation` / `silentMutation` (`src/lib/`) para las escrituras con update
+optimista. Cualquier error se propaga al UI (no hay fallback a mock).
 
 ---
 
