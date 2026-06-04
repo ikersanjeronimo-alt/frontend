@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
+import { createCommunity } from '../services/communities'
+import { type ApiError } from '../services/api'
 import { SleepingCat } from '../components/ui/SleepingCat'
 import { catFor } from '../components/ui/catPalette'
 import styles from './CommunityCreatePage.module.css'
@@ -17,6 +19,8 @@ export function CommunityCreatePage() {
   const [category, setCategory] = useState('')
   const [mod,      setMod]      = useState(user?.username ?? '')
   const [done,     setDone]     = useState(false)
+  const [loading,  setLoading]  = useState(false)
+  const [error,    setError]    = useState<string | null>(null)
   const redirectTimer = useRef<number | null>(null)
 
   const CATEGORIES = useMemo(() => [
@@ -45,16 +49,31 @@ export function CommunityCreatePage() {
 
   const canSubmit = name.trim() && desc.trim() && emoji.trim() && category && mod.trim()
 
-  const handleSubmit = () => {
-    if (!canSubmit) return
-    // TODO: fetch real — POST /api/communities
-    // createCommunity({ name, desc, emoji, category, mod }).then(c => navigate(`/comunidades/${c.id}`))
-    setDone(true)
-    if (redirectTimer.current !== null) window.clearTimeout(redirectTimer.current)
-    redirectTimer.current = window.setTimeout(() => {
-      redirectTimer.current = null
-      navigate('/comunidades')
-    }, 1800)
+  const handleSubmit = async () => {
+    if (!canSubmit || loading) return
+    setError(null)
+    setLoading(true)
+    try {
+      const community = await createCommunity({
+        name,
+        desc,
+        emoji,
+        category: category.toUpperCase(),
+        mod,
+        modUserId: user?.id ?? null,
+      })
+      setDone(true)
+      if (redirectTimer.current !== null) window.clearTimeout(redirectTimer.current)
+      redirectTimer.current = window.setTimeout(() => {
+        redirectTimer.current = null
+        navigate(`/comunidades/${community.id}`)
+      }, 1800)
+    } catch (err) {
+      const apiErr = err as ApiError
+      setError(apiErr.message || t('common.errSend'))
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -154,12 +173,14 @@ export function CommunityCreatePage() {
             />
           </div>
 
+          {error && <p className={styles.errorMsg}>{error}</p>}
+
           <button
             className={`${styles.submitBtn} hover-lift`}
             onClick={handleSubmit}
-            disabled={!canSubmit}
+            disabled={!canSubmit || loading}
           >
-            {t('communities.createSubmit')}
+            {loading ? t('modRegister.loading') : t('communities.createSubmit')}
           </button>
 
         </div>

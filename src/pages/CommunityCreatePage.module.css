@@ -249,3 +249,13 @@
   max-width: 340px;
   line-height: 1.6;
 }
+
+.errorMsg {
+  color: #c0392b;
+  font-size: 13px;
+  margin: 0;
+  padding: 8px 12px;
+  background: #fdf0ef;
+  border-radius: 8px;
+  border-left: 3px solid #c0392b;
+}
