@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
+import { createEvent } from '../services/events'
+import { type ApiError } from '../services/api'
 import { SleepingCat } from '../components/ui/SleepingCat'
 import { catFor } from '../components/ui/catPalette'
 import styles from './EventCreatePage.module.css'
@@ -18,6 +20,8 @@ export function EventCreatePage() {
   const [duration, setDuration] = useState('')
   const [host,     setHost]     = useState(user?.username ?? '')
   const [done,     setDone]     = useState(false)
+  const [loading,  setLoading]  = useState(false)
+  const [error,    setError]    = useState<string | null>(null)
   const redirectTimer = useRef<number | null>(null)
 
   // Limpiar el timer al desmontar para evitar navegar después del unmount.
@@ -38,17 +42,31 @@ export function EventCreatePage() {
 
   const canSubmit = title.trim() && desc.trim() && date && time && duration.trim() && host.trim()
 
-  const handleSubmit = () => {
-    if (!canSubmit) return
-    // TODO: fetch real — POST /api/events
-    // const payload = { title, desc, date, time, duration, host, spots: 20, total: 20, tags: [] }
-    // createEvent(payload).then(e => navigate(`/eventos/${e.id}`))
-    setDone(true)
-    if (redirectTimer.current !== null) window.clearTimeout(redirectTimer.current)
-    redirectTimer.current = window.setTimeout(() => {
-      redirectTimer.current = null
-      navigate('/eventos')
-    }, 1800)
+  const handleSubmit = async () => {
+    if (!canSubmit || loading) return
+    setError(null)
+    setLoading(true)
+    try {
+      const dateStr = time ? `${date}T${time}` : date
+      const event = await createEvent({
+        title,
+        description: desc,
+        date: dateStr,
+        topic: host || undefined,
+        place: duration || undefined,
+      })
+      setDone(true)
+      if (redirectTimer.current !== null) window.clearTimeout(redirectTimer.current)
+      redirectTimer.current = window.setTimeout(() => {
+        redirectTimer.current = null
+        navigate(`/eventos/${event.id}`)
+      }, 1800)
+    } catch (err) {
+      const apiErr = err as ApiError
+      setError(apiErr.message || t('common.errSend'))
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -151,12 +169,14 @@ export function EventCreatePage() {
             />
           </div>
 
+          {error && <p className={styles.errorMsg}>{error}</p>}
+
           <button
             className={`${styles.submitBtn} hover-lift`}
             onClick={handleSubmit}
-            disabled={!canSubmit}
+            disabled={!canSubmit || loading}
           >
-            {t('events.createSubmit')}
+            {loading ? t('modRegister.loading') : t('events.createSubmit')}
           </button>
 
         </div>

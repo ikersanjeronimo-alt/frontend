@@ -5,6 +5,21 @@ export function getEvents(): Promise<ApiEvent[]> {
   return apiFetch<ApiEvent[]>('/api/events')
 }
 
+export interface CreateEventPayload {
+  title: string
+  description: string
+  date: string
+  topic?: string
+  place?: string
+}
+
+export function createEvent(payload: CreateEventPayload): Promise<ApiEvent> {
+  return apiFetch<ApiEvent>('/api/events', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function getEventById(id: string): Promise<ApiEvent> {
   return apiFetch<ApiEvent>(`/api/events/${id}`)
 }
