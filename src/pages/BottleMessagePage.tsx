@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { sendBottle, receiveBottle } from '../services/bottles'
+import type { ApiError } from '../services/api'
 import { useBannedWords } from '../hooks/useBannedWords'
 import { maskBannedWords } from '../lib/bannedWords'
 import { SleepingCat } from '../components/ui/SleepingCat'
@@ -48,7 +49,12 @@ export function BottleMessagePage() {
       setReceived({ text: b.message})
       setStep('received')
     } catch (e) {
-      setSendError(e instanceof Error ? e.message : t('bottle.errReceive'))
+      const status = (e as ApiError).status
+      if (status === 404) {
+        setSendError(t('bottle.noBottles'))
+      } else {
+        setSendError(e instanceof Error ? e.message : t('bottle.errReceive'))
+      }
     } finally {
       setReceiving(false)
     }
