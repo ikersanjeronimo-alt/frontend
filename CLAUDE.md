@@ -162,8 +162,7 @@ workspace/
 | `communities.ts` | `GET+POST /api/communities`, `POST+DELETE /:id/join`, `GET+POST /:id/messages`, `DELETE /:id/messages/:msgId`, `GET /:id/members/active`, `DELETE /:id/members/:userId`, `PATCH /:id/pinned-note`, `PATCH /:id/chat-closed` | ✅ |
 | presencia (WS) | suscripción a `/topic/communities/{id}/presence` | ✅ (reemplaza al viejo `POST /:id/online`, ver 2026-06-04 abajo) |
 | `chats.ts` | `GET+POST /api/chats/:id/messages`, `GET /inbox`, `GET+POST /inbox/:userId/messages` | ✅ |
-| `events.ts` | `GET /api/events`, `GET /:id`, `POST /api/events`, `POST+DELETE /:id/interest` | ✅ (`createEvent` añadido 2026-06-04) |
-| `events.ts` | `POST+DELETE /api/events/:id/join` | ⚠️ **NO existe en el back** (solo `/interest`) → 404. `joinEvent`/`leaveEvent` rotos. Pendiente de código. |
+| `events.ts` | `GET /api/events`, `GET /:id`, `POST /api/events`, `POST+DELETE /:id/interest` | ✅ |
 | `bottles.ts` | `POST /api/bottles`, `GET /received`, `GET /floating` | ✅ |
 | `stories.ts` | `GET+POST /api/stories` | ✅ |
 | `letters.ts` | `POST /api/timeMachine` | ✅ |
@@ -334,7 +333,7 @@ npm run test:watch  # Vitest, modo watch
 - [x] ~~Bug fix: `modSaved` activándose tras error en `SettingsPage`.~~ (hecho)
 - [x] ~~Borrar lógica de privilege escalation por prefijo de username.~~ (hecho — antes `startsWith('admin') → ADMIN`)
 - [x] ~~Guard de rol en rutas (`<RequireRole>`)~~ — Sprint 1.
-- [ ] **Restaurar `<RequireRole roles={['MODERATOR','ADMIN']} redirectTo="/loginmod">` en `/modregister`** — quitado temporalmente 2026-05-25 para poder crear el primer admin durante las pruebas del 2FA (chicken-and-egg: el guard original impedía registrar a nadie sin ser ya admin). Restaurar cuando exista un mecanismo de bootstrap de admin (seed via CommandLineRunner, endpoint `/api/auth/register/admin/bootstrap` que solo permite el primero, o seed SQL).
+- [x] ~~**Restaurar `<RequireRole>` en `/modregister`**~~ — hecho 2026-06-05. La ruta exige `roles={['ADMIN']}` (solo ADMINISTRATOR puede crear mods/admins). El endpoint `/api/auth/register/admin/bootstrap` existe y permite crear el primer admin sin sesión.
 - [x] ~~Ruta catch-all `*` con `<NotFoundPage />`~~ — Sprint 1.
 - [x] ~~`.env.example` con `VITE_BACKEND_URL` y `VITE_USE_MOCK_FALLBACK`~~ — Sprint 1.
 - [x] ~~"Modo oscuro próximamente": implementado como toggle real~~ — hecho 2026-05-23.
@@ -394,8 +393,8 @@ npm run test:watch  # Vitest, modo watch
 - **Bandeja del profesional** (`usePrivateInbox`) aún **no es tiempo real** (su cola `/user/queue/private` ya recibe, falta cablearla a la bandeja).
 - `settings`/`mood` **no persisten** en el back (decidir: persistir o quitar del UI).
 - `ApiProfile.activity` se entrega **vacío** (no hay modelo de actividad).
-- **Desajustes de contrato a resolver en código**: `events.ts` `joinEvent`/`leaveEvent` llaman a `/api/events/:id/join` (inexistente → 404); `types/api.ts` arrastra `VerifyTotpPayload`/`VerifyLoginPayload` y comentarios hacia `/verify` (muertos).
-- **Crear mod/admin (`/modregister`) requiere sesión activa de ADMINISTRATOR**: el backend devuelve 403 sin cuerpo si el JWT del llamante no es de rol `ADMINISTRATOR`. El front ya muestra mensaje claro ("Necesitas iniciar sesión como administrador...") desde 2026-06-04. El guard `<RequireRole>` de la ruta sigue pendiente de restaurar (ver TODO histórico).
+- ~~Desajustes de contrato~~: `joinEvent`/`leaveEvent` **eliminados** del front (2026-06-05) — el endpoint `/join` nunca existió y la única acción relevante es `/interest`. `VerifyLoginPayload` **eliminado** de `types/api.ts` (era código muerto). Comentario en `types/api.ts` actualizado a los endpoints reales (`/2fa/qr`, `/2fa/code`).
+- ~~Guard `/modregister`~~: ya en producción con `roles={['ADMIN']}` (2026-06-05).
 
 ### 6. Pulido / deuda
 - Estilos del botón "reportar" en el popup del mapa.
@@ -436,6 +435,16 @@ Commits recientes (con tag):
 ---
 
 ## Última actualización
+
+- **2026-06-05** — **Design-review + limpieza de código muerto.**
+  - **Design-review (touch targets, fechas, empty states):**
+    - `Navbar.module.css`: `.link`/`.linkActive` padding `4px` → `14px` (44px touch target); `.mobileLink` `12px` → `15px`.
+    - `EventListPage.tsx`, `EventDetailPage.tsx`, `DashboardPage.tsx`: helper `fmtDate()` que convierte ISO a fecha legible con `toLocaleDateString`; host condicional (oculta el elemento cuando está vacío, elimina el "con ·" huérfano).
+    - `ProfilePage.tsx` + `ProfilePage.module.css`: mensaje "Aún no hay actividad registrada." cuando `activity` está vacío. Key `profile.noActivity` añadida a los 3 idiomas.
+  - **Limpieza de código muerto:**
+    - `services/events.ts`: eliminadas `joinEvent`/`leaveEvent` (el endpoint `/api/events/:id/join` nunca existió en el back; el widget del Dashboard que tenía el botón "Apuntarme" ya solo navegaba sin llamarlas).
+    - `types/api.ts`: eliminada `VerifyLoginPayload` (nunca importada); comentario del bloque 2FA actualizado a los endpoints reales (`/2fa/qr`, `/2fa/code`).
+  - **CLAUDE.md**: corregidos dos TODOs ya resueltos (RequireRole en `/modregister` estaba hecho desde 2026-06-04; desajustes de contrato ahora resueltos).
 
 - **2026-06-05** — **Vista de chats privados del profesional: redirigir a bandeja, ocultar lista de colegas.**
   - **Problema:** cuando un profesional (MODERATOR en el front) accedía a `/chat/:id`, veía la lista de todos los profesionales en el sidebar en lugar de sus conversaciones con usuarios anónimos. El botón "Mi bandeja" al final del sidebar tampoco tenía sentido.

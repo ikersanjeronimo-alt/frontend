@@ -227,32 +227,27 @@ export interface RegisterModPayload {
 
 // ── 2FA TOTP (Google Authenticator) ──────────────────────────────
 // Flujo de moderadores/administradores:
-//  1. POST /api/auth/register/mod         → RegisterModEnrollment (QR)
-//  2. POST /api/auth/register/mod/verify  → 204 (cuenta activa)
-//  3. POST /api/auth/login/mod            → LoginModChallenge (requires2fa)
-//  4. POST /api/auth/login/mod/verify     → AuthResponse (token + user)
+//  1. POST /api/auth/register/mod            → RegisterModEnrollment (URI del QR)
+//  2. POST /api/auth/register/mod/2fa/qr     → 204 (primer código validado, cuenta activa)
+//  3. POST /api/auth/login/mod               → LoginModChallenge (challengeId)
+//  4. POST /api/auth/login/mod/2fa/code      → AuthResponse (token + user)
 
 export interface RegisterModEnrollment {
   /** Secreto Base32. Se muestra como fallback si el usuario no puede escanear el QR. */
   secret: string
   /** URI otpauth://totp/... que se codifica en el QR. */
   otpauthUri: string
-  /** El email que se usará luego para verificar — eco del payload, útil para no perderlo en el front. */
+  /** El email que se usará luego para verificar — eco del payload. */
   email: string
 }
 
 export interface LoginModChallenge {
   requires2fa: true
-  /** Token corto que identifica la sesión de login en curso. Se manda en /verify. */
+  /** Token corto que identifica la sesión de login en curso. Se manda en /2fa/code. */
   challengeId: string
 }
 
 export interface VerifyTotpPayload {
   email: string
-  code: string
-}
-
-export interface VerifyLoginPayload {
-  challengeId: string
   code: string
 }
