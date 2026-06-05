@@ -2,7 +2,7 @@ import type { Client } from '@stomp/stompjs'
 import { getClient, onConnect } from '../lib/wsClient'
 import type { ApiMessage } from '../types/api'
 import { useCommunityChatStore } from '../store/communityChatStore'
-import { updateCommunityOnline } from './communities'
+import { useCommunitiesStore } from '../store/communitiesStore'
 
 const subscriptions: Map<string, () => void> = new Map()
 
@@ -31,7 +31,7 @@ export function initCommunityChatWS(communityId: string): void {
 function subscribe(client: Client, communityId: string): void {
   const topic = `/topic/communities/${communityId}`
 
-  const unsubscribe = client.subscribe(topic, (message) => {
+  const unsubscribeMessages = client.subscribe(topic, (message) => {
     try {
       const payload: ApiMessage = JSON.parse(message.body)
       if (payload.action === 'DELETE') {
@@ -44,11 +44,26 @@ function subscribe(client: Client, communityId: string): void {
     }
   }).unsubscribe
 
-  subscriptions.set(communityId, unsubscribe)
-  console.log(`[communityChat] Subscribed to ${topic}`)
-  void updateCommunityOnline(communityId, 1).catch(err => {
-    console.error(`[communityChat/${communityId}] Error updating online +1:`, err)
+  // Presencia real: el backend deriva el numero de usuarios en linea de las
+  // sesiones STOMP vivas suscritas a esta comunidad y lo publica aqui cada vez
+  // que alguien entra o sale (incluido cierre brusco). Ya no hay contador +1/-1.
+  const unsubscribePresence = client.subscribe(`${topic}/presence`, (message) => {
+    try {
+      const payload: { communityId: string; online: number } = JSON.parse(message.body)
+      useCommunitiesStore.getState().setCommunities(prev =>
+        prev.map(c => c.id === String(payload.communityId)
+          ? { ...c, online: payload.online }
+          : c))
+    } catch (err) {
+      console.error(`[communityChat/${communityId}] Error parsing presence:`, err)
+    }
+  }).unsubscribe
+
+  subscriptions.set(communityId, () => {
+    unsubscribeMessages()
+    unsubscribePresence()
   })
+  console.log(`[communityChat] Subscribed to ${topic}`)
 }
 
 export function unsubscribeCommunityChat(communityId: string): void {
@@ -57,8 +72,5 @@ export function unsubscribeCommunityChat(communityId: string): void {
     unsubscribe()
     subscriptions.delete(communityId)
     console.log(`[communityChat] Unsubscribed from ${communityId}`)
-    void updateCommunityOnline(communityId, -1).catch(err => {
-      console.error(`[communityChat/${communityId}] Error updating online -1:`, err)
-    })
   }
 }

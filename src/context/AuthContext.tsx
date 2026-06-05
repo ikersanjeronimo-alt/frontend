@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import type { ReactNode } from 'react'
 import * as authService from '../services/auth'
 import { authBus } from '../lib/authBus'
+import { syncWSAuth } from '../lib/wsClient'
 import { tokenStorage } from '../services/storage'
 import type { ApiUser, AuthResponse } from '../types/api'
 
@@ -36,6 +37,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const applySession = useCallback((session: AuthResponse) => {
     tokenStorage.set(session.token)
     setUser({ ...session.user, token: session.token })
+    // Reconectar el WS si el token cambió, para que el Principal de la sesión
+    // STOMP (y la presencia online) corresponda a la identidad vigente.
+    syncWSAuth()
   }, [])
 
   useEffect(() => {
@@ -49,14 +53,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (savedToken) {
         const restored = authService.restoreAuthFromToken(savedToken)
         if (restored) {
-          if (tokenStorage.get() !== savedToken) return
-          if (!cancelled) {
-            applySession(restored)
-            setIsLoading(false)
+          // Verificar que el usuario realmente existe en la BD.
+          // Un JWT válido puede tener un username que ya no existe (p.ej. si el
+          // nick fue cambiado antes de que el backend emitiera un nuevo token).
+          try {
+            await authService.getMe()
+            if (tokenStorage.get() !== savedToken) return
+            if (!cancelled) {
+              applySession(restored)
+              setIsLoading(false)
+            }
+            return
+          } catch {
+            // Token inválido (401 u otro error): limpiar y crear sesión anónima
+            tokenStorage.clear()
           }
-          return
+        } else {
+          tokenStorage.clear()
         }
-        tokenStorage.clear()
       }
 
       try {
@@ -110,12 +124,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [applySession])
 
   const updateUsername = useCallback(async (username: string) => {
-    try {
-      const session = await authService.updateUsername(username)
-      applySession(session)
-    } catch (e) {
-      throw e
-    }
+    const session = await authService.updateUsername(username)
+    applySession(session)
   }, [applySession])
 
   const logout = useCallback(() => {

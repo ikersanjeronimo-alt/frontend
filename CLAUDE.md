@@ -138,7 +138,7 @@ workspace/
 - **`User`** (tabla `users`): `userId(Integer)`, `name`, `lastName`, `userName`(único), `nickName`(único, default=userName), `userPassword`, `companyName`, `mail`(único), `creationDate`, `profession`/`specialization` (**String, sí se persisten**), `professionRef`/`specializationRef` (**FK a entidades `Profession`/`Specialization` — muertas, ver Roadmap**), `role` (default ANON), `secretKey`, **`twoFactorEnabled`**, `topics`(CSV), **`warnings`**, **`banned`**. `getAuthorities()` devuelve `ROLE_<role>`.
 
 **Dominios**
-- **`community`** — membresía real (`community_members`), DTOs (`id` String, mensaje con `time`/`own`, `modUserId`, `chatClosed`, `pinnedNote`, `unread`), endpoints `join/leave` (devuelven la comunidad), `online?delta=`, `pinned-note`, `chat-closed`, `members/active`, `kick`, borrar mensaje; autorización MOD/ADMIN.
+- **`community`** — membresía real (`community_members`), DTOs (`id` String, mensaje con `time`/`own`, `modUserId`, `chatClosed`, `pinnedNote`, `unread`), endpoints `join/leave` (devuelven la comunidad), `pinned-note`, `chat-closed`, `members/active`, `kick`, borrar mensaje; autorización MOD/ADMIN. **Presencia ("online") derivada de sesiones STOMP vivas** (`CommunityPresenceService` + `WebSocketPresenceListener`), no de un contador persistido.
 - **`bottle`** — alberga `Bottle` (botella al mar: `authorId`/`received`/`createdAt`) **y el chat privado** (`PrivateMessageController` en `/api/chats`, identidad por JWT sin `userId` del cliente, + bandeja `/inbox`).
 - **`event`** — `interest` (POST/DELETE devuelven el evento), `GET /{id}`; "Me interesa" = contador global.
 - **`storyMap`** — mapa de historias (`GET/POST /api/stories`).
@@ -159,9 +159,10 @@ workspace/
 | `auth.ts` | `GET /api/users/me`, `PATCH /api/users/me/username` | ✅ |
 | `profile.ts` | `GET /profile`, `GET+PATCH /mod-profile`, `PATCH /password`, `POST /onboarding`, `PATCH /settings`, `POST /mood` | ✅ (`settings`/`mood` no persisten) |
 | `dashboard.ts` | `GET /api/users/me/dashboard/messages` | ✅ |
-| `communities.ts` | `GET+POST /api/communities`, `POST+DELETE /:id/join`, `GET+POST /:id/messages`, `DELETE /:id/messages/:msgId`, `GET /:id/members/active`, `DELETE /:id/members/:userId`, `POST /:id/online`, `PATCH /:id/pinned-note`, `PATCH /:id/chat-closed` | ✅ |
+| `communities.ts` | `GET+POST /api/communities`, `POST+DELETE /:id/join`, `GET+POST /:id/messages`, `DELETE /:id/messages/:msgId`, `GET /:id/members/active`, `DELETE /:id/members/:userId`, `PATCH /:id/pinned-note`, `PATCH /:id/chat-closed` | ✅ |
+| presencia (WS) | suscripción a `/topic/communities/{id}/presence` | ✅ (reemplaza al viejo `POST /:id/online`, ver 2026-06-04 abajo) |
 | `chats.ts` | `GET+POST /api/chats/:id/messages`, `GET /inbox`, `GET+POST /inbox/:userId/messages` | ✅ |
-| `events.ts` | `GET /api/events`, `GET /:id`, `POST+DELETE /:id/interest` | ✅ |
+| `events.ts` | `GET /api/events`, `GET /:id`, `POST /api/events`, `POST+DELETE /:id/interest` | ✅ (`createEvent` añadido 2026-06-04) |
 | `events.ts` | `POST+DELETE /api/events/:id/join` | ⚠️ **NO existe en el back** (solo `/interest`) → 404. `joinEvent`/`leaveEvent` rotos. Pendiente de código. |
 | `bottles.ts` | `POST /api/bottles`, `GET /received`, `GET /floating` | ✅ |
 | `stories.ts` | `GET+POST /api/stories` | ✅ |
@@ -170,7 +171,7 @@ workspace/
 | `moderation.ts` | `GET+POST /reports`, `POST /reports/:id/resolve`, `GET /members`, `POST /members/:id/warn`, `POST /members/:id/ban` | ✅ |
 | `types/api.ts` | `VerifyTotpPayload`/`VerifyLoginPayload` + comentarios hacia `/verify` | ⚠️ **Tipos/comentarios muertos**: el back nunca tuvo `/verify`. Pendiente de código (es `.ts`). |
 
-**Backend implementado pero SIN consumidor en el front** (existe, nadie lo llama desde `services/`): `GET /api/testJWT`, `PUT+DELETE /api/communities/:id`, `PUT+DELETE /api/events/:id`, `GET /api/moderation/reports/pending`, `GET /api/moderation/reports/:id/audit`, `GET /api/moderation/stats`, `POST /api/auth/register/admin/bootstrap` (se invoca desde la página de bootstrap, no desde un service).
+**Backend implementado pero SIN consumidor en el front** (existe, nadie lo llama desde `services/`): `GET /api/testJWT`, `PUT+DELETE /api/communities/:id`, `PUT+DELETE /api/events/:id`, `GET /api/moderation/reports/pending`, `GET /api/moderation/reports/:id/audit`, `GET /api/moderation/stats`, `POST /api/auth/register/admin/bootstrap` (se invoca desde la página de bootstrap, no desde un service). Nota: `POST /api/communities` y `POST /api/events` ya tienen consumidor — `createCommunity` en `communities.ts` y `createEvent` en `events.ts` (añadido 2026-06-04).
 
 ---
 
@@ -211,8 +212,8 @@ workspace/
 - `TimeMachinePage` y `BottleMessagePage` — UI completa. Errores de envío (network + flag) caen al banner demo y simulan éxito; errores de servidor se muestran al usuario.
 - `ModerationPage` — protegida con `<RequireRole roles={['MODERATOR', 'ADMIN']}>` desde Sprint 1.
 - `CommunityChatPage` — si el `:comunidadId` no existe en los mocks, muestra "Comunidad no encontrada" con CTA a `/comunidades`.
-- `EventCreatePage` y el form embebido de `EventDetailPage` (`EventFormSection`) — **simulan publicar/guardar sin backend real**. Documentado como deuda; cuando el back tenga `POST /api/events` y `POST /api/events/:id/form*` se conectan con `useApi` + `optimisticMutation`.
-- `CommunityCreatePage` (`/comunidades/nueva`, solo MOD/ADMIN) — **simula publicar sin backend real**. Campos: nombre, descripción, emoji, categoría, moderador/a. TODO marcado para `POST /api/communities` cuando el back lo implemente.
+- `EventCreatePage` — **conectado al backend real** desde 2026-06-04. Llama a `POST /api/events` vía `createEvent` de `events.ts`. Mapeo de campos: `desc`→`description`, `date+time`→`date` (ISO combinado), `host`→`topic`, `duration`→`place` (único campo disponible en la entidad `Event`). El form embebido `EventFormSection` de `EventDetailPage` sigue sin backend (`POST /api/events/:id/form*` no existe).
+- `CommunityCreatePage` (`/comunidades/nueva`, solo MOD/ADMIN) — **conectado al backend real** desde 2026-06-04. Llama a `POST /api/communities` vía `createCommunity` de `communities.ts`. La categoría se convierte a mayúsculas antes de enviar (el backend espera el nombre del enum `CommunityTypes`: `ANSIEDAD`, `DEPRESION`, etc.). Tras crear, navega al ID real de la comunidad.
 
 ---
 
@@ -288,7 +289,7 @@ npm run test:watch  # Vitest, modo watch
 - **Persistencia local cuando no hay back** (`lib/bannedWords.ts`, `lib/eventInterests.ts`, `sys_lang`, `sys_theme`, `sys_token`): patrón con `localStorage` + clave `sys_*` + módulo singleton con `get/set/subscribe`. Cuando exista el back, sustituir solo la capa de fetch — los hooks consumidores no cambian.
 - **Sub-componentes en `components/<area>/`**: para descomponer god components, los sub-componentes viven en su propia subcarpeta de `components/` (no en `pages/`). Convención actual: `components/auth/`, `components/settings/`, `components/moderation/`, `components/events/`, `components/layout/`, `components/ui/`. Cada sub-componente tiene su **propio `.module.css`**. **Prohibido importar el CSS Module de la page padre** desde un sub-componente — acoplamiento invertido eliminado en la auditoría B1.
 - **`useSavedFlash(ms)` hook** (`hooks/useSavedFlash.ts`): para el patrón "✓ Guardado" temporal. Devuelve `[shown, flash]`. Llama a `flash()` tras un éxito y `shown` queda true durante `ms` (2000 por defecto). Cancela el timer al desmontar. Usar este en vez de `useState + setTimeout` inline.
-- **Eventos "Me interesa" con contador real**: el back devuelve `interestedCount` **incluyendo** al usuario actual si ya tiene interés registrado. Para evitar doble conteo, `EventDetailPage` captura el estado inicial de `liked` con `useRef(liked)` en el primer render y calcula un **delta**: `(event.interestedCount ?? 0) + (liked === likedOnMount.current ? 0 : liked ? 1 : -1)`. Si el estado no cambió desde el monte → delta 0; si el usuario acaba de dar like → +1; si acaba de quitarlo → −1.
+- **Eventos "Me interesa" con contador real**: el back devuelve `interestedCount` **incluyendo** al usuario actual si ya tiene interés registrado. Para evitar doble conteo, `EventDetailPage` captura el estado inicial de `liked` con `useRef(liked)` en el primer render y calcula un **delta**: `(event.interestedCount ?? 0) + (liked === likedOnMount.current ? 0 : liked ? 1 : -1)`. Si el estado no cambió desde el monte → delta 0; si el usuario acaba de dar like → +1; si acaba de quitarlo → −1. **Todos los roles pueden dar Me interesa, incluido ANON** (`canLike = !!user`); el backend lo permite mediante `authenticated()` que acepta cualquier JWT válido incluido el de ANON.
 
 ---
 
@@ -394,6 +395,7 @@ npm run test:watch  # Vitest, modo watch
 - `settings`/`mood` **no persisten** en el back (decidir: persistir o quitar del UI).
 - `ApiProfile.activity` se entrega **vacío** (no hay modelo de actividad).
 - **Desajustes de contrato a resolver en código**: `events.ts` `joinEvent`/`leaveEvent` llaman a `/api/events/:id/join` (inexistente → 404); `types/api.ts` arrastra `VerifyTotpPayload`/`VerifyLoginPayload` y comentarios hacia `/verify` (muertos).
+- **Crear mod/admin (`/modregister`) requiere sesión activa de ADMINISTRATOR**: el backend devuelve 403 sin cuerpo si el JWT del llamante no es de rol `ADMINISTRATOR`. El front ya muestra mensaje claro ("Necesitas iniciar sesión como administrador...") desde 2026-06-04. El guard `<RequireRole>` de la ruta sigue pendiente de restaurar (ver TODO histórico).
 
 ### 6. Pulido / deuda
 - Estilos del botón "reportar" en el popup del mapa.
@@ -434,6 +436,96 @@ Commits recientes (con tag):
 ---
 
 ## Última actualización
+
+- **2026-06-05** — **Vista de chats privados del profesional: redirigir a bandeja, ocultar lista de colegas.**
+  - **Problema:** cuando un profesional (MODERATOR en el front) accedía a `/chat/:id`, veía la lista de todos los profesionales en el sidebar en lugar de sus conversaciones con usuarios anónimos. El botón "Mi bandeja" al final del sidebar tampoco tenía sentido.
+  - **Cambios:**
+    - `PrivateChatPage`: si `isMod && !isInboxMode`, devuelve `<Navigate to="/chat/inbox" replace />` antes de renderizar nada. Los profesionales siempre aterrizan en su bandeja. Eliminado el `ChatSidebarItem` de "Mi bandeja" del sidebar normal (era código muerto para mods). Eliminados import de `useAuth` y la variable `user` (ya sin uso tras borrar el item).
+    - `Navbar`: en la rama `isMod`, se sustituye `{ to: '/profesionales', label: t('nav.profesionales') }` por `{ to: '/chat/inbox', label: t('nav.chatsPrivados') }`. Los profesionales ven "Chats privados" en el menú en lugar de "Ayuda profesional".
+    - `i18n`: añadida key `nav.chatsPrivados` en ES ("Chats privados"), EN ("Private chats") y EU ("Chat pribatuak").
+  - **Comportamiento resultante:** un profesional entra a `/chat/inbox` desde el navbar (o desde cualquier `/chat/*` que le redirige). Ve su lista de conversaciones con usuarios anónimos. Los usuarios normales siguen viendo la lista de profesionales como antes.
+
+- **2026-06-05** — **Tarjetas de "Ayuda profesional": el estado pasa de disponibilidad falsa (now/today/tomorrow) a online/offline real.**
+  - **Motivo:** el pill de disponibilidad mostraba solo el punto sin texto. La causa: `ProfessionalController` hardcodeaba `availability="today"` con `availableAt=null` para *todos*, y la rama `today` del pill pintaba el texto desde `availableAt` (vacío → solo punto). Además el matiz now/today/tomorrow no significaba nada (no hay modelo de disponibilidad). Decisión del usuario: estado de conexión real, coherente con la tabla de Miembros.
+  - **Backend:** `ProfessionalResponse` cambia `availability`/`availableAt` (String) por **`online` (boolean)**. `ProfessionalController` inyecta `UserPresenceService` y calcula `online = presenceService.isOnline(u.getUsername())` (mismo origen de presencia que el staff del panel: sesiones STOMP vivas, snapshot al pedir el listado, no tiempo real).
+  - **Frontend:** `ApiProfessional` pierde `availability`/`availableAt` y gana `online: boolean`. `ProfessionalsPage` y `PrivateChatPage` sustituyen `AvailabilityPill` por `StatusPill` (punto + "En línea"/"Desconectado"). El filtro `filterNow` ("Disponibles ahora") pasa a `filterOnline` ("En línea") y filtra por `p.online`. i18n: `availNow/availToday/availTomorrow/filterNow` → `statusOnline/statusOffline/filterOnline` (ES/EN/EU). CSS: `.pillNow/.pillToday/.pillTomorrow` → `.pillOnline/.pillOffline` en ambos `.module.css`.
+  - **Caveat:** `online` es snapshot por sesión WS (igual que el staff): refleja quién tiene la app abierta al cargar el listado, no se actualiza en vivo.
+
+- **2026-06-05** — **Fix: el WebSocket no se reconectaba al cambiar de identidad (login/logout) → presencia online y `/user/queue` con el Principal equivocado.**
+  - **Problema:** `initWS()` se ejecuta una sola vez al cargar el módulo (`main.tsx`) y **nada reconectaba el STOMP al cambiar el token**. El `Principal` de la sesión WebSocket se fija en el CONNECT, así que si la app arrancaba anónima (caso típico) y luego hacías login de mod/admin, la conexión seguía viva con el `Principal` **anónimo**. Efecto visible: un admin logueado aparecía **offline** en la tabla de staff (su username nunca entraba en `UserPresenceService`). Mismo defecto latente en los **mensajes privados** (`/user/queue/private` enruta por el Principal).
+  - **Fix (frontend):** `lib/wsClient.ts` guarda el `connectedToken` (el token usado por la conexión viva, fijado en `beforeConnect`) y expone **`syncWSAuth()`**: si el token actual difiere, fuerza `deactivate().then(activate())` para que el CONNECT lleve el JWT vigente (los `onConnect` callbacks se vuelven a suscribir solos). `AuthContext.applySession` llama a `syncWSAuth()` tras guardar el token, cubriendo login, login mod (`loginAsModWithToken`), registro, restauración, anónimo y logout. La guarda por igualdad de token evita reconexiones redundantes (p. ej. en refresh con sesión ya válida no reconecta).
+  - **Sin cambios de backend.** La presencia (`UserPresenceService`) ya era correcta; el bug era que el cliente nunca reconectaba con la identidad nueva.
+
+- **2026-06-05** — **Pestaña "Miembros" del panel: tabla de mod/admins (con online) + editar/borrar, además de la lista de miembros de comunidad.**
+  - **Decisión:** la pestaña Miembros ahora muestra **arriba** una tabla con todo el equipo (PROFESSIONAL + ADMINISTRATOR) y **debajo** se mantiene la lista de miembros de comunidad con Avisar/Banear. Botón **"Añadir mod/admin"** → `/modregister`.
+  - **Backend (3 endpoints nuevos en `ModerationController`/`ModerationService`):**
+    - `GET /api/moderation/staff` → `StaffMemberResponse[]` (`id, name, username, email, role, company, profession, joined, online`). `online` se calcula con la **presencia global nueva** (`UserPresenceService` + `UserPresenceListener`): mapa en memoria `username -> sesiones STOMP vivas`, alimentado por `SessionConnectedEvent`/`SessionDisconnectEvent` (el CONNECT ata el Principal=username en `WebSocketConfig`). Es snapshot (al cargar/refrescar), no tiempo real. `UserRepository.findByRoleIn(...)` nuevo.
+    - `PATCH /api/moderation/staff/{id}` (body `UpdateStaffRequest {name?, email?, company?, profession?}`) → edita campos básicos. **Solo ADMINISTRATOR** (403 si no) y **no la cuenta propia** (400). No edita rol ni username.
+    - `DELETE /api/moderation/staff/{id}` → borra el usuario. **Solo ADMINISTRATOR** y **no la cuenta propia** (400). `CommunityMember.userId` es columna lógica (sin FK JPA), así que el borrado no rompe el mapeo; si hubiera FKs a nivel de script SQL podría dar 409.
+  - **Frontend:**
+    - `types/api.ts`: `ApiStaffMember` (con `online`) + `UpdateStaffPayload`.
+    - `services/moderation.ts`: `getModerationStaff`, `updateStaff`, `deleteStaff`. Hook `useModerationStaff` (`useApi`).
+    - `components/moderation/MembersSection.tsx`: tabla de staff con punto de estado (En línea/Desconectado), etiqueta de rol, y botones **editar** (`IconPencil`) / **borrar** (`IconTrash`) que **solo aparecen para ADMIN y nunca en la fila propia** (comparando `useRole().user.id` con el id del staff). Borrar usa confirmación inline (Confirmar/Cancelar).
+    - `components/moderation/StaffEditModal.tsx` (+ `.module.css`): modal de edición reutilizando `FormField`/`Input`/`Feedback`. Para ADMINISTRATOR oculta empresa/profesión (igual que `ModRegisterPage`).
+    - `Icons.tsx`: nuevos `IconPencil` e `IconTrash`.
+    - i18n: claves `moderation.staffDesc/addStaff/staffEmpty/online/offline/editBtn/deleteBtn/confirm/cancel/staffEdit*` (ES/EN/EU).
+  - **Caveat:** el `online` es por **sesión WS** (si un mod tiene la app abierta en una pestaña → online). Se actualiza al entrar/refrescar la pestaña Miembros, no en vivo.
+
+- **2026-06-05** — **Mensajes privados: resolver/avisar un reporte ahora BORRA el mensaje y desaparece en vivo (como en comunidades).**
+  - **Cambio:** en `ModerationService.resolveReport`, la rama `PRIVATE_MESSAGE` ya no sanea el texto sino que **borra la fila de `private_messages`** vía nuevo `PrivateMessageService.deleteMessage(messageId)`. Como un chat privado tiene dos participantes y usa colas personales (no un topic), el `DELETE` se difunde a la cola de **ambos** (`/user/queue/private`), igual que `saveMessage` reparte el mensaje. El `message_id` del reporte es referencia lógica (sin FK); el snapshot `reports.content` conserva el texto para el panel.
+  - **Backend:** `PrivateMessageDTO` gana campo `action` + factory `deleted(id, userId, professionalId)` (lleva los ids para que el cliente enrute el borrado al hilo). `PrivateMessageService.deleteMessage` borra y difunde a ambos. Con esto, **las tres ramas de moderación (STORY, MESSAGE, PRIVATE_MESSAGE) borran**; se eliminó la constante `REDACTED_MESSAGE` (ya sin uso).
+  - **Frontend:** `privateChatStore` añade `removeMessage(professionalId, id)`; `privChatWS` ramifica por `raw.action === 'DELETE'` → lo quita del hilo (clave = `professionalId`).
+  - **Caveat (igual que ya pasaba):** la **bandeja del profesional** (`usePrivateInbox`) no es tiempo real, así que el profesional verá el borrado al recargar; el **usuario** con el hilo abierto sí lo ve en vivo. Es la misma limitación de tiempo real que ya tenían los privados (ver Roadmap §5).
+
+- **2026-06-05** — **Resolver/avisar un reporte de mensaje de comunidad ahora BORRA el mensaje (antes lo enmascaraba).**
+  - **Cambio:** en `ModerationService.resolveReport`, la rama `MESSAGE` ya no sanea el texto a `[eliminado por moderación]` sino que **borra la fila de `community_messages`** vía `communityMessageService.deleteMessage(communityId, messageId)`, que difunde el evento `DELETE` por `/topic/communities/{id}`. Resultado: al resolver un mensaje reportado, desaparece en vivo en todas las sesiones del chat, igual que el delete directo del moderador. El `message_id` del reporte es referencia lógica (sin FK), así que borrar el mensaje no rompe nada; el snapshot `reports.content` conserva el texto para el panel.
+  - **Limpieza:** eliminado `CommunityMessageService.maskMessage(...)` (introducido el mismo día), ya sin uso.
+  - **Sin cambios de front.** Los `PRIVATE_MESSAGE` siguen enmascarándose (sin difusión en vivo) — fuera de alcance.
+
+- **2026-06-05** — **Moderación de mensajes de comunidad en tiempo real (borrado y saneo se ven al instante para todos).**
+  - **Problema:** ni el borrado directo de un mensaje (`DELETE /:id/messages/:msgId`) ni el saneo por resolver/avisar un reporte difundían nada por WebSocket. El moderador lo veía (quita el mensaje localmente), pero el resto de la comunidad seguía viendo el mensaje original hasta recargar.
+  - **Solución (solo backend; el front ya estaba preparado):**
+    - `CommunityMessageDTO`: nuevo campo `action` + factory `deleted(id)` (`action:"DELETE"`). En mensajes normales `action` es null → el cliente lo trata como crear/actualizar.
+    - `WebSocketService.broadcastDeletedCommunityMessage(communityId, messageId)`: difunde el borrado por `/topic/communities/{id}`.
+    - `CommunityMessageService`: `deleteMessage` ahora recibe `communityId` y **difunde DELETE** tras borrar; nuevo `maskMessage(messageId, texto)` que sanea el texto, guarda y **difunde la actualización** (mismo id → el front hace upsert y cambia el texto en sitio).
+    - `CommunityMessageController.deleteMessage`: pasa `communityId` al servicio.
+    - `ModerationService`: la rama MESSAGE de `resolveReport` delega en `communityMessageService.maskMessage(...)` (antes saneaba inline sin difundir).
+  - **Front:** sin cambios. `communityChatWS` ya ramifica por `payload.action === 'DELETE'` → `removeMessage`; en otro caso `addMessage`, que es **upsert** (si el id ya existe, mezcla y actualiza el texto). `ApiMessage` ya tenía `action?: 'DELETE'`.
+  - **Alcance:** cubre mensajes de **comunidad**. Los **mensajes privados** saneados por moderación siguen sin difusión en vivo (van por `/user/queue/private`, otro canal) — pendiente si se quiere. Nota cosmética menor: al actualizar un mensaje saneado el DTO lleva `own:false`, así que en la pantalla del autor el globo redactado puede cambiar de lado (irrelevante, el contenido está censurado).
+
+- **2026-06-05** — **Moderación de historias del mapa: al resolver un reporte de tipo STORY se borra el punto (antes se enmascaraba).**
+  - **Cambio:** en `ModerationService.resolveReport`, la rama `STORY` ya no hace `setMessage("[eliminado por moderación]")` sino que **borra la fila de `storyMaps`** por completo. Mensajes de comunidad y privados siguen enmascarándose igual.
+  - **FK:** antes de borrar, se desligan todos los reportes que referencian esa historia (`reports.story_id`) vía nuevo `ReportRepository.findByStory_Id(...)` + `setStory(null)` + `saveAll/flush`, para no violar la restricción. El snapshot `reports.content` conserva el texto reportado, así que el panel de moderación sigue mostrando qué se reportó aunque la historia ya no exista.
+  - **Tiempo real:** el punto desaparece **en vivo** en los mapas abiertos. Backend: nuevo `StoryMapEventDTO {action, id, message, latitude, longitude}`; `WebSocketService.broadcastNewStoryMap` ahora envía `action:"CREATE"` y el nuevo `broadcastDeletedStoryMap(id)` envía `action:"DELETE"` por `/topic/storyMap`. Frontend: `storiesStore` añade `removeStory(id)`; `storiesWS` ramifica por `raw.action` (`DELETE` → quita el punto; resto → lo añade, con fallback compatible si no viene acción).
+  - **Contrato WS de historias:** el mensaje de `/topic/storyMap` pasa a llevar un campo `action`. El GET REST `/api/stories` no cambia (sigue devolviendo entidades `StoryMap` crudas). Front + back compilan limpios.
+
+- **2026-06-04** — **Fix: historias del mapa de 256–300 caracteres no se guardaban (y fallaban en silencio).**
+  - **Problema:** el front permite hasta 300 chars (`MapPage` `maxLength={300}`), pero la entidad `StoryMap.message` era un `String` sin `@Column(length)`, así que Hibernate (`ddl-auto=update`) creaba la columna como `VARCHAR(255)`. Una historia de 256–300 chars reventaba en MySQL (`Data too long`). Peor aún: `StoryMapService.createStoryMap` envolvía el `save()` en un `try/catch` que **se tragaba la excepción** y devolvía un `int` (406) en el **body** con HTTP 200, de modo que el front (que ignora el body y confía en que el POST lance) nunca se enteraba → la historia no se guardaba sin ningún error visible.
+  - **Solución (backend):**
+    - `StoryMap.java`: `@Column(length = 300)` en `message` para casar con el límite del front.
+    - `NewStoryMapRequest.java`: validación `@NotBlank @Size(max = 300)` en `text`.
+    - `StoryMapController.java`: `@Valid` en el `@RequestBody`; ahora devuelve `ResponseEntity<StoryMap>` con **201 Created** (antes un `int`). Un texto >300 → 400 limpio vía `MethodArgumentNotValid` del `GlobalExceptionHandler`.
+    - `StoryMapService.java`: eliminado el `try/catch` que silenciaba el error (y los `System.out.println` de debug); ahora devuelve el `StoryMap` guardado y deja que los fallos de persistencia se propaguen. El front ya tiene el `catch` + `silentMutation` que mostrará el error.
+  - **Frontend:** sin cambios de código (el contrato se respeta: `createStory` ignora el body y la historia llega por el broadcast WS).
+  - **OJO BD existente:** `ddl-auto=update` **no** ensancha de forma fiable una columna ya creada (solo añade tablas/columnas que faltan). En una BD que ya tenga la tabla `storyMaps`, hay que ejecutar a mano: `ALTER TABLE storyMaps MODIFY message VARCHAR(300);`. En una BD nueva Hibernate ya la crea como `VARCHAR(300)`.
+
+- **2026-06-04** — **Presencia real de "usuarios en línea" derivada de sesiones STOMP (fix: el contador solo subía).**
+  - **Problema:** el número de "en línea" era un entero **persistido en la columna `online` de `Community`** que el cliente incrementaba (`POST /:id/online?delta=+1`) al entrar al chat y decrementaba (`delta=-1`) al salir. El `-1` solo se enviaba si React desmontaba de forma ordenada; con cierre de pestaña, F5, pérdida de red o suspensión del móvil, el `+1` quedaba persistido y el `-1` no llegaba nunca. Como el valor era global y sobrevivía a reinicios, la deriva al alza se acumulaba para siempre → "solo sube y sube".
+  - **Solución (backend):** presencia derivada de las **suscripciones STOMP vivas**, todo en memoria.
+    - Nuevo `domain/community/service/CommunityPresenceService.java`: `Map<communityId, Set<sessionId>>` + `Map<"sessionId:subscriptionId", communityId>` (para resolver el UNSUBSCRIBE, que no trae destino). Métodos `onSubscribe/onUnsubscribe/onDisconnect/count`, y difunde el conteo por `/topic/communities/{id}/presence`.
+    - Nuevo `websocket/listener/WebSocketPresenceListener.java`: `@EventListener` para `SessionSubscribeEvent` / `SessionUnsubscribeEvent` / `SessionDisconnectEvent`. El **DISCONNECT** (que el broker dispara también en cierres bruscos / timeout de heartbeat) es lo que hace que el número **baje solo**. Regex `^/topic/communities/(\d+)$` con `matches()` → solo cuenta el topic de una comunidad concreta (excluye el topic de lista y el propio `/presence`).
+    - Nuevo `websocket/service/PresenceDTO.java` (`{communityId, online}`).
+    - `CommunityService.toResponse` ahora calcula `online` con `presenceService.count(id)` en vez de `c.getOnline()`. `CommunityResponse.from` recibe `online` como parámetro. **Eliminados** `CommunityService.updateOnline` y el endpoint `POST /api/communities/:id/online` del controlador. La columna `online` de la entidad se conserva (compat BD) pero ya no se lee para la respuesta.
+  - **Solución (frontend):**
+    - `services/communityChatWS.ts`: quitadas las llamadas `updateCommunityOnline(+1/-1)`. Al entrar al chat, además de suscribirse a `/topic/communities/{id}` (mensajes), se suscribe a `/topic/communities/{id}/presence` y actualiza el `online` de esa comunidad en `communitiesStore` en vivo. Ambas suscripciones se limpian juntas al salir.
+    - `services/communities.ts`: **eliminada** la función `updateCommunityOnline` (sin más consumidores).
+  - **Comportamiento resultante:** el número refleja las sesiones realmente conectadas al chat y baja al salir aunque sea por cierre brusco. Cuenta por **sesión** (cada pestaña abierta suma 1); si se quisiera deduplicar por usuario, bastaría contar por `Principal`/username en `CommunityPresenceService`. Front + back compilan limpios.
+
+- **2026-06-04** — **Conexión real de creación de comunidades y eventos; fixes de permisos y Me interesa.**
+  - **`CommunityCreatePage`**: conectado a `POST /api/communities` (antes fake-success comentado). Corrección de bug: la categoría se manda en mayúsculas para que Jackson deserialice el enum `CommunityTypes` correctamente (`'ansiedad'` → `'ANSIEDAD'`). Añadido estado `loading`/`error`; tras crear, navega al ID real.
+  - **`EventCreatePage`**: conectado a `POST /api/events` (antes fake-success comentado). Añadida `createEvent` a `services/events.ts` con mapeo de campos al modelo de la entidad `Event` (`description`, `topic`, `place`, `date` combinado con `time`).
+  - **`ModRegisterPage`**: el 403 del backend ahora muestra mensaje claro en lugar de "Error 403". Añadidas keys i18n `errEmailDuplicate` y `errForbidden` (× 3 idiomas).
+  - **`EventDetailPage` y `EventListPage`**: `canLike = !!user` (antes `user?.role !== 'ANON'`). Los anónimos tienen JWT válido; el backend acepta `authenticated()` para `/interest`.
 
 - **2026-06-03** — **Realineamiento documental front↔back.** Tras una sesión grande de realineamiento de código (ver `AUDITORIA.md`), se puso al día este `CLAUDE.md` contra el **estado real** del backend (verificado endpoint a endpoint):
   - Reescrita la mentira *"backend muy verde, solo `register/mod` y `User`"*: el back tiene **47 endpoints en 11 controladores**, JWT real, WebSocket STOMP autenticado, rate limiting (bucket4j), `@RestControllerAdvice` global, membresía de comunidades, chat privado en `/api/chats`, moderación con 3 tipos de reporte, etc.
@@ -640,3 +732,14 @@ Commits recientes (con tag):
   - **Convenciones nuevas:**
     - **Flujos de auth con 2FA = state machine en la página, no en el contexto.** El AuthContext expone primitivas `loginAsMod` y `verifyLoginAsMod`; la página orquesta los pasos con un `useState<Phase>`. Patrón replicable si se añade 2FA al login de usuarios normales más adelante.
     - **Cuando el back asuma el 2FA:** los `catch (e) { if (!isNetworkError(e) || !ALLOW_MOCK_FALLBACK) throw e; ... }` de `services/auth.ts` siguen funcionando sin tocar. `lib/totp.ts` queda como código muerto y se puede borrar.
+
+---
+
+## gstack (equipo de IA por slash commands)
+
+Este repo usa **gstack** cuando se abre Claude Code **desde WSL** (las skills viven en `~/.claude/skills/gstack` del Ubuntu, no en el home de Windows; en una sesión de Windows nativo NO están disponibles).
+
+- **Navegación web:** usa `/browse` de gstack. **No** uses las herramientas `mcp__claude-in-chrome__*`.
+- **Skills disponibles:** `/office-hours`, `/plan-ceo-review`, `/plan-eng-review`, `/plan-design-review`, `/design-consultation`, `/design-shotgun`, `/design-html`, `/review`, `/ship`, `/land-and-deploy`, `/canary`, `/benchmark`, `/browse`, `/qa`, `/qa-only`, `/cso`, `/investigate`, `/autoplan`, `/learn`, `/gstack-upgrade`.
+- **Testeo en navegador real:** `/qa http://localhost:5173` (frontend Vite). Backend en `:8080`, MySQL en `:3306` (devcontainer). Para solo reportar sin tocar código: `/qa-only`.
+- **gstack NO anula las reglas de este fichero.** Castellano, sin emojis en la UI, diseños simples, preguntar ante ambigüedad, y al terminar dar los comandos de commit (sin commitear automáticamente) — todo sigue vigente dentro de cualquier skill.

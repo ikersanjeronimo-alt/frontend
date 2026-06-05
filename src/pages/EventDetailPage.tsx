@@ -41,7 +41,7 @@ export function EventDetailPage() {
 
   const { toggle, isInterested } = useEventInterests()
   const liked = eventId ? isInterested(eventId) : false
-  const canLike = user?.role !== 'ANON'
+  const canLike = !!user
   // Captura el estado inicial para que el delta optimista sea correcto:
   // si el usuario ya había marcado interés, interestedCount del servidor ya lo incluye.
   // const likedOnMount = useRef(liked)

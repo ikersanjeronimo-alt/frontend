@@ -58,6 +58,27 @@ export interface ApiModerationMember {
   banned: boolean
 }
 
+export interface ApiStaffMember {
+  id: string
+  name: string
+  username: string
+  email: string
+  /** Rol crudo del backend. */
+  role: 'PROFESSIONAL' | 'ADMINISTRATOR'
+  company: string | null
+  profession: string | null
+  joined: string
+  /** Tiene alguna sesión WebSocket viva ahora mismo. */
+  online: boolean
+}
+
+export interface UpdateStaffPayload {
+  name?: string
+  email?: string
+  company?: string
+  profession?: string
+}
+
 export interface ApiMessage {
   id: string
   username: string
@@ -74,8 +95,6 @@ export interface ApiEvent {
   date: string
   time?: string
   duration?: string
-  spots?: number
-  total?: number
   tags: string[]
   desc?: string
   description?: string
@@ -124,8 +143,7 @@ export interface ApiProfessional {
   name: string
   specialty: 'psicologo' | 'terapeuta' | 'psiquiatra'
   tags: string[]
-  availability: 'now' | 'today' | 'tomorrow'
-  availableAt?: string
+  online: boolean
   bio?: string
 }
 

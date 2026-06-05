@@ -1,0 +1,78 @@
+.trigger {
+  border: none;
+  background: transparent;
+  color: inherit;
+  opacity: 0.55;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.12s ease, background 0.12s ease;
+}
+
+.trigger:hover {
+  opacity: 1;
+  background: rgba(127, 127, 127, 0.16);
+}
+
+/* Popover renderizado en portal sobre <body> con position fixed. */
+.menu {
+  position: fixed;
+  z-index: 1200;
+  min-width: 160px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.item {
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dark);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease;
+}
+
+.item:hover:not(:disabled) {
+  background: var(--primary-vlt);
+}
+
+.item:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Variante "light": colores fijos del tema claro, independientes de
+   data-theme. Para superficies que siempre son blancas aunque la app esté en
+   modo oscuro, como los popups del mapa (Leaflet no sigue el tema). */
+.triggerLight {
+  color: #696283;
+  opacity: 0.7;
+}
+
+.menuLight {
+  background: #ffffff;
+  border-color: #e5e0f5;
+  box-shadow: var(--shadow-sm);
+}
+
+.menuLight .item {
+  color: #2a2560;
+}
+
+.menuLight .item:hover:not(:disabled) {
+  background: #f3f1fb;
+}

@@ -1,5 +1,5 @@
 import { apiFetch } from './api'
-import type { ApiReport, ApiModerationMember } from '../types/api'
+import type { ApiReport, ApiModerationMember, ApiStaffMember, UpdateStaffPayload } from '../types/api'
 
 export function getReports(): Promise<ApiReport[]> {
   return apiFetch<ApiReport[]>('/api/moderation/reports')
@@ -37,6 +37,21 @@ export function reportPrivateMessage(privateMessageId: string, reason: string): 
 
 export function getModerationMembers(): Promise<ApiModerationMember[]> {
   return apiFetch<ApiModerationMember[]>('/api/moderation/members')
+}
+
+export function getModerationStaff(): Promise<ApiStaffMember[]> {
+  return apiFetch<ApiStaffMember[]>('/api/moderation/staff')
+}
+
+export function updateStaff(id: string, payload: UpdateStaffPayload): Promise<ApiStaffMember> {
+  return apiFetch<ApiStaffMember>(`/api/moderation/staff/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteStaff(id: string): Promise<void> {
+  return apiFetch<void>(`/api/moderation/staff/${id}`, { method: 'DELETE' })
 }
 
 export function warnMember(id: string): Promise<ApiModerationMember> {

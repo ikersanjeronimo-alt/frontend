@@ -20,7 +20,7 @@ import styles from './SettingsPage.module.css'
 
 export function SettingsPage() {
   const { logout } = useAuth()
-  const { isMod, isAdmin } = useRole()
+  const { isMod } = useRole()
   const navigate = useNavigate()
   const { t } = useTranslation()
 
@@ -45,13 +45,11 @@ export function SettingsPage() {
 
   const handleSectionClick = (id: string) => {
     if (id === 'salir') { logout(); navigate('/'); return }
-    if (id === 'crear_moderador') { navigate('/admin/moderadores/nuevo'); return }
     setSection(id)
     setMobileOpen(false)
   }
 
-  const ADMIN_SECTIONS = isAdmin ? [{ id: 'crear_moderador', label: t('admin.createModeratorTitle') }] : []
-  const visibleSections = isMod ? [...SECTIONS, ...MOD_SECTIONS, ...ADMIN_SECTIONS] : [...SECTIONS, ...ADMIN_SECTIONS]
+  const visibleSections = isMod ? [...SECTIONS, ...MOD_SECTIONS] : SECTIONS
   const allSections     = [...visibleSections, ...DANGER_SECTIONS]
   const currentLabel    = allSections.find(s => s.id === section)?.label ?? ''
 

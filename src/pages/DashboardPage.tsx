@@ -175,7 +175,6 @@ export function DashboardPage() {
               <p className={styles.eventMeta}>{t('common.host')} {nextEvent.host}</p>
               <div className={styles.eventRow}>
                 <span className={styles.eventDate}>{nextEvent.date} · {nextEvent.time}</span>
-                <span className={styles.eventSpots}>{nextEvent.spots} {t('dashboard.spotsLeft')}</span>
               </div>
               <button className={styles.eventBtn} onClick={() => navigate(`/eventos/${nextEvent.id}`)}>
                 {t('dashboard.joinEvent')}

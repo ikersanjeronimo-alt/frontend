@@ -84,12 +84,10 @@
   font-weight: 600;
 }
 
-.pillNow    { background: var(--green-lt); color: var(--green); }
-.pillToday  { background: #fff4e5;         color: var(--peach); }
-.pillTomorrow { background: var(--bg);     color: var(--mid); }
+.pillOnline  { background: var(--green-lt); color: var(--green); }
+.pillOffline { background: var(--bg);        color: var(--mid); }
 
-:global([data-theme="dark"]) .pillNow   { background: #163524; color: #7ED9A1; }
-:global([data-theme="dark"]) .pillToday { background: #3A2917; color: #F0B86B; }
+:global([data-theme="dark"]) .pillOnline { background: #163524; color: #7ED9A1; }
 
 .panelSection {
   display: flex;

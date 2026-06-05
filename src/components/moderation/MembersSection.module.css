@@ -16,6 +16,107 @@
   line-height: 1.6;
 }
 
+.staffHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.addBtn {
+  border: none;
+  border-radius: 12px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font);
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.addBtn:hover { opacity: 0.85; }
+
+.membersTitle {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+}
+
+.empty {
+  font-size: 13px;
+  color: var(--lite);
+  margin: 0;
+  padding: 4px 0;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.statusOn  { color: #2d7d46; }
+.statusOff { color: var(--lite); }
+
+:global([data-theme="dark"]) .statusOn { color: #7ED9A1; }
+
+.iconBtn {
+  border: none;
+  background: var(--primary-vlt);
+  color: var(--primary);
+  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.iconBtn:hover { opacity: 0.8; }
+
+.iconBtnDanger { background: #ffeaea; color: #e53935; }
+
+:global([data-theme="dark"]) .iconBtnDanger { background: #3B1A1A; color: #F08A86; }
+
+.confirmText {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mid);
+  align-self: center;
+}
+
+.roleTag {
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 3px 10px;
+  flex-shrink: 0;
+}
+
+.roleMod {
+  background: var(--primary-vlt);
+  color: var(--primary);
+}
+
+.roleAdmin {
+  background: #fff4e5;
+  color: #b45309;
+}
+
+:global([data-theme="dark"]) .roleAdmin {
+  background: #3A2917;
+  color: #F0B86B;
+}
+
 .table {
   display: flex;
   flex-direction: column;

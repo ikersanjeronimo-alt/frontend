@@ -265,6 +265,38 @@ export function IconMoodVeryGood(p: IconProps) {
   return <MoodFace {...p} eyes="happy" mouth={<path d="M8 14 Q12 18.5 16 14" />} />
 }
 
+// ── Tres puntos verticales (menú de acciones) ───────────────
+
+export function IconKebab(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <circle cx="12" cy="5" r="1.4" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none" />
+    </Svg>
+  )
+}
+
+export function IconPencil(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" />
+    </Svg>
+  )
+}
+
+export function IconTrash(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <line x1="10" y1="11" x2="10" y2="17" />
+      <line x1="14" y1="11" x2="14" y2="17" />
+    </Svg>
+  )
+}
+
 // ── Punto coloreado para indicadores de disponibilidad ───────
 
 export function IconDot({ color = 'currentColor', size = 10, className }: { color?: string; size?: number; className?: string }) {

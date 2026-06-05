@@ -8,6 +8,9 @@ interface SelectProps<T extends string> {
   placeholder?: string
   ariaLabel?: string
   id?: string
+  /** Etiqueta visible para cada valor. El valor (T) es lo que se emite/envía;
+   *  esto solo cambia lo que se muestra (p. ej. para traducir las opciones). */
+  getLabel?: (value: T) => string
 }
 
 export function Select<T extends string>({
@@ -17,6 +20,7 @@ export function Select<T extends string>({
   placeholder = 'Sin especificar',
   ariaLabel,
   id,
+  getLabel = (v) => v,
 }: SelectProps<T>) {
   const [open, setOpen]           = useState(false)
   const [highlight, setHighlight] = useState<number>(-1)
@@ -84,7 +88,7 @@ export function Select<T extends string>({
     }
   }
 
-  const display = value || placeholder
+  const display = value ? getLabel(value) : placeholder
 
   return (
     <div className={styles.root} ref={rootRef}>
@@ -137,7 +141,7 @@ export function Select<T extends string>({
                 onMouseEnter={() => setHighlight(idx)}
                 onClick={() => select(opt)}
               >
-                {opt}
+                {getLabel(opt)}
               </li>
             )
           })}

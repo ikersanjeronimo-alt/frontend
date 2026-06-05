@@ -192,11 +192,6 @@
   font-weight: 600;
 }
 
-.cardSpots {
-  font-size: 12px;
-  color: var(--mid);
-}
-
 /* ── Botón crear evento ───────────────────────────────────── */
 
 .createBtn {

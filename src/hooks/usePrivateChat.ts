@@ -47,11 +47,11 @@ export function usePrivateChat(professionalId: string) {
 
     try {
       const saved = await sendPrivateMessage(professionalId, text)
+      // Quitar el optimista y cualquier eco del WS que ya haya llegado con el id
+      // real, y dejar una sola copia de `saved` (evita la burbuja duplicada).
       const latest = usePrivateChatStore.getState().messages[professionalId] ?? EMPTY
-      usePrivateChatStore.getState().setMessages(
-        professionalId,
-        latest.map(message => message.id === tempId ? saved : message),
-      )
+      const deduped = latest.filter(message => message.id !== tempId && message.id !== saved.id)
+      usePrivateChatStore.getState().setMessages(professionalId, [...deduped, saved])
       return saved
     } catch (error) {
       const latest = usePrivateChatStore.getState().messages[professionalId] ?? EMPTY

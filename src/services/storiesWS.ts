@@ -12,6 +12,14 @@ export function initStoriesWS(): void {
         client.subscribe(TOPIC, res => {
               const raw = JSON.parse(res.body)
 
+              // Evento de borrado (p. ej. historia eliminada por moderación):
+              // quita el punto del mapa al instante.
+              if (raw.action === 'DELETE') {
+                useStoriesStore.getState().removeStory(String(raw.id))
+                return
+              }
+
+              // CREATE (o mensajes sin acción, por compatibilidad): añade el punto.
               const story: Story = {
                 id: String(raw.id),
                 lat: raw.latitude,

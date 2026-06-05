@@ -12,6 +12,7 @@ interface StoriesState {
   connected:    boolean
   setStories:   (stories: Story[]) => void
   addStory:     (story: Story) => void
+  removeStory:  (id: string) => void
   setConnected: (v: boolean) => void
 }
 
@@ -23,6 +24,9 @@ export const useStoriesStore = create<StoriesState>((set) => ({
     stories: state.stories.some(s => s.id === story.id)
       ? state.stories
       : [...state.stories, story]
+  })),
+  removeStory:  (id)      => set(state => ({
+    stories: state.stories.filter(s => s.id !== id)
   })),
   setConnected: (connected) => set({ connected }),
 }))

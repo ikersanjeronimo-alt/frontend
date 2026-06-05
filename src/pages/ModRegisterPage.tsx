@@ -30,6 +30,20 @@ export function ModRegisterPage({ initialMode = 'moderador', lockMode = false, b
   const navigate = useNavigate()
   const { t } = useTranslation()
 
+  const PROFESSION_LABELS: Record<Profession, string> = {
+    'Psicólogo':  t('modRegister.prof_psicologo'),
+    'Terapeuta':  t('modRegister.prof_terapeuta'),
+    'Psiquiatra': t('modRegister.prof_psiquiatra'),
+  }
+  const SPECIALIZATION_LABELS: Record<Specialization, string> = {
+    'Ansiedad':   t('modRegister.spec_ansiedad'),
+    'Depresión':  t('modRegister.spec_depresion'),
+    'Estrés':     t('modRegister.spec_estres'),
+    'Duelo':      t('modRegister.spec_duelo'),
+    'Autoestima': t('modRegister.spec_autoestima'),
+    'Relaciones': t('modRegister.spec_relaciones'),
+  }
+
   const [mode, setMode]         = useState<Mode>(initialMode)
   const [phase, setPhase]       = useState<Phase>('form')
   
@@ -315,6 +329,8 @@ export function ModRegisterPage({ initialMode = 'moderador', lockMode = false, b
                     value={profession}
                     onChange={setProfession}
                     options={PROFESSION_OPTIONS}
+                    getLabel={v => PROFESSION_LABELS[v]}
+                    placeholder={t('modRegister.unspecified')}
                     ariaLabel={t('modRegister.professionLbl')}
                   />
                 </div>
@@ -325,6 +341,8 @@ export function ModRegisterPage({ initialMode = 'moderador', lockMode = false, b
                     value={specialization}
                     onChange={setSpecialization}
                     options={SPECIALIZATION_OPTIONS}
+                    getLabel={v => SPECIALIZATION_LABELS[v]}
+                    placeholder={t('modRegister.unspecified')}
                     ariaLabel={t('modRegister.specLbl')}
                   />
                 </div>

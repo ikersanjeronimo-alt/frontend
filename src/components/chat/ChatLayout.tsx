@@ -176,10 +176,10 @@ export function ChatBubble({ side, avatar, username, time, children, actions }: 
         {username && <span className={styles.bubbleUsername}>{username}</span>}
         <div className={`${styles.bubble} ${isOwn ? styles.bubbleOwn : styles.bubbleOther}`}>
           {children}
-          {actions && <div className={styles.bubbleActions}>{actions}</div>}
         </div>
         <span className={styles.bubbleTime}>{time}</span>
       </div>
+      {actions && <div className={styles.bubbleActions}>{actions}</div>}
     </div>
   )
 }

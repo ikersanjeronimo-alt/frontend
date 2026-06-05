@@ -261,28 +261,6 @@
   display: block;
 }
 
-/* ── Barra de plazas ──────────────────────────────────────── */
-
-.spotsBar {
-  height: 6px;
-  background: var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-  margin-top: -4px;
-}
-
-.spotsBarFill {
-  height: 100%;
-  background: var(--primary);
-  border-radius: 6px;
-}
-
-.spotsText {
-  font-size: 12px;
-  color: var(--mid);
-  margin: -8px 0 0;
-}
-
 /* ── CTA ──────────────────────────────────────────────────── */
 
 .cta {

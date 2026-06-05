@@ -8,8 +8,6 @@ export interface Event {
   time?:            string
   duration?:        string
   place?:           string
-  spots?:           number
-  total?:           number
   tags?:            string[]
   desc?:            string
   joined?:          boolean

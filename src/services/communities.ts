@@ -65,12 +65,6 @@ export function getActiveMembers(communityId: string): Promise<ApiChatMember[]> 
   return apiFetch<ApiChatMember[]>(`/api/communities/${communityId}/members/active`)
 }
 
-export function updateCommunityOnline(id: string, delta: number): Promise<ApiCommunity> {
-  return apiFetch<any>(`/api/communities/${id}/online?delta=${delta}`, {
-    method: 'POST',
-  }).then(normalizeCommunity)
-}
-
 export interface CreateCommunityPayload {
   name: string
   desc: string

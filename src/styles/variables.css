@@ -2,6 +2,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
+  /* Esquema de color del documento: pinta scrollbars y controles nativos
+     acordes al tema (claro por defecto). */
+  color-scheme: light;
+
   /* --- Colores principales --- */
   --primary:      #8A7DC4;   /* lavanda media — botones, acentos */
   --primary-dk:   #6B5BAA;   /* hover, gradientes oscuros */
@@ -49,6 +53,9 @@
    Activado al setear `data-theme="dark"` en <html>. Mantiene los
    mismos nombres de variables — el resto del CSS no cambia. */
 [data-theme="dark"] {
+  /* Scrollbars y controles nativos en versión oscura. */
+  color-scheme: dark;
+
   /* Acentos: el lavanda se aclara ligeramente para contraste sobre fondo oscuro.
      `--primary-dk` se usa para hover y en oscuro pasa a ser MÁS claro que
      `--primary` (el nombre se mantiene por compatibilidad). */

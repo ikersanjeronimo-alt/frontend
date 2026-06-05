@@ -200,6 +200,73 @@
   transform: translateY(-1px);
 }
 
+/* ── Nick editable (solo ANON) ───────────────────────────── */
+
+.nickChip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--primary-vlt);
+  border: 1px solid var(--primary-lt);
+  border-radius: 17px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  white-space: nowrap;
+  font-family: var(--font);
+}
+
+.nickChip:hover {
+  background: var(--primary-lt);
+  transform: translateY(-1px);
+}
+
+.nickEditIcon {
+  font-size: 11px;
+  opacity: 0.65;
+  line-height: 1;
+}
+
+.nickEditWrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.nickInput {
+  background: var(--white);
+  border: 1.5px solid var(--primary);
+  border-radius: 17px;
+  padding: 5px 12px;
+  font-size: 12px;
+  color: var(--dark);
+  font-family: var(--font);
+  width: 140px;
+  outline: none;
+}
+
+.nickInputError {
+  border-color: #c0392b;
+}
+
+.nickErrorMsg {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 12px;
+  font-size: 11px;
+  color: #c0392b;
+  white-space: nowrap;
+  background: var(--white);
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid #f5c6c6;
+  z-index: 10;
+}
+
 /* ── Botón entrar ─────────────────────────────────────────── */
 
 .enterBtn {

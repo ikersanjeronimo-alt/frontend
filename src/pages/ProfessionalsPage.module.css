@@ -276,7 +276,7 @@
   flex-wrap: wrap;
 }
 
-/* ── Disponibilidad pills ─────────────────────────────────── */
+/* ── Estado de conexión (online/offline) ──────────────────── */
 
 .pill {
   font-size: 11px;
@@ -289,12 +289,10 @@
   gap: 6px;
 }
 
-.pillNow      { background: #e6f4ea; color: #2d7d46; }
-.pillToday    { background: #fff3e0; color: #e65100; }
-.pillTomorrow { background: var(--bg); color: var(--mid); border: 1px solid var(--border); }
+.pillOnline  { background: #e6f4ea; color: #2d7d46; }
+.pillOffline { background: var(--bg); color: var(--mid); border: 1px solid var(--border); }
 
-:global([data-theme="dark"]) .pillNow   { background: #163524; color: #7ED9A1; }
-:global([data-theme="dark"]) .pillToday { background: #3A2917; color: #F0B86B; }
+:global([data-theme="dark"]) .pillOnline { background: #163524; color: #7ED9A1; }
 
 /* ── Botón contactar ──────────────────────────────────────── */
 

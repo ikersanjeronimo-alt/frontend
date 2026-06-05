@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useAuth } from '../context/AuthContext'
 import { useRole } from '../hooks/useRole'
 import { useProfessionals } from '../hooks/useProfessionals'
 import { usePrivateChat } from '../hooks/usePrivateChat'
@@ -16,38 +15,26 @@ import {
   ChatLayout, ChatSidebar, ChatSidebarItem, ChatSidebarExplore,
   ChatMain, ChatHeader, ChatMessages, ChatBubble, ChatComposer, ChatPanel,
 } from '../components/chat/ChatLayout'
-import chatStyles from '../components/chat/ChatLayout.module.css'
+import { BubbleMenu, type BubbleMenuItem } from '../components/chat/BubbleMenu'
 import { reportPrivateMessage } from '../services/moderation'
 import { initials } from '../lib/initials'
 import type { ApiProfessional } from '../types/api'
 import styles from './PrivateChatPage.module.css'
 
-function AvailabilityPill({ p }: { p: ApiProfessional }) {
+function StatusPill({ p }: { p: ApiProfessional }) {
   const { t } = useTranslation()
-  if (p.availability === 'now') {
-    return (
-      <span className={`${styles.pill} ${styles.pillNow}`}>
-        <IconDot color="var(--green)" size={8} />
-        <span>{t('professionals.availNow')}</span>
-      </span>
-    )
-  }
-  if (p.availability === 'today') {
-    return (
-      <span className={`${styles.pill} ${styles.pillToday}`}>
-        <IconDot color="var(--peach)" size={8} />
-        <span>{p.availableAt}</span>
-      </span>
-    )
-  }
-  return <span className={`${styles.pill} ${styles.pillTomorrow}`}>{t('professionals.availTomorrow')}</span>
+  return (
+    <span className={`${styles.pill} ${p.online ? styles.pillOnline : styles.pillOffline}`}>
+      <IconDot color="currentColor" size={8} />
+      <span>{p.online ? t('professionals.statusOnline') : t('professionals.statusOffline')}</span>
+    </span>
+  )
 }
 
 export function PrivateChatPage() {
   const { professionalId = '', userId = '' } = useParams<{ professionalId: string; userId?: string }>()
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { user } = useAuth()
   const { isMod } = useRole()
   const { data: professionals, loading: professionalsLoading } = useProfessionals()
   const { words: bannedWords } = useBannedWords()
@@ -75,6 +62,19 @@ export function PrivateChatPage() {
 
   const isInboxMode = professionalId === 'inbox'
 
+  // Todos los hooks deben llamarse antes de cualquier early return
+  const regularProfessional = useMemo(
+    () => professionals.find(p => p.id === professionalId),
+    [professionals, professionalId],
+  )
+  const inbox = usePrivateInbox(userId, isInboxMode)
+  const privateChat = usePrivateChat(isInboxMode ? '' : professionalId)
+
+  // Early returns DESPUÉS de todos los hooks
+  if (isMod && !isInboxMode) {
+    return <Navigate to="/chat/inbox" replace />
+  }
+
   if (isInboxMode && !isMod) {
     return (
       <ChatLayout>
@@ -90,14 +90,6 @@ export function PrivateChatPage() {
       </ChatLayout>
     )
   }
-
-  const regularProfessional = useMemo(
-    () => professionals.find(p => p.id === professionalId),
-    [professionals, professionalId],
-  )
-
-  const inbox = usePrivateInbox(userId, isInboxMode)
-  const privateChat = usePrivateChat(isInboxMode ? '' : professionalId)
 
   const activeProfessional = isInboxMode ? null : regularProfessional
   const messages = isInboxMode ? inbox.messages : privateChat.messages
@@ -151,14 +143,6 @@ export function PrivateChatPage() {
           meta={SPECIALTY_LABELS[p.specialty] ?? p.specialty}
         />
       ))}
-      {isMod && (
-        <ChatSidebarItem
-          to="/chat/inbox"
-          avatar={<div className={styles.sidebarAvatar}>{initials(user?.username ?? 'ME')}</div>}
-          name={t('privateChat.inboxTitle')}
-          meta={t('privateChat.inboxMeta')}
-        />
-      )}
       <ChatSidebarExplore to="/profesionales">{t('privateChat.explore')}</ChatSidebarExplore>
     </ChatSidebar>
   )
@@ -229,24 +213,29 @@ export function PrivateChatPage() {
           )}
           {messages.map(m => {
             const isUser = m.from === 'user'
+            // `from` es el rol absoluto del emisor; "propio" depende de quién mira:
+            // el usuario ve como propios los suyos; el profesional (inbox), los del profesional.
+            const isOwn = isInboxMode ? !isUser : isUser
             const avatarName = isInboxMode ? inbox.selectedConversation?.username ?? 'Usuario' : activeProfessional?.name ?? 'Usuario'
             const canReport = !isInboxMode && !isUser
+            const menuItems: BubbleMenuItem[] = []
+            if (canReport) {
+              const reported = reportedMsgIds.has(m.id)
+              menuItems.push({
+                label: reported ? t('map.reported') : t('map.report'),
+                onClick: () => handleReportPrivate(m.id),
+                disabled: reported,
+              })
+            }
             return (
               <ChatBubble
                 key={m.id}
-                side={isUser ? 'own' : 'other'}
-                avatar={!isUser ? initials(avatarName) : undefined}
+                side={isOwn ? 'own' : 'other'}
+                avatar={!isOwn ? initials(avatarName) : undefined}
                 time={m.time}
-                actions={canReport ? (
-                  <button
-                    type="button"
-                    className={chatStyles.bubbleActionBtn}
-                    onClick={() => handleReportPrivate(m.id)}
-                    disabled={reportedMsgIds.has(m.id)}
-                  >
-                    {reportedMsgIds.has(m.id) ? t('map.reported') : t('map.report')}
-                  </button>
-                ) : undefined}
+                actions={menuItems.length > 0
+                  ? <BubbleMenu items={menuItems} ariaLabel={t('common.messageActions')} />
+                  : undefined}
               >
                 {maskBannedWords(m.text, bannedWords)}
               </ChatBubble>
@@ -278,7 +267,7 @@ export function PrivateChatPage() {
         {!isInboxMode && activeProfessional && (
           <>
             <div className={styles.panelAvail}>
-              <AvailabilityPill p={activeProfessional} />
+              <StatusPill p={activeProfessional} />
             </div>
 
             {activeProfessional.bio && (

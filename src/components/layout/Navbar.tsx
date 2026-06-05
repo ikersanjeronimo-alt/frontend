@@ -1,23 +1,23 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '../../context/AuthContext'
 import { useRole } from '../../hooks/useRole'
 import { IconUser } from '../ui/Icons'
 import styles from './Navbar.module.css'
 
 export function Navbar() {
   const { user, isMod, isLoggedIn } = useRole()
+  const { updateUsername } = useAuth()
   const navigate = useNavigate()
   const { t } = useTranslation()
 
-  // Links según rol: los mods/admins ven panel + lo justo para moderar;
-  // anon/users mantienen el catálogo completo de features de bienestar.
   const NAV_LINKS = isMod
     ? [
-        { to: '/moderacion',         label: t('nav.moderacion') },
-        { to: '/comunidades',        label: t('nav.comunidades') },
-        { to: '/eventos',            label: t('nav.eventos') },
-        { to: '/profesionales',      label: t('nav.profesionales') },
+        { to: '/moderacion',   label: t('nav.moderacion') },
+        { to: '/comunidades',  label: t('nav.comunidades') },
+        { to: '/eventos',      label: t('nav.eventos') },
+        { to: '/chat/inbox',   label: t('nav.chatsPrivados') },
       ]
     : [
         { to: '/comunidades',        label: t('nav.comunidades') },
@@ -30,14 +30,69 @@ export function Navbar() {
 
   const [menuOpen, setMenuOpen] = useState(false)
 
+  // Estado del chip editable (solo ANON)
+  const [editing,   setEditing]   = useState(false)
+  const [nickVal,   setNickVal]   = useState('')
+  const [nickError, setNickError] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
   const closeMenu = () => setMenuOpen(false)
 
   const goToDashboard = () => { navigate('/dashboard'); closeMenu() }
   const goToSettings  = () => { navigate('/configuracion'); closeMenu() }
 
-  // Mismo bloque para ANON y USER/MOD/ADMIN: engranaje → ajustes, username → dashboard.
-  // La edición del username vive solo en /configuracion > Cuenta (fuente única).
-  const userSection = user ? (
+  const startEdit = () => {
+    setNickVal(user?.username ?? '')
+    setNickError(null)
+    setEditing(true)
+    setTimeout(() => inputRef.current?.select(), 0)
+  }
+
+  const commitEdit = async () => {
+    const trimmed = nickVal.trim()
+    if (!trimmed || trimmed === user?.username) { setEditing(false); return }
+    try {
+      await updateUsername(trimmed)
+      setEditing(false)
+      setNickError(null)
+    } catch (e: unknown) {
+      const status = (e as { status?: number }).status
+      setNickError(status === 409 ? t('nav.nickTaken') : t('common.errSend'))
+      inputRef.current?.select()
+    }
+  }
+
+  const handleNickKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') { e.preventDefault(); void commitEdit() }
+    if (e.key === 'Escape') setEditing(false)
+  }
+
+  const isAnon = user?.role === 'ANON'
+
+  // ANON: chip editable con lápiz inline
+  // USER/MOD/ADMIN: engranaje (→ ajustes) + username estático (→ dashboard)
+  const userSection = !user ? null : isAnon ? (
+    editing ? (
+      <div className={styles.nickEditWrap}>
+        <input
+          ref={inputRef}
+          className={`${styles.nickInput} ${nickError ? styles.nickInputError : ''}`}
+          value={nickVal}
+          onChange={e => { setNickVal(e.target.value); setNickError(null) }}
+          onBlur={() => { void commitEdit() }}
+          onKeyDown={handleNickKey}
+          maxLength={32}
+          aria-label={t('nav.editNick')}
+        />
+        {nickError && <span className={styles.nickErrorMsg}>{nickError}</span>}
+      </div>
+    ) : (
+      <button className={styles.nickChip} onClick={startEdit} title={t('nav.editNick')}>
+        {user.username}
+        <span className={styles.nickEditIcon} aria-hidden>✎</span>
+      </button>
+    )
+  ) : (
     <>
       <button
         className={styles.dashboardBtn}
@@ -55,7 +110,7 @@ export function Navbar() {
         {user.username}
       </button>
     </>
-  ) : null
+  )
 
   return (
     <header className={styles.header}>

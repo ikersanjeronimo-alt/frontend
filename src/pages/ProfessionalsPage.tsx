@@ -9,23 +9,14 @@ import { SleepingCat } from '../components/ui/SleepingCat'
 import { catFor } from '../components/ui/catPalette'
 import styles from './ProfessionalsPage.module.css'
 
-type Availability = 'now' | 'today' | 'tomorrow'
-
-function AvailabilityPill({ a, at }: { a: Availability; at?: string }) {
+function StatusPill({ online }: { online: boolean }) {
   const { t } = useTranslation()
-  if (a === 'now') return (
-    <span className={`${styles.pill} ${styles.pillNow}`}>
-      <IconDot color="var(--green)" size={8} />
-      <span>{t('professionals.availNow')}</span>
+  return (
+    <span className={`${styles.pill} ${online ? styles.pillOnline : styles.pillOffline}`}>
+      <IconDot color="currentColor" size={8} />
+      <span>{online ? t('professionals.statusOnline') : t('professionals.statusOffline')}</span>
     </span>
   )
-  if (a === 'today') return (
-    <span className={`${styles.pill} ${styles.pillToday}`}>
-      <IconDot color="var(--peach)" size={8} />
-      <span>{at}</span>
-    </span>
-  )
-  return <span className={`${styles.pill} ${styles.pillTomorrow}`}>{t('professionals.availTomorrow')}</span>
 }
 
 export function ProfessionalsPage() {
@@ -46,14 +37,14 @@ export function ProfessionalsPage() {
     { id: 'psicologo',  label: t('professionals.filterPsi') },
     { id: 'terapeuta',  label: t('professionals.filterTer') },
     { id: 'psiquiatra', label: t('professionals.filterPsq') },
-    { id: 'now',        label: t('professionals.filterNow') },
+    { id: 'online',     label: t('professionals.filterOnline') },
   ]
 
   const filtered = professionals.filter(p => {
     const specialtyLabel = SPECIALTY_LABELS[p.specialty] ?? p.specialty
     const matchesFilter =
-      filter === 'all'   ? true :
-      filter === 'now'   ? p.availability === 'now' :
+      filter === 'all'    ? true :
+      filter === 'online' ? p.online :
       p.specialty === filter
     const q = search.toLowerCase()
     const matchesSearch =
@@ -137,7 +128,7 @@ export function ProfessionalsPage() {
               </div>
 
               <div className={styles.cardFooter}>
-                <AvailabilityPill a={p.availability} at={p.availableAt} />
+                <StatusPill online={p.online} />
                 <button
                   className={styles.contactBtn}
                   onClick={() => navigate(`/chat/${p.id}`)}

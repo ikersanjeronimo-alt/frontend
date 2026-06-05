@@ -13,6 +13,7 @@ import { reportStory } from '../services/moderation'
 import { silentMutation } from '../lib/silentMutation'
 import { SleepingCat } from '../components/ui/SleepingCat'
 import { catFor } from '../components/ui/catPalette'
+import { BubbleMenu } from '../components/chat/BubbleMenu'
 import { useStoriesStore } from '../store/storiesStore'  // ← NUEVO
 import styles from './MapPage.module.css'
 
@@ -143,17 +144,18 @@ export function MapPage() {
             <Popup className={styles.popup} maxWidth={280}>
               <div className={styles.popupInner}>
                 <p className={styles.popupText}>{maskBannedWords(s.text, bannedWords)}</p>
-                {reportedIds.has(s.id) ? (
-                  <span className={styles.popupReported}>{t('map.reported')}</span>
-                ) : (
-                  <button
-                    type="button"
-                    className={styles.popupReportBtn}
-                    onClick={() => handleReport(s.id)}
-                  >
-                    {t('map.report')}
-                  </button>
-                )}
+                <div className={styles.popupActions}>
+                  <BubbleMenu
+                    items={[{
+                      label: reportedIds.has(s.id) ? t('map.reported') : t('map.report'),
+                      onClick: () => handleReport(s.id),
+                      disabled: reportedIds.has(s.id),
+                    }]}
+                    ariaLabel={t('common.messageActions')}
+                    placement="right"
+                    light
+                  />
+                </div>
               </div>
             </Popup>
           </Marker>

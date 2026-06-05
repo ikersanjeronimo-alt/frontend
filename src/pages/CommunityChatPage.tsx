@@ -15,7 +15,7 @@ import {
   ChatLayout, ChatSidebar, ChatSidebarItem, ChatSidebarExplore,
   ChatMain, ChatHeader, ChatMessages, ChatBubble, ChatComposer, ChatPanel,
 } from '../components/chat/ChatLayout'
-import chatStyles from '../components/chat/ChatLayout.module.css'
+import { BubbleMenu, type BubbleMenuItem } from '../components/chat/BubbleMenu'
 import {
   deleteCommunityMessage,
   kickCommunityMember,
@@ -195,26 +195,21 @@ export function CommunityChatPage() {
         <ChatMessages scrollDep={messages.length}>
           {messages.map((m) => {
             const isOwn = m.own || m.username === user?.username
-            const canDelete = canModerate || isOwn
-            const reportBtn = !isOwn ? (
-              <button
-                type="button"
-                className={chatStyles.bubbleActionBtn}
-                onClick={() => handleReportMessage(m.id)}
-                disabled={reportedMsgIds.has(m.id)}
-              >
-                {reportedMsgIds.has(m.id) ? t('map.reported') : t('map.report')}
-              </button>
-            ) : null
-            const deleteBtn = canDelete ? (
-              <button
-                type="button"
-                className={chatStyles.bubbleActionBtn}
-                onClick={() => handleDeleteMessage(m.id)}
-              >
-                {t('common.delete')}
-              </button>
-            ) : null
+            const menuItems: BubbleMenuItem[] = []
+            if (!isOwn) {
+              const reported = reportedMsgIds.has(m.id)
+              menuItems.push({
+                label: reported ? t('map.reported') : t('map.report'),
+                onClick: () => handleReportMessage(m.id),
+                disabled: reported,
+              })
+            }
+            if (canModerate) {
+              menuItems.push({
+                label: t('common.delete'),
+                onClick: () => handleDeleteMessage(m.id),
+              })
+            }
             return (
               <ChatBubble
                 key={m.id}
@@ -222,7 +217,9 @@ export function CommunityChatPage() {
                 avatar={!isOwn ? initials(m.username) : undefined}
                 username={isOwn ? t('common.you') : m.username}
                 time={m.time}
-                actions={(reportBtn || deleteBtn) ? <>{reportBtn}{deleteBtn}</> : undefined}
+                actions={menuItems.length > 0
+                  ? <BubbleMenu items={menuItems} ariaLabel={t('common.messageActions')} />
+                  : undefined}
               >
                 {maskBannedWords(m.text, bannedWords)}
               </ChatBubble>

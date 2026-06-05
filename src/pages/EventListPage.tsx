@@ -21,7 +21,7 @@ export function EventListPage() {
   const { isMod } = useRole()
   const navigate = useNavigate()
   const { toggle, isInterested } = useEventInterests()
-  const canLike = user?.role !== 'ANON'
+  const canLike = !!user
 
   const [activeEventId, setActiveEventId] = useState<string | null>(null)
   const cardRefs = useRef<Map<string, HTMLElement>>(new Map())
@@ -145,7 +145,6 @@ export function EventListPage() {
                         {e?.tags?.map(tag => <span key={tag} className={styles.cardTag}>{tag}</span>)}
                       </div>
                     )}
-                    <span className={styles.cardSpots}>{e.spots}/{e.total} {t('events.spotsLabel')}</span>
                   </div>
                 </div>
               </div>
