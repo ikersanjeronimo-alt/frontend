@@ -32,6 +32,13 @@ import styles from './DashboardPage.module.css'
 
 const dashCat = catFor('/dashboard')
 
+function fmtDate(iso: string | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return iso
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+}
+
 const MOOD_ICONS = {
   1: IconMoodVeryBad,
   2: IconMoodBad,
@@ -172,9 +179,9 @@ export function DashboardPage() {
             <div className={`${styles.widget} ${styles.widgetEvent}`}>
               <p className={styles.eventLabel}>{t('dashboard.nextEvent')}</p>
               <h3 className={styles.eventTitle}>{nextEvent.title}</h3>
-              <p className={styles.eventMeta}>{t('common.host')} {nextEvent.host}</p>
+              {nextEvent.host && <p className={styles.eventMeta}>{t('common.host')} {nextEvent.host}</p>}
               <div className={styles.eventRow}>
-                <span className={styles.eventDate}>{nextEvent.date} · {nextEvent.time}</span>
+                <span className={styles.eventDate}>{fmtDate(nextEvent.date)}{nextEvent.time ? ` · ${nextEvent.time}` : ''}</span>
               </div>
               <button className={styles.eventBtn} onClick={() => navigate(`/eventos/${nextEvent.id}`)}>
                 {t('dashboard.joinEvent')}

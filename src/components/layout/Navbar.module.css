@@ -97,9 +97,11 @@
 .linkActive {
   font-size: 13px;
   text-decoration: none;
-  padding: 4px 2px;
+  padding: 14px 2px;
   position: relative;
   transition: color 0.15s;
+  display: flex;
+  align-items: center;
 }
 
 .link {
@@ -348,7 +350,7 @@
 
 .mobileLink {
   display: block;
-  padding: 12px 24px;
+  padding: 15px 24px;
   font-size: 14px;
   color: var(--mid);
   text-decoration: none;

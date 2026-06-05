@@ -12,6 +12,13 @@ import { catFor } from '../components/ui/catPalette'
 import styles from './EventListPage.module.css'
 import { useEventStore } from '../store/eventsStore'
 
+function fmtDate(iso: string | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return iso
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+}
+
 export function EventListPage() {
   const { t } = useTranslation()
   // const { data: events, loading, error } = useEvents()
@@ -132,10 +139,14 @@ export function EventListPage() {
 
               <div className={styles.cardBody}>
                 <div className={styles.cardTopRow}>
-                  <span className={styles.cardDate}>{e.date} · {e.time}</span>
+                  <span className={styles.cardDate}>{fmtDate(e.date)}{e.time ? ` · ${e.time}` : ''}</span>
                 </div>
                 <h3 className={styles.cardTitle}>{e.title}</h3>
-                <p className={styles.cardHost}>{t('common.host')} {e.host} · {e.duration}</p>
+                {(e.host || e.duration) && (
+                  <p className={styles.cardHost}>
+                    {e.host ? `${t('common.host')} ${e.host}` : ''}{e.host && e.duration ? ' · ' : ''}{e.duration ?? ''}
+                  </p>
+                )}
                 <p className={`${styles.cardDesc} ${isActive ? styles.cardDescFull : ''}`}>{e.desc}</p>
 
                 <div className={styles.cardExtra} aria-hidden={!isActive}>

@@ -92,6 +92,9 @@ export function ProfilePage() {
           <div className={styles.widget}>
             <h2 className={styles.widgetTitle}>{t('profile.recentAct')}</h2>
             <div className={styles.timeline}>
+              {profile.activity.length === 0 && (
+                <p className={styles.emptyActivity}>{t('profile.noActivity')}</p>
+              )}
               {profile.activity.map(a => (
                 <div key={a.id} className={styles.timelineItem}>
                   <div className={styles.timelineIcon}>{ACTIVITY_ICON[a.icon] ?? <IconChat size={16} />}</div>

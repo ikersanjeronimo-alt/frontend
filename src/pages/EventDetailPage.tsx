@@ -17,6 +17,13 @@ import { catFor } from '../components/ui/catPalette'
 import styles from './EventDetailPage.module.css'
 import { useEventStore } from '../store/eventsStore'
 
+function fmtDate(iso: string | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return iso
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+}
+
 export function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>()
   const navigate    = useNavigate()
@@ -90,7 +97,7 @@ export function EventDetailPage() {
           <div className={styles.hero}>
             <div className={`${styles.heroBlob} blob blob-float-slow`} />
             <h1 className={styles.heroTitle}>{event.title}</h1>
-            <p className={styles.heroHost}>{t('common.host')} {event.host}</p>
+            {event.host && <p className={styles.heroHost}>{t('common.host')} {event.host}</p>}
             <SleepingCat
               color={catFor('/eventos-detail').color}
               seed={catFor('/eventos-detail').seed}
@@ -137,7 +144,7 @@ export function EventDetailPage() {
                 <span className={styles.infoIcon}><IconCalendar size={18} /></span>
                 <div>
                   <span className={styles.infoLabel}>{t('events.infoDate')}</span>
-                  <span className={styles.infoValue}>{event.date} · {event.time}</span>
+                  <span className={styles.infoValue}>{fmtDate(event.date)}{event.time ? ` · ${event.time}` : ''}</span>
                 </div>
               </div>
               <div className={styles.infoRow}>
@@ -147,6 +154,7 @@ export function EventDetailPage() {
                   <span className={styles.infoValue}>{event.duration}</span>
                 </div>
               </div>
+              {event.host && (
               <div className={styles.infoRow}>
                 <span className={styles.infoIcon}><IconUser size={18} /></span>
                 <div>
@@ -154,6 +162,7 @@ export function EventDetailPage() {
                   <span className={styles.infoValue}>{event.host}</span>
                 </div>
               </div>
+              )}
             </div>
 
             <button
