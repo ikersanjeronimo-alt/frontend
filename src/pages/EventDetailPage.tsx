@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useRef, type ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
@@ -37,10 +37,6 @@ export function EventDetailPage() {
     { icon: <IconQuestion size={18} />, text: t('events.expectQs') },
   ]
 
-  // const { data: events, loading, error } = useEvents()
-  // const event = eventId ? events.find(e => e.id === eventId) : undefined
-  // const notFound = !loading && !error && !event
-
   const events = useEventStore(state => state.events)
   const event = eventId ? events.find(e => e.id === eventId) : undefined
   const notFound = !event
@@ -48,9 +44,7 @@ export function EventDetailPage() {
   const { toggle, isInterested } = useEventInterests()
   const liked = eventId ? isInterested(eventId) : false
   const canLike = !!user
-  // Captura el estado inicial para que el delta optimista sea correcto:
-  // si el usuario ya había marcado interés, interestedCount del servidor ya lo incluye.
-  // const likedOnMount = useRef(liked)
+  const likedOnMount = useRef(liked)
 
   if (!event) {
     return (
@@ -60,7 +54,7 @@ export function EventDetailPage() {
             {t('events.backAll')}
           </button>
         </div>
-        <PageState error={notFound ? t('events.notFound') : null} />
+        <PageState error={notFound ? t('events.notFound') : undefined} />
       </div>
     )
   }
@@ -113,14 +107,16 @@ export function EventDetailPage() {
             <EventFormSection isMod={isMod} />
           </div>
 
+          {event.tags && event.tags.length > 0 && (
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>{t('events.topics')}</h2>
             <div className={styles.tags}>
-              {/* {event.tags.map(t => (
-                <span key={t} className={styles.tag}>{t}</span>
-              ))} */}
+              {event.tags.map(tag => (
+                <span key={tag} className={styles.tag}>{tag}</span>
+              ))}
             </div>
           </div>
+          )}
 
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>{t('events.whatExpect')}</h2>
@@ -146,6 +142,7 @@ export function EventDetailPage() {
                   <span className={styles.infoValue}>{fmtDate(event.date)}{event.time ? ` · ${event.time}` : ''}</span>
                 </div>
               </div>
+              {event.duration && (
               <div className={styles.infoRow}>
                 <span className={styles.infoIcon}><IconClock size={18} /></span>
                 <div>
@@ -153,6 +150,7 @@ export function EventDetailPage() {
                   <span className={styles.infoValue}>{event.duration}</span>
                 </div>
               </div>
+              )}
               {event.host && (
               <div className={styles.infoRow}>
                 <span className={styles.infoIcon}><IconUser size={18} /></span>
@@ -171,7 +169,7 @@ export function EventDetailPage() {
             >
               <IconHeart filled={liked} size={18} />
               <span>{liked ? t('events.interestedYes') : t('events.interestedNo')}</span>
-              {/* <span className={styles.heartCount}>· {(event.interestedCount ?? 0) + (liked === likedOnMount.current ? 0 : liked ? 1 : -1)}</span> */}
+              <span className={styles.heartCount}>· {(event.interestedCount ?? 0) + (liked === likedOnMount.current ? 0 : liked ? 1 : -1)}</span>
             </button>
 
           </div>

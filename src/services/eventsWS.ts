@@ -49,9 +49,10 @@ function handleEventMessage(payload: EventMessage): void {
     title: payload.event.title,
     desc: payload.event.description ?? payload.event.desc ?? '',
     date: payload.event.date,
-    place: payload.event.place ?? '',
+    host: payload.event.topic ?? undefined,
+    duration: payload.event.place ?? undefined,
     interestedCount: payload.event.reaction ?? payload.event.interestedCount ?? 0,
-    tags: payload.event.tags ?? (payload.event.topic ? [payload.event.topic] : []),
+    tags: payload.event.tags ?? [],
   }
 
   switch (payload.action) {
@@ -77,10 +78,11 @@ async function fetchInitialEvents() {
       title: s.title,
       desc: s.desc ?? s.description ?? '',
       date: s.date,
-      place: s.place ?? '',
+      host: s.topic ?? undefined,
+      duration: s.place ?? undefined,
       interestedCount: s.reaction ?? s.interestedCount ?? 0,
       interested: s.interested ?? undefined,
-      tags: s.tags ?? (s.topic ? [s.topic] : []),
+      tags: s.tags ?? [],
     }))
     useEventStore.getState().setEvents(data)
   } catch (error) {
