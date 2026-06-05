@@ -6,7 +6,6 @@ import type {
   ApiUser,
   UserRole,
   RegisterModPayload,
-  // RegisterModEnrollment,
   VerifyTotpPayload,
 } from '../types/api'
 

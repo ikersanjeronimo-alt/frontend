@@ -44,14 +44,11 @@ export function initWS():void{
       }
     },
 
-    onConnect: (frame: IFrame) => {
-        console.log('[ws] Conectado, ejecutando callbacks:', onConnectCallbacks.length)
-        console.log("[ws] Connected", frame)
-        onConnectCallbacks.forEach(cb => cb(client!))
+    onConnect: (_frame: IFrame) => {
+      onConnectCallbacks.forEach(cb => cb(client!))
     },
-    
-    onDisconnect: (frame: IFrame) => {
-      console.log("[ws] Disconnected", frame)
+
+    onDisconnect: (_frame: IFrame) => {
       onDisconnectCallbacks.forEach(cb => cb())
     },
 
@@ -68,7 +65,6 @@ export function initWS():void{
     heartbeatOutgoing: 4000,
   })
 
-  console.log('[ws] Iniciando conexión a:', WS_URL)
   client.activate()
 }
 

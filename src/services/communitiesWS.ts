@@ -14,9 +14,7 @@ interface CommunityMessage {
 }
 
 export function initCommunitiesWS(): void {
-  console.log('[communitiesWS] Inicializando...')
   onConnect((client: Client) => {
-    console.log('[communitiesWS] Conectado, iniciando...')
     fetchInitialCommunities()
     useCommunitiesStore.getState().setConnected(true)
 
@@ -28,11 +26,9 @@ export function initCommunitiesWS(): void {
         console.error('[communities] Error parsing message:', err)
       }
     })
-    console.log('[communitiesWS] Suscrito a', TOPIC)
   })
 
   onDisconnect(() => {
-    console.log('[communitiesWS] Desconectado')
     useCommunitiesStore.getState().setConnected(false)
   })
 }
@@ -44,32 +40,24 @@ function handleCommunityMessage(payload: CommunityMessage): void {
   switch (payload.action) {
     case 'CREATE':
       store.addCommunity(community)
-      console.log('[communities] Community created:', community.id)
       break
-    case 'UPDATE':
-      {
-        const current = store.communities.find(c => c.id === community.id)
-        store.updateCommunity(current ? { ...community, joined: current.joined } : community)
-      }
-      console.log('[communities] Community updated:', community.id)
+    case 'UPDATE': {
+      const current = store.communities.find(c => c.id === community.id)
+      store.updateCommunity(current ? { ...community, joined: current.joined } : community)
       break
+    }
     case 'DELETE':
       store.removeCommunity(community.id)
-      console.log('[communities] Community deleted:', community.id)
       break
     default:
-      console.warn('[communities] Unknown action:', payload.action)
+      console.warn('[communities] Unknown action:', (payload as any).action)
   }
 }
 
 async function fetchInitialCommunities() {
   try {
-    console.log('[communitiesWS] Cargando comunidades iniciales...')
     const res = await getCommunities()
-    console.log('[communitiesWS] Comunidades cargadas:', res.length, res)
-
     useCommunitiesStore.getState().setCommunities(res)
-    console.log('[communitiesWS] Store actualizado')
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') {
       console.warn('[communitiesWS] Timeout loading initial communities')
@@ -80,10 +68,6 @@ async function fetchInitialCommunities() {
 }
 
 function normalizeCommunity(raw: any, currentUserId: string | null = null): ApiCommunity {
-  return normalizeCommunityWithUser(raw, currentUserId)
-}
-
-function normalizeCommunityWithUser(raw: any, currentUserId: string | null): ApiCommunity {
   const modUserId = raw.modUserId != null ? String(raw.modUserId) : null
   const joinedFromBackend = Boolean(raw.joined ?? false)
   const joined = joinedFromBackend || (
@@ -110,8 +94,6 @@ function normalizeCommunityWithUser(raw: any, currentUserId: string | null): Api
 
 function getCurrentUserId(): string | null {
   const token = tokenStorage.get()
-  if (!token) {
-    return null
-  }
+  if (!token) return null
   return restoreAuthFromToken(token)?.user.id ?? null
 }

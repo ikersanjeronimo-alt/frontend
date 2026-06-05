@@ -7,20 +7,14 @@ import { useCommunitiesStore } from '../store/communitiesStore'
 const subscriptions: Map<string, () => void> = new Map()
 
 export function initCommunityChatWS(communityId: string): void {
-  // Si ya hay suscripción para este chat, no hacer nada
-  if (subscriptions.has(communityId)) {
-    return
-  }
+  if (subscriptions.has(communityId)) return
 
   const client = getClient()
 
-  // Si el cliente ya está conectado, suscribirse inmediatamente
   if (client?.connected) {
     subscribe(client, communityId)
   } else {
-    // Si no está conectado, hacerlo cuando se conecte
     onConnect((connectedClient: Client) => {
-      // Verificar que aún no hay suscripción (podría haberse creado en el intervalo)
       if (!subscriptions.has(communityId)) {
         subscribe(connectedClient, communityId)
       }
@@ -44,8 +38,8 @@ function subscribe(client: Client, communityId: string): void {
     }
   }).unsubscribe
 
-  // Presencia real: el backend deriva el numero de usuarios en linea de las
-  // sesiones STOMP vivas suscritas a esta comunidad y lo publica aqui cada vez
+  // Presencia real: el backend deriva el número de usuarios en línea de las
+  // sesiones STOMP vivas suscritas a esta comunidad y lo publica aquí cada vez
   // que alguien entra o sale (incluido cierre brusco). Ya no hay contador +1/-1.
   const unsubscribePresence = client.subscribe(`${topic}/presence`, (message) => {
     try {
@@ -63,7 +57,6 @@ function subscribe(client: Client, communityId: string): void {
     unsubscribeMessages()
     unsubscribePresence()
   })
-  console.log(`[communityChat] Subscribed to ${topic}`)
 }
 
 export function unsubscribeCommunityChat(communityId: string): void {
@@ -71,6 +64,5 @@ export function unsubscribeCommunityChat(communityId: string): void {
   if (unsubscribe) {
     unsubscribe()
     subscriptions.delete(communityId)
-    console.log(`[communityChat] Unsubscribed from ${communityId}`)
   }
 }

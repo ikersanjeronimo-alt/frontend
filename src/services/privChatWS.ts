@@ -73,5 +73,4 @@ function subscribe(client: Client): void {
   })
 
   subscribed = true
-  console.log('[privateChat] Subscribed to /user/queue/private')
 }

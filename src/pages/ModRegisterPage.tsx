@@ -47,12 +47,10 @@ export function ModRegisterPage({ initialMode = 'moderador', lockMode = false, b
   const [mode, setMode]         = useState<Mode>(initialMode)
   const [phase, setPhase]       = useState<Phase>('form')
   
-  // Email registrado (para 2FA)
   const [enrolledEmail, setEnrolledEmail] = useState('')
   const [otpauthUri, setOtpauthUri] = useState<string | null>(null)
   const [qrLoading, setQrLoading] = useState(false)
 
-  // Form fields
   const [firstName, setFirstName]     = useState('')
   const [lastName, setLastName] = useState('')
   const [username, setUsername] = useState('')
@@ -79,7 +77,6 @@ export function ModRegisterPage({ initialMode = 'moderador', lockMode = false, b
     setOtpauthUri(null)
   }
 
-  // Cargar QR cuando entra en fase 'enroll'
   useEffect(() => {
     if (phase === 'enroll' && enrolledEmail && !otpauthUri && !qrLoading) {
       const loadQR = async () => {

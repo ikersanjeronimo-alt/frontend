@@ -10,7 +10,6 @@ import { initEventsWS } from './services/eventsWS.ts'
 import { initCommunitiesWS } from './services/communitiesWS.ts'
 import { initPrivateChatWS } from './services/privChatWS.ts'
 
-// Conecta webSocket
 initWS()
 initStoriesWS()
 initEventsWS()
