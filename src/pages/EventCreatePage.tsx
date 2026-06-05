@@ -129,6 +129,7 @@ export function EventCreatePage() {
                   id="ev-date"
                   className={styles.input}
                   type="date"
+                  min={new Date().toISOString().split('T')[0]}
                   value={date}
                   onChange={e => setDate(e.target.value)}
                 />
