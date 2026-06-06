@@ -66,9 +66,9 @@ export function ModLoginPage() {
       const apiErr = err as ApiError
       if (apiErr.status === 401) {
         // Codigo TOTP invalido o challenge expirado.
-        throw new Error(t('totp.errCode') || 'El código de verificación es inválido.')
+        throw new Error(t('totp.errCode') || 'El código de verificación es inválido.', { cause: err })
       } else if (apiErr.status === 400) {
-        throw new Error(t('totp.errCode') || 'El código de verificación es inválido.')
+        throw new Error(t('totp.errCode') || 'El código de verificación es inválido.', { cause: err })
       }
       throw err
     }

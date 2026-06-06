@@ -24,7 +24,9 @@ export function TimeMachinePage() {
   // Por defecto, dentro de DELIVERY_YEARS años; mínimo, mañana.
   const toInputValue = (d: Date) => d.toISOString().slice(0, 10)
   const todayInput = toInputValue(new Date())
-  const minDelivery = toInputValue(new Date(Date.now() + 24 * 60 * 60 * 1000))
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const minDelivery = toInputValue(tomorrow)
 
   const [deliveryInput, setDeliveryInput] = useState(() => {
     const d = new Date()

@@ -162,9 +162,9 @@ export function ModRegisterPage({ initialMode = 'moderador', lockMode = false, b
     } catch (err) {
       const apiErr = err as ApiError
       if (apiErr.status === 406) {
-        throw new Error(t('totp.errCode') || 'El código de verificación es inválido.')
+        throw new Error(t('totp.errCode') || 'El código de verificación es inválido.', { cause: err })
       } else if (apiErr.status === 400) {
-        throw new Error(t('totp.errEmail') || 'El email no existe.')
+        throw new Error(t('totp.errEmail') || 'El email no existe.', { cause: err })
       }
       throw err
     }

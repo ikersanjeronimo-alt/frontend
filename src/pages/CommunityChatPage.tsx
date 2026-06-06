@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCommunities } from '../hooks/useCommunities'
@@ -42,8 +42,17 @@ export function CommunityChatPage() {
   const [showPanel, setShowPanel] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
   const [modError, setModError] = useState<string | null>(null)
-  const [pinnedDraft, setPinnedDraft] = useState('')
+  const [pinnedDraft, setPinnedDraft] = useState(community?.pinnedNote ?? '')
+  const [pinnedKey, setPinnedKey] = useState(`${community?.id ?? ''}:${community?.pinnedNote ?? ''}`)
   const [reportedMsgIds, setReportedMsgIds] = useState<Set<string>>(new Set())
+
+  // Resetear el borrador de la nota fijada cuando cambia la comunidad o su nota,
+  // ajustando el estado durante el render (evita el setState síncrono en un effect).
+  const currentPinnedKey = `${community?.id ?? ''}:${community?.pinnedNote ?? ''}`
+  if (pinnedKey !== currentPinnedKey) {
+    setPinnedKey(currentPinnedKey)
+    setPinnedDraft(community?.pinnedNote ?? '')
+  }
 
   const handleReportMessage = (messageId: string) => {
     setReportedMsgIds(prev => new Set(prev).add(messageId))
@@ -57,10 +66,6 @@ export function CommunityChatPage() {
   }
 
   const cat = catFor('/comunidades-chat')
-
-  useEffect(() => {
-    setPinnedDraft(community?.pinnedNote ?? '')
-  }, [community?.id, community?.pinnedNote])
 
   const canModerate = useMemo(() => {
     if (!community || !user) return false

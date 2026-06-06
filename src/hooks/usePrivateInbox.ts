@@ -16,9 +16,10 @@ export function usePrivateInbox(selectedUserIdFromRoute = '', enabled = true) {
     [enabled],
   )
 
-  const [conversations, setConversations] = useState<ApiPrivateConversation[]>(EMPTY_CONVERSATIONS)
-  const [loadingMessages, setLoadingMessages] = useState(false)
   const [messagesError, setMessagesError] = useState<string | null>(null)
+  // userIds cuya carga REST ya terminó (éxito o error) — permite derivar el loading
+  // sin setear estado de forma síncrona dentro del effect.
+  const [fetchedUserIds, setFetchedUserIds] = useState<ReadonlySet<string>>(() => new Set())
 
   // ── Tienda WS ──────────────────────────────────────────────────────────────
   const setInboxMessages = usePrivateChatStore(state => state.setInboxMessages)
@@ -29,22 +30,16 @@ export function usePrivateInbox(selectedUserIdFromRoute = '', enabled = true) {
     if (enabled) initPrivateChatWS()
   }, [enabled])
 
-  // ── Sincronizar lista de conversaciones desde la API ───────────────────────
-  useEffect(() => {
-    setConversations(apiConversations)
-  }, [apiConversations])
-
-  // ── Actualizar lastMessage/lastTime en el sidebar cuando llega un WS msg ───
-  useEffect(() => {
-    if (Object.keys(inboxLastMessages).length === 0) return
-    setConversations(prev =>
-      prev.map(conv => {
-        const latest = inboxLastMessages[conv.userId]
-        if (!latest) return conv
-        return { ...conv, lastMessage: latest.text, lastTime: latest.time }
-      }),
-    )
-  }, [inboxLastMessages])
+  // ── Lista derivada: API + último mensaje del WS (incluye el optimista) ──────
+  // El sidebar se actualiza solo porque el envío optimista usa addInboxMessage,
+  // que escribe en inboxLastMessages.
+  const conversations = useMemo(
+    () => apiConversations.map(conv => {
+      const latest = inboxLastMessages[conv.userId]
+      return latest ? { ...conv, lastMessage: latest.text, lastTime: latest.time } : conv
+    }),
+    [apiConversations, inboxLastMessages],
+  )
 
   // ── Usuario seleccionado ───────────────────────────────────────────────────
   const selectedUserId = useMemo(() => {
@@ -55,25 +50,31 @@ export function usePrivateInbox(selectedUserIdFromRoute = '', enabled = true) {
   // ── Cargar mensajes REST para la conversación seleccionada (si store vacío) ─
   useEffect(() => {
     if (!enabled || !selectedUserId) return
+    if (fetchedUserIds.has(selectedUserId)) return
     // Si el store ya tiene mensajes, el WebSocket se encarga; no volvemos a cargar
     if ((usePrivateChatStore.getState().inboxMessages[selectedUserId] ?? EMPTY_MESSAGES).length > 0) return
 
     let cancelled = false
-    setLoadingMessages(true)
-    setMessagesError(null)
-
     getProfessionalInboxMessages(selectedUserId)
-      .then(msgs => { if (!cancelled) setInboxMessages(selectedUserId, msgs) })
+      .then(msgs => { if (!cancelled) { setInboxMessages(selectedUserId, msgs); setMessagesError(null) } })
       .catch(err => { if (!cancelled) setMessagesError(err instanceof Error ? err.message : 'Error.') })
-      .finally(() => { if (!cancelled) setLoadingMessages(false) })
+      .finally(() => { if (!cancelled) setFetchedUserIds(prev => new Set(prev).add(selectedUserId)) })
 
     return () => { cancelled = true }
-  }, [selectedUserId, enabled, setInboxMessages])
+  }, [selectedUserId, enabled, setInboxMessages, fetchedUserIds])
 
   // ── Mensajes del hilo actual (directos del store WS) ──────────────────────
   const messages = usePrivateChatStore(
     state => state.inboxMessages[selectedUserId] ?? EMPTY_MESSAGES,
   )
+
+  // Estamos cargando si hay un usuario seleccionado cuya carga aún no terminó
+  // y el store sigue sin mensajes para él.
+  const loadingMessages = enabled
+    && !!selectedUserId
+    && !fetchedUserIds.has(selectedUserId)
+    && messages.length === 0
+    && !messagesError
 
   const selectedConversation = useMemo(
     () => conversations.find(conv => conv.userId === selectedUserId) ?? null,
@@ -88,16 +89,9 @@ export function usePrivateInbox(selectedUserIdFromRoute = '', enabled = true) {
     const now = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
     const optimistic: ApiPrivateMessage = { id: tempId, from: 'professional', text, time: now }
 
-    // Añadir optimistamente al store
-    const store = usePrivateChatStore.getState()
-    store.setInboxMessages(selectedUserId, [...(store.inboxMessages[selectedUserId] ?? EMPTY_MESSAGES), optimistic])
-
-    // Actualizar sidebar optimistamente
-    setConversations(prev =>
-      prev.map(conv =>
-        conv.userId === selectedUserId ? { ...conv, lastMessage: text, lastTime: now } : conv,
-      ),
-    )
+    // Optimista: addInboxMessage añade al hilo y actualiza inboxLastMessages,
+    // así que el sidebar (derivado de inboxLastMessages) se refresca solo.
+    usePrivateChatStore.getState().addInboxMessage(selectedUserId, optimistic)
 
     try {
       const saved = await sendProfessionalInboxMessage(selectedUserId, text)
