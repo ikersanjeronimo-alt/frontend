@@ -189,6 +189,16 @@
   .landingCat { right: 140px;  transform: scale(1.8);  bottom: 105%;}
 }
 
+/* En movil (telefonos) el gato de 200px resulta demasiado grande: lo reducimos
+   a la mitad. transform-origin en la esquina inferior derecha para que siga
+   anclado en el mismo punto (bottom:100% / right) y no se descoloque. */
+@media (max-width: 575px) {
+  .landingCat {
+    transform: scale(0.5);
+    transform-origin: bottom right;
+  }
+}
+
 @media (min-width: 576px) {
   .featuresSection {
     padding: 56px 32px 64px;
