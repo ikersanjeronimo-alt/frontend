@@ -75,19 +75,23 @@ export function TotpPanel({ enroll, onVerify, onCancel, submitLabel, cancelLabel
               : <div className={styles.qrPlaceholder}>{t('totp.qrLoading')}</div>}
           </div>
 
-          <button
-            type="button"
-            className={styles.secretToggle}
-            onClick={() => setShowSecret(s => !s)}
-          >
-            {showSecret ? t('totp.hideSecret') : t('totp.showSecret')}
-          </button>
+          {enroll.secret && (
+            <>
+              <button
+                type="button"
+                className={styles.secretToggle}
+                onClick={() => setShowSecret(s => !s)}
+              >
+                {showSecret ? t('totp.hideSecret') : t('totp.showSecret')}
+              </button>
 
-          {showSecret && (
-            <div className={styles.secretReveal}>
-              <span className={styles.secretLabel}>{t('totp.secretLabel')}</span>
-              <code className={styles.secretValue}>{enroll.secret}</code>
-            </div>
+              {showSecret && (
+                <div className={styles.secretReveal}>
+                  <span className={styles.secretLabel}>{t('totp.secretLabel')}</span>
+                  <code className={styles.secretValue}>{enroll.secret}</code>
+                </div>
+              )}
+            </>
           )}
         </>
       )}

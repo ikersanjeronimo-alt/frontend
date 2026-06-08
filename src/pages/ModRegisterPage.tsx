@@ -49,6 +49,7 @@ export function ModRegisterPage({ initialMode = 'moderador', lockMode = false, b
   
   const [enrolledEmail, setEnrolledEmail] = useState('')
   const [otpauthUri, setOtpauthUri] = useState<string | null>(null)
+  const [totpSecret, setTotpSecret] = useState('')
   const [qrLoading, setQrLoading] = useState(false)
 
   const [firstName, setFirstName]     = useState('')
@@ -75,6 +76,7 @@ export function ModRegisterPage({ initialMode = 'moderador', lockMode = false, b
     setSpecialization('')
     setPassword('')
     setOtpauthUri(null)
+    setTotpSecret('')
   }
 
   useEffect(() => {
@@ -84,6 +86,12 @@ export function ModRegisterPage({ initialMode = 'moderador', lockMode = false, b
         try {
           const qrUri = await get2faQR(enrolledEmail)
           setOtpauthUri(qrUri)
+          try {
+            const secret = new URL(qrUri).searchParams.get('secret') ?? ''
+            setTotpSecret(secret)
+          } catch {
+            setTotpSecret('')
+          }
         } catch (err) {
           const apiErr = err as ApiError
           setError(apiErr.message || t('login.errUnexpected'))
@@ -185,7 +193,7 @@ export function ModRegisterPage({ initialMode = 'moderador', lockMode = false, b
         />
 
         <NavLink to="/" className={styles.logoLink}>
-          <div className={styles.logoIcon}>S</div>
+          <img src="/logo.png" alt="" aria-hidden className={styles.logoIcon} />
           <span className={styles.logoText}>ShareYourStory</span>
         </NavLink>
 
@@ -241,7 +249,7 @@ export function ModRegisterPage({ initialMode = 'moderador', lockMode = false, b
 
         {phase === 'enroll' && otpauthUri && (
           <TotpPanel
-            enroll={{ secret: '', otpauthUri }}
+            enroll={{ secret: totpSecret, otpauthUri }}
             onVerify={handleVerify}
             onCancel={() => { setOtpauthUri(null); setPhase('form') }}
             submitLabel={t('totp.confirmEnroll')}
