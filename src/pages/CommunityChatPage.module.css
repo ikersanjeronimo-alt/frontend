@@ -261,6 +261,11 @@
   flex-shrink: 0;
 }
 
+/* Miembro sin sesion WebSocket viva: punto gris (no esta en linea ahora). */
+.memberOfflineDot {
+  background: var(--lite);
+}
+
 .memberKickBtn {
   border: none;
   border-radius: 999px;

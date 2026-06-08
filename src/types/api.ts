@@ -33,6 +33,7 @@ export interface ApiChatMember {
   userId: string
   username: string
   initials: string
+  online: boolean
 }
 
 export interface ApiDashboardMessage {

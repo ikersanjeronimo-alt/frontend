@@ -310,7 +310,10 @@ export function CommunityChatPage() {
               <div key={m.userId} className={styles.memberRow}>
                 <div className={styles.memberAvatar}>{m.initials}</div>
                 <span className={styles.memberUsername}>{m.username}</span>
-                <span className={styles.memberOnlineDot} />
+                <span
+                  className={`${styles.memberOnlineDot} ${m.online ? '' : styles.memberOfflineDot}`}
+                  title={m.online ? t('common.online') : t('moderation.offline')}
+                />
                 {canModerate && m.userId !== user?.id && (
                   <button
                     type="button"
