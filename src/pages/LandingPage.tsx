@@ -32,7 +32,7 @@ const FEATURES = [
   },
   {
     title: 'Máquina del tiempo',
-    desc: 'Escribe una carta a tu yo del futuro. La recibirás por email exactamente en 5 años.',
+    desc: 'Escribe una carta a tu yo del futuro. Tú decides cuándo recibirla.',
     route: '/maquina-del-tiempo',
     color: 'lavender',
   },
