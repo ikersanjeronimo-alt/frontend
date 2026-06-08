@@ -14,3 +14,11 @@
   display: flex;
   flex-direction: column;
 }
+
+/* La pagina (hijo directo del Outlet) crece para llenar el alto disponible via
+   flex-grow, no via min-height:100% (que no resuelve porque el shell usa
+   min-height, no height). Asi su fondo llega hasta el footer aunque el
+   contenido sea corto. flex-shrink:0 evita encoger paginas full-bleed (mapa). */
+.content > * {
+  flex: 1 0 auto;
+}
