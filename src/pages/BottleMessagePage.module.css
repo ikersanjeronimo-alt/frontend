@@ -1,6 +1,6 @@
 
 .page {
-  min-height: calc(100vh - 64px);
+  min-height: 100%;
   background: linear-gradient(180deg, #e8f4fd 0%, #d0e8f7 50%, #b8d9f0 100%);
   display: flex;
   align-items: center;

@@ -2,7 +2,7 @@
 /* ── Página completa ──────────────────────────────────────── */
 
 .page {
-  min-height: calc(100vh - 64px);
+  min-height: 100%;
   background: var(--bg);
   display: flex;
   align-items: center;

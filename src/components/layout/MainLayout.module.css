@@ -1,0 +1,16 @@
+/* Shell de columna a pantalla completa: empuja el Footer al fondo del viewport
+   cuando el contenido es corto (sticky footer), y deja scroll normal cuando es
+   largo. Resuelve el "siempre hay que scrollear para ver el footer": antes cada
+   página forzaba min-height:calc(100vh - 64px) y el footer caía siempre debajo. */
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.content {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
