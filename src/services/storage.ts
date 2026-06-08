@@ -19,6 +19,7 @@ const KEYS = {
   lang:           'sys_lang',
   bannedWords:    'sys_banned_words',
   eventInterests: 'sys_event_interests',
+  dailyMood:      'sys_daily_mood',
 } as const
 
 // ── Helpers internos ──────────────────────────────────────────
@@ -92,5 +93,26 @@ export const bannedWordsStorage = {
 export const eventInterestsStorage = {
   get(): string[] | null { return getJson(KEYS.eventInterests, isStringArray) },
   set(ids: string[]): void { setJson(KEYS.eventInterests, ids) },
+}
+
+// ── Bienestar diario (mood, una vez por día) ───────────────────
+
+interface StoredDailyMood { value: number; date: string }
+
+const isStoredDailyMood = (v: unknown): v is StoredDailyMood =>
+  typeof v === 'object' && v !== null &&
+  typeof (v as StoredDailyMood).value === 'number' &&
+  typeof (v as StoredDailyMood).date === 'string'
+
+const todayStr = () => new Date().toISOString().slice(0, 10)
+
+export const dailyMoodStorage = {
+  getToday(): number | null {
+    const stored = getJson(KEYS.dailyMood, isStoredDailyMood)
+    return stored?.date === todayStr() ? stored.value : null
+  },
+  setToday(value: number): void {
+    setJson(KEYS.dailyMood, { value, date: todayStr() })
+  },
 }
 

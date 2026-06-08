@@ -8,6 +8,7 @@ import { useDashboardMessages } from '../hooks/useDashboardMessages'
 import { useBannedWords } from '../hooks/useBannedWords'
 import { maskBannedWords } from '../lib/bannedWords'
 import { submitMood } from '../services/profile'
+import { dailyMoodStorage } from '../services/storage'
 import {
   IconMoodVeryBad,
   IconMoodBad,
@@ -55,21 +56,23 @@ export function DashboardPage() {
   const { data: events }      = useEvents()
   const { data: messages }    = useDashboardMessages()
   const { words: bannedWords } = useBannedWords()
-  const [mood, setMood]           = useState<number | null>(null)
+  const [mood, setMood]           = useState<number | null>(() => dailyMoodStorage.getToday())
   const [moodError, setMoodError] = useState('')
   const [moodSending, setMoodSending] = useState(false)
+  const moodAlreadySent = mood !== null && dailyMoodStorage.getToday() !== null
 
   const myCommunities = communities.filter(c => c.joined)
   const nextEvent     = events[0]
 
   const handleMood = async (value: number) => {
-    if (moodSending) return
+    if (moodSending || moodAlreadySent) return
     const previous = mood
     setMood(value)
     setMoodError('')
     setMoodSending(true)
     try {
       await submitMood(value)
+      dailyMoodStorage.setToday(value)
     } catch (e) {
       setMood(previous)
       setMoodError(e instanceof Error ? e.message : t('dashboard.moodError'))
@@ -105,7 +108,7 @@ export function DashboardPage() {
                 key={m.value}
                 className={`${styles.moodBtn} ${mood === m.value ? styles.moodBtnActive : ''}`}
                 onClick={() => handleMood(m.value)}
-                disabled={moodSending}
+                disabled={moodSending || moodAlreadySent}
                 title={m.label}
                 aria-label={m.label}
               >
