@@ -54,9 +54,11 @@ export function MembersSection() {
       {/* Equipo de moderación: moderadores y administradores */}
       <div className={styles.staffHeader}>
         <p className={styles.desc}>{t('moderation.staffDesc')}</p>
-        <button type="button" className={styles.addBtn} onClick={() => navigate('/modregister')}>
-          {t('moderation.addStaff')}
-        </button>
+        {isAdmin && (
+          <button type="button" className={styles.addBtn} onClick={() => navigate('/modregister')}>
+            {t('moderation.addStaff')}
+          </button>
+        )}
       </div>
 
       <div className={styles.table}>
