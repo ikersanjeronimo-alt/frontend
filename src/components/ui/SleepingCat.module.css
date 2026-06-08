@@ -42,6 +42,7 @@
 /* ── Respiración del cuerpo ───────────────────────────────── */
 
 .bodyGroup {
+  transform-box: fill-box;
   transform-origin: 50% 100%;
   animation: breathe 4.2s ease-in-out infinite;
   will-change: transform;
@@ -55,7 +56,8 @@
 /* ── Cabeza: ladeo al despertar ───────────────────────────── */
 
 .headGroup {
-  transform-origin: 48px 118px;
+  transform-box: fill-box;
+  transform-origin: 48% 100%;
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -84,7 +86,8 @@
    para que dos gatos no muevan la cola al unísono. */
 
 .tail {
-  transform-origin: 205px 92px;
+  transform-box: fill-box;
+  transform-origin: 0% 0%;
   animation: wag 8s ease-in-out infinite;
   will-change: transform;
 }
