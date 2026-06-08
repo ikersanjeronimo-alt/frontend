@@ -62,6 +62,15 @@ export function ProfessionalsPage() {
           <h1 className={styles.title}>{t('professionals.title')}</h1>
           <p className={styles.subtitle}>{t('professionals.subtitle')}</p>
         </div>
+        {isMod && (
+          <button
+            type="button"
+            className={`${styles.contactBtn} ${styles.inboxBtn}`}
+            onClick={() => navigate('/chat/inbox')}
+          >
+            {t('nav.chatsPrivados')}
+          </button>
+        )}
         <SleepingCat
           color={catFor('/profesionales').color}
           seed={catFor('/profesionales').seed}
@@ -69,15 +78,6 @@ export function ProfessionalsPage() {
           className={styles.pageCat}
         />
       </div>
-      {isMod && (
-        <button
-          type="button"
-          className={styles.contactBtn}
-          onClick={() => navigate('/chat/inbox')}
-        >
-          {t('privateChat.inboxTitle')}
-        </button>
-      )}
 
       <div className={styles.controls}>
         <div className={styles.searchWrapper}>
