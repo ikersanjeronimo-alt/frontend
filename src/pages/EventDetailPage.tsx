@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
@@ -44,8 +44,6 @@ export function EventDetailPage() {
   const { toggle, isInterested } = useEventInterests()
   const liked = eventId ? isInterested(eventId) : false
   const canLike = !!user
-  // Estado del primer render (valor inicial perezoso): seguro de leer durante el render.
-  const [likedOnMount] = useState(liked)
 
   if (!event) {
     return (
@@ -170,7 +168,7 @@ export function EventDetailPage() {
             >
               <IconHeart filled={liked} size={18} />
               <span>{liked ? t('events.interestedYes') : t('events.interestedNo')}</span>
-              <span className={styles.heartCount}>· {(event.interestedCount ?? 0) + (liked === likedOnMount ? 0 : liked ? 1 : -1)}</span>
+              <span className={styles.heartCount}>· {event.interestedCount ?? 0}</span>
             </button>
 
           </div>
