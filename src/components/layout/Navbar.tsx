@@ -17,6 +17,7 @@ export function Navbar() {
         { to: '/moderacion',   label: t('nav.moderacion') },
         { to: '/comunidades',  label: t('nav.comunidades') },
         { to: '/eventos',      label: t('nav.eventos') },
+        { to: '/mapa',         label: t('nav.mapa') },
         { to: '/chat/inbox',   label: t('nav.chatsPrivados') },
       ]
     : [

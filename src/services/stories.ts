@@ -11,3 +11,8 @@ export function createStory(lat: number, lng: number, text: string): Promise<Api
     body: JSON.stringify({ text, lat, lng }),
   })
 }
+
+/** Borra una historia del mapa (solo moderadores/administradores). */
+export function deleteStory(id: string): Promise<void> {
+  return apiFetch<void>(`/api/stories/${id}`, { method: 'DELETE' })
+}

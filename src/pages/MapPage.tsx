@@ -8,10 +8,11 @@ import shadowUrl     from 'leaflet/dist/images/marker-shadow.png'
 import { useTranslation } from 'react-i18next'
 import { useBannedWords } from '../hooks/useBannedWords'
 import { maskBannedWords } from '../lib/bannedWords'
-import { createStory } from '../services/stories'
+import { createStory, deleteStory } from '../services/stories'
 import { reportStory } from '../services/moderation'
 import { silentMutation } from '../lib/silentMutation'
-import { BubbleMenu } from '../components/chat/BubbleMenu'
+import { useRole } from '../hooks/useRole'
+import { BubbleMenu, type BubbleMenuItem } from '../components/chat/BubbleMenu'
 import { useStoriesStore } from '../store/storiesStore'  // ← NUEVO
 import styles from './MapPage.module.css'
 
@@ -55,6 +56,7 @@ function MapClickHandler({ active, onMapClick }: { active: boolean; onMapClick: 
 export function MapPage() {
   const { t } = useTranslation()
   const { words: bannedWords } = useBannedWords()
+  const { isMod } = useRole()
 
   // Lee directamente del store global — se actualiza solo cuando llega WS
   const stories = useStoriesStore(state => state.stories)
@@ -80,6 +82,12 @@ export function MapPage() {
         return next
       })
     })
+  }
+
+  // Borrado directo de una historia (solo mod/admin). El punto desaparece en vivo
+  // por el broadcast WS (storiesStore.removeStory); aquí solo lanzamos el DELETE.
+  const handleDeleteStory = (id: string) => {
+    void deleteStory(id).catch(() => {})
   }
 
   const handleMapClick = (lat: number, lng: number) => {
@@ -144,11 +152,16 @@ export function MapPage() {
                 <p className={styles.popupText}>{maskBannedWords(s.text, bannedWords)}</p>
                 <div className={styles.popupActions}>
                   <BubbleMenu
-                    items={[{
-                      label: reportedIds.has(s.id) ? t('map.reported') : t('map.report'),
-                      onClick: () => handleReport(s.id),
-                      disabled: reportedIds.has(s.id),
-                    }]}
+                    items={[
+                      {
+                        label: reportedIds.has(s.id) ? t('map.reported') : t('map.report'),
+                        onClick: () => handleReport(s.id),
+                        disabled: reportedIds.has(s.id),
+                      },
+                      ...(isMod
+                        ? [{ label: t('common.delete'), onClick: () => handleDeleteStory(s.id) }] as BubbleMenuItem[]
+                        : []),
+                    ]}
                     ariaLabel={t('common.messageActions')}
                     placement="right"
                     light
