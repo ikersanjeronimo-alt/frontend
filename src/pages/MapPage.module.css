@@ -5,6 +5,9 @@
   position: relative;
   width: 100%;
   height: calc(100vh - 64px);
+  /* dvh = viewport VISIBLE en móvil (descuenta la barra del navegador), para
+     que los controles anclados abajo (FAB) no queden tapados/fuera. */
+  height: calc(100dvh - 64px);
   overflow: hidden;
 }
 
@@ -28,20 +31,6 @@
   left: 56px;
   z-index: 800;
 }
-
-/* Gato sentado en la esquina superior derecha del mapa.
-   El page tiene overflow:hidden (para que Leaflet no se escape), así que el
-   gato no puede ir por encima del top. Lo dejamos pegado al top con un
-   pequeño aire para que parezca asomado al mapa desde arriba. */
-.mapCat {
-  position: absolute;
-  top: 8px;
-  right: 20px;
-  z-index: 800;
-}
-
-@media (min-width: 576px) { .mapCat { right: 32px; } }
-@media (min-width: 992px) { .mapCat { right: 60px; } }
 
 @media (min-width: 576px) {
   .statsBar {
@@ -273,7 +262,7 @@
 
 .fab {
   position: absolute;
-  bottom: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   right: 12px;
   z-index: 800;
   background: var(--primary);

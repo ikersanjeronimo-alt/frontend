@@ -11,8 +11,6 @@ import { maskBannedWords } from '../lib/bannedWords'
 import { createStory } from '../services/stories'
 import { reportStory } from '../services/moderation'
 import { silentMutation } from '../lib/silentMutation'
-import { SleepingCat } from '../components/ui/SleepingCat'
-import { catFor } from '../components/ui/catPalette'
 import { BubbleMenu } from '../components/chat/BubbleMenu'
 import { useStoriesStore } from '../store/storiesStore'  // ← NUEVO
 import styles from './MapPage.module.css'
@@ -169,8 +167,6 @@ export function MapPage() {
           {stories.length} {t('map.stories')}
         </span>
       </div>
-
-      <SleepingCat color={catFor('/mapa').color} seed={catFor('/mapa').seed} size={86} className={styles.mapCat} />
 
       {addingMode && (
         <div className={styles.instruction}>
