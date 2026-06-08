@@ -186,6 +186,17 @@
   transition: background 0.15s, transform 0.15s;
   white-space: nowrap;
   font-family: var(--font);
+  min-width: 0;
+  max-width: 180px;
+}
+
+/* Etiqueta del username: trunca con elipsis si es muy largo (evita
+   que empuje el botón "Entrar" fuera de pantalla en móvil). */
+.userLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .usernameStatic:hover {
@@ -210,6 +221,8 @@
   transition: background 0.15s, transform 0.15s;
   white-space: nowrap;
   font-family: var(--font);
+  min-width: 0;
+  max-width: 180px;
 }
 
 .nickChip:hover {
@@ -272,6 +285,7 @@
   font-weight: 600;
   transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .enterBtn:hover {

@@ -88,7 +88,7 @@ export function Navbar() {
       </div>
     ) : (
       <button className={styles.nickChip} onClick={startEdit} title={t('nav.editNick')}>
-        {user.username}
+        <span className={styles.userLabel}>{user.username}</span>
         <span className={styles.nickEditIcon} aria-hidden>✎</span>
       </button>
     )
@@ -107,7 +107,7 @@ export function Navbar() {
         onClick={goToDashboard}
         title={t('nav.dashboard')}
       >
-        {user.username}
+        <span className={styles.userLabel}>{user.username}</span>
       </button>
     </>
   )
