@@ -4,6 +4,7 @@ import type { ApiReport } from '../types/api'
 
 const EMPTY: ApiReport[] = []
 
-export function useModerationReports() {
-  return useApi(getReports, EMPTY)
+// `reloadKey` permite recargar la lista cuando llega un aviso WS de reporte nuevo.
+export function useModerationReports(reloadKey = 0) {
+  return useApi(getReports, EMPTY, [reloadKey])
 }

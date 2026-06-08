@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useModerationReports } from '../../hooks/useModerationReports'
+import { onNewReport } from '../../services/reportsWS'
 import { updateReport, type ReportAction } from '../../services/moderation'
 import type { ApiReport } from '../../types/api'
 import { PageState } from '../ui/PageState'
@@ -14,9 +15,13 @@ export function ReportsSection() {
     { id: 'resolved',  label: t('moderation.filterResolved') },
     { id: 'dismissed', label: t('moderation.filterDismissed') },
   ]
-  const { data: reports, setData: setReports, loading, error } = useModerationReports()
+  const [reloadKey, setReloadKey] = useState(0)
+  const { data: reports, setData: setReports, loading, error } = useModerationReports(reloadKey)
   const [filter, setFilter]     = useState('pending')
   const [selected, setSelected] = useState<string | null>(null)
+
+  // Reportes en tiempo real: al llegar el aviso WS de reporte nuevo, recarga la lista.
+  useEffect(() => onNewReport(() => setReloadKey(k => k + 1)), [])
 
   const filtered = reports.filter(r => filter === 'all' || r.status === filter)
   const pendingCount = reports.filter(r => r.status === 'pending').length
