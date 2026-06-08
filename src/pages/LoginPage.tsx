@@ -74,7 +74,7 @@ export function LoginPage() {
         />
 
         <NavLink to="/" className={styles.logoLink}>
-          <div className={styles.logoIcon}>S</div>
+          <img src="/logo.png" alt="" aria-hidden className={styles.logoIcon} />
           <span className={styles.logoText}>ShareYourStory</span>
         </NavLink>
 

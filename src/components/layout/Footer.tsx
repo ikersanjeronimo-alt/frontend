@@ -8,7 +8,7 @@ export function Footer() {
   return (
     <footer className={styles.footer}>
       <NavLink to="/" className={styles.logo}>
-        <div className={styles.logoIcon}>S</div>
+        <img src="/logo.png" alt="" aria-hidden className={styles.logoIcon} />
         <span className={styles.logoText}>ShareYourStory</span>
       </NavLink>
 

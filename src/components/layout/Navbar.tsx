@@ -117,7 +117,7 @@ export function Navbar() {
       <nav className={styles.nav}>
 
         <NavLink to="/" className={styles.logo} onClick={closeMenu}>
-          <div className={styles.logoIcon}>S</div>
+          <img src="/logo.png" alt="" aria-hidden className={styles.logoIcon} />
           <span className={styles.logoText}>ShareYourStory</span>
         </NavLink>
 

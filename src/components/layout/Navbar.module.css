@@ -43,18 +43,11 @@
 }
 
 .logoIcon {
-  width: 30px;
-  height: 30px;
-  background: var(--primary);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-weight: 800;
-  font-size: 13px;
+  height: 32px;
+  width: auto;
   flex-shrink: 0;
   transition: transform 0.2s ease;
+  object-fit: contain;
 }
 
 .logo:hover .logoIcon {
@@ -69,9 +62,7 @@
 
 @media (min-width: 992px) {
   .logoIcon {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
+    height: 34px;
   }
 
   .logoText {
