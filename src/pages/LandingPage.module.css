@@ -174,7 +174,13 @@
   bottom: 100%;
   right: 16px;
   z-index: 3;
-  /* En móviles muy pequeños se acerca al borde; ya está OK con 16px. */
+  /* Tamaño fluido: escala de forma continua (lineal) con el ancho del viewport
+     en vez de saltar por breakpoints. ~100px en movil, ~145px en tablet pequena,
+     ~190px en tablet, hasta 340px en pantallas grandes. Anclado por bottom/right,
+     asi al achicarse no se descoloca. !important para ganar al width/height inline
+     (200px) que fija el componente SleepingCat. El SVG mantiene su proporcion. */
+  width: clamp(95px, calc(10px + 23vw), 340px) !important;
+  height: clamp(56px, calc(6px + 13.6vw), 201px) !important;
 }
 
 @media (min-width: 576px) {
@@ -182,21 +188,11 @@
 }
 
 @media (min-width: 992px) {
-  .landingCat { right: 80px; transform: scale(1.2);}
+  .landingCat { right: 80px; }
 }
 
 @media (min-width: 1200px) {
-  .landingCat { right: 140px;  transform: scale(1.8);  bottom: 105%;}
-}
-
-/* En movil (telefonos) el gato de 200px resulta demasiado grande: lo reducimos
-   a la mitad. transform-origin en la esquina inferior derecha para que siga
-   anclado en el mismo punto (bottom:100% / right) y no se descoloque. */
-@media (max-width: 575px) {
-  .landingCat {
-    transform: scale(0.5);
-    transform-origin: bottom right;
-  }
+  .landingCat { right: 140px; bottom: 105%; }
 }
 
 @media (min-width: 576px) {
