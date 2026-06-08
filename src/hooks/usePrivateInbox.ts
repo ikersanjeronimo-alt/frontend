@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useApi } from './useApi'
 import { getProfessionalInbox, getProfessionalInboxMessages, sendProfessionalInboxMessage } from '../services/chats'
 import { initPrivateChatWS } from '../services/privChatWS'
@@ -9,11 +9,14 @@ const EMPTY_CONVERSATIONS: ApiPrivateConversation[] = []
 const EMPTY_MESSAGES: ApiPrivateMessage[] = []
 
 export function usePrivateInbox(selectedUserIdFromRoute = '', enabled = true) {
-  // ── Lista de conversaciones (REST, solo necesaria al montar) ───────────────
+  // ── Lista de conversaciones (REST) ─────────────────────────────────────────
+  // `reloadKey` permite re-pedir la lista cuando llega por WS un mensaje de una
+  // conversación nueva (un userId que aún no está en la lista): así aparece sin F5.
+  const [reloadKey, setReloadKey] = useState(0)
   const { data: apiConversations, loading: conversationsLoading, error: conversationsError } = useApi(
     () => (enabled ? getProfessionalInbox() : Promise.resolve(EMPTY_CONVERSATIONS)),
     EMPTY_CONVERSATIONS,
-    [enabled],
+    [enabled, reloadKey],
   )
 
   const [messagesError, setMessagesError] = useState<string | null>(null)
@@ -29,6 +32,22 @@ export function usePrivateInbox(selectedUserIdFromRoute = '', enabled = true) {
   useEffect(() => {
     if (enabled) initPrivateChatWS()
   }, [enabled])
+
+  // ── Aparición de conversaciones NUEVAS en vivo ─────────────────────────────
+  // Si llega por WS un mensaje de un userId que no está en la lista REST (un
+  // usuario que escribe por primera vez), re-pedimos la lista. La guarda
+  // `requestedNewUsers` evita repetir el refetch por el mismo userId (sin bucle).
+  const requestedNewUsers = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    if (!enabled) return
+    const known = new Set(apiConversations.map(c => c.userId))
+    const unseen = Object.keys(inboxLastMessages)
+      .filter(uid => !known.has(uid) && !requestedNewUsers.current.has(uid))
+    if (unseen.length > 0) {
+      unseen.forEach(uid => requestedNewUsers.current.add(uid))
+      setReloadKey(k => k + 1)
+    }
+  }, [enabled, apiConversations, inboxLastMessages])
 
   // ── Lista derivada: API + último mensaje del WS (incluye el optimista) ──────
   // El sidebar se actualiza solo porque el envío optimista usa addInboxMessage,

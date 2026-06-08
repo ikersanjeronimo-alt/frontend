@@ -117,7 +117,7 @@ export function PrivateChatPage() {
           to={`/chat/inbox/${conv.userId}`}
           avatar={<div className={styles.sidebarAvatar}>{initials(conv.username)}</div>}
           name={conv.username}
-          meta={conv.lastMessage}
+          meta={maskBannedWords(conv.lastMessage, bannedWords)}
         />
       ))}
       <ChatSidebarExplore to="/profesionales">{t('privateChat.explore')}</ChatSidebarExplore>
@@ -185,7 +185,7 @@ export function PrivateChatPage() {
     : activeProfessional?.name ?? t('privateChat.notFoundTitle')
 
   const headerMeta = isInboxMode
-    ? inbox.selectedConversation?.lastMessage ?? t('privateChat.inboxMeta')
+    ? (inbox.selectedConversation ? maskBannedWords(inbox.selectedConversation.lastMessage, bannedWords) : t('privateChat.inboxMeta'))
     : activeProfessional
       ? SPECIALTY_LABELS[activeProfessional.specialty] ?? activeProfessional.specialty
       : undefined
@@ -294,7 +294,7 @@ export function PrivateChatPage() {
           <div className={styles.panelSection}>
             <h4 className={styles.panelSectionTitle}>{t('privateChat.inboxMeta')}</h4>
             <p className={styles.panelBio}>
-              {inbox.selectedConversation.lastTime} · {inbox.selectedConversation.lastMessage}
+              {inbox.selectedConversation.lastTime} · {maskBannedWords(inbox.selectedConversation.lastMessage, bannedWords)}
             </p>
           </div>
         )}
