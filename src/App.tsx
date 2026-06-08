@@ -70,8 +70,8 @@ export default function App() {
             <Route element={<BareLayout />}>
               <Route path="/login"                     element={<LoginPage />} />
               <Route path="/loginmod"                  element={<ModLoginPage />} />
-              <Route path="/modregister"               element={<RequireRole roles={['ADMIN']}><ModRegisterPage initialMode="moderador" lockMode backTo="/configuracion" /></RequireRole>} />
-              <Route path="/admin/moderadores/nuevo"    element={<RequireRole roles={['ADMIN']}><ModRegisterPage initialMode="moderador" lockMode backTo="/configuracion" /></RequireRole>} />
+              <Route path="/modregister"               element={<RequireRole roles={['ADMIN']}><ModRegisterPage initialMode="moderador" backTo="/moderacion" /></RequireRole>} />
+              <Route path="/admin/moderadores/nuevo"    element={<RequireRole roles={['ADMIN']}><ModRegisterPage initialMode="moderador" backTo="/moderacion" /></RequireRole>} />
               <Route path="/chat/:professionalId/:userId" element={<PrivateChatPage />} />
               <Route path="/chat/:professionalId"      element={<PrivateChatPage />} />
               <Route path="/comunidades/:comunidadId"  element={<CommunityChatPage />} />
