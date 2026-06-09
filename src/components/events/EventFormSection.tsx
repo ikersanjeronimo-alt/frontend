@@ -158,6 +158,8 @@ export function EventFormSection({ isMod }: EventFormSectionProps) {
                 {draftOptions.map((opt, i) => (
                   <div key={i} className={styles.optionRow}>
                     <input
+                      id={`ev-option-${i}`}
+                      name={`ev-option-${i}`}
                       className={styles.input}
                       type="text"
                       placeholder={`${t('events.formOptPh')} ${i + 1}`}

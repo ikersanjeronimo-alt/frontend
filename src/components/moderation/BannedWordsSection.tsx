@@ -61,6 +61,8 @@ export function BannedWordsSection() {
 
       <div className={styles.addRow}>
         <input
+          id="banned-word-new"
+          name="banned-word-new"
           type="text"
           className={styles.addInput}
           placeholder={t('moderation.filterPh')}
@@ -94,6 +96,8 @@ export function BannedWordsSection() {
               <li key={w} className={styles.row}>
                 {isEditing ? (
                   <input
+                    id={`banned-word-edit-${i}`}
+                    name="banned-word-edit"
                     type="text"
                     className={styles.editInput}
                     value={draftWord}

@@ -97,8 +97,10 @@ export function TotpPanel({ enroll, onVerify, onCancel, submitLabel, cancelLabel
       )}
 
       <div className={styles.field}>
-        <label className={styles.label}>{t('totp.codeLbl')}</label>
+        <label className={styles.label} htmlFor="totp-code">{t('totp.codeLbl')}</label>
         <input
+          id="totp-code"
+          name="totp-code"
           ref={inputRef}
           className={`${styles.input} ${styles.codeInput}`}
           type="text"

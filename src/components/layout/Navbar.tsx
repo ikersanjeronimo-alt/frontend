@@ -76,6 +76,8 @@ export function Navbar() {
     editing ? (
       <div className={styles.nickEditWrap}>
         <input
+          id="nav-username-edit"
+          name="username"
           ref={inputRef}
           className={`${styles.nickInput} ${nickError ? styles.nickInputError : ''}`}
           value={nickVal}
