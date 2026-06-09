@@ -29,6 +29,14 @@ function getInitialLang(): Lang {
 const resources = {
   es: {
     translation: {
+      session: {
+        title:    'Tu sesión ha caducado',
+        message:  'Por seguridad, tu sesión ha expirado. Puedes renovarla y seguir conectado, o salir.',
+        stay:     'Seguir conectado',
+        leave:    'Salir',
+        renewing: 'Renovando...',
+        error:    'No se pudo renovar la sesión. Vuelve a iniciar sesión.',
+      },
       common: {
         loading:      'Cargando...',
         saving:       'Guardando...',
@@ -585,6 +593,14 @@ const resources = {
   },
   en: {
     translation: {
+      session: {
+        title:    'Your session has expired',
+        message:  'For your security, your session has expired. You can renew it and stay signed in, or leave.',
+        stay:     'Stay signed in',
+        leave:    'Leave',
+        renewing: 'Renewing...',
+        error:    'Could not renew the session. Please sign in again.',
+      },
       common: {
         loading: 'Loading...', saving: 'Saving...', save: 'Save', saved: '✓ Saved',
         cancel: 'Cancel', back: 'Back', send: 'Send', sending: 'Sending...',
@@ -957,6 +973,14 @@ const resources = {
   },
   eu: {
     translation: {
+      session: {
+        title:    'Zure saioa iraungi da',
+        message:  'Segurtasunagatik, zure saioa iraungi da. Berritu eta konektatuta jarrai dezakezu, edo irten.',
+        stay:     'Konektatuta jarraitu',
+        leave:    'Irten',
+        renewing: 'Berritzen...',
+        error:    'Ezin izan da saioa berritu. Hasi saioa berriro.',
+      },
       common: {
         loading: 'Kargatzen...', saving: 'Gordetzen...', save: 'Gorde', saved: '✓ Gordeta',
         cancel: 'Utzi', back: 'Itzuli', send: 'Bidali', sending: 'Bidaltzen...',

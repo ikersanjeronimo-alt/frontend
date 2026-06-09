@@ -79,11 +79,15 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     // no sesión expirada. El componente que llamó debe mostrar el mensaje.
     const isAuthFlow = path.startsWith('/api/auth/')
     if (!isAuthFlow) {
+      // Guardamos el token caducado ANTES de borrarlo: el AuthProvider lo usa
+      // para intentar renovar la sesión (POST /api/auth/refresh) si era de un
+      // usuario logueado, en vez de degradar a anónimo en silencio.
+      const expired = tokenStorage.get()
       tokenStorage.clear()
       // Notificar al AuthProvider via bus singleton — resistente a race
       // conditions del orden de mount (ver lib/authBus.ts). Se omite en la sonda
       // de restauración de sesión, donde un 401 es esperado y no una expiración.
-      if (!suppressAuthExpired) authBus.fireExpired()
+      if (!suppressAuthExpired) authBus.fireExpired(expired)
     }
     throw makeApiError(401, isAuthFlow ? 'Credenciales incorrectas.' : 'Sesión expirada.')
   }

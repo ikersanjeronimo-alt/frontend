@@ -1,9 +1,11 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import type { ReactNode } from 'react'
 import * as authService from '../services/auth'
 import { authBus } from '../lib/authBus'
 import { syncWSAuth } from '../lib/wsClient'
 import { tokenStorage } from '../services/storage'
+import { decodeJWT } from '../lib/jwt'
+import { SessionExpiredModal } from '../components/auth/SessionExpiredModal'
 import type { ApiUser, AuthResponse } from '../types/api'
 
 export type UserRole = 'ANON' | 'USER' | 'MODERATOR' | 'ADMIN'
@@ -33,6 +35,11 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  // Token recién caducado de un usuario logueado mientras el modal de "sesión
+  // caducada" está abierto (null = cerrado). El ref evita reabrirlo o pisarlo
+  // con re-anonimizaciones si llegan más 401 concurrentes.
+  const [expiredSession, setExpiredSession] = useState<string | null>(null)
+  const expiredRef = useRef<string | null>(null)
 
   const applySession = useCallback((session: AuthResponse) => {
     tokenStorage.set(session.token)
@@ -91,7 +98,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [applySession])
 
   useEffect(() => {
-    return authBus.onExpired(() => {
+    return authBus.onExpired((expiredToken) => {
+      // Si ya hay un modal de expiración abierto, ignorar 401 posteriores
+      // (peticiones concurrentes) para no reabrirlo ni pisar el token.
+      if (expiredRef.current) return
+
+      // El rol viaja en el claim del token caducado (rol del backend:
+      // USER/PROFESSIONAL/ADMINISTRATOR/ANON). Solo los usuarios logueados ven
+      // el diálogo; los anónimos se renuevan en silencio como hasta ahora.
+      const role = expiredToken ? decodeJWT(expiredToken)?.role : undefined
+      const wasLoggedIn = !!role && role !== 'ANON'
+
+      if (wasLoggedIn && expiredToken) {
+        expiredRef.current = expiredToken
+        setExpiredSession(expiredToken)
+        return
+      }
+
       tokenStorage.clear()
       void (async () => {
         try {
@@ -140,9 +163,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })()
   }, [applySession])
 
+  // "Seguir conectado": renueva el token con el recién caducado (ventana de
+  // gracia del back). Si falla, propaga para que el modal muestre el error.
+  const renewSession = useCallback(async () => {
+    if (!expiredRef.current) return
+    const session = await authService.refreshSession(expiredRef.current)
+    applySession(session)
+    expiredRef.current = null
+    setExpiredSession(null)
+  }, [applySession])
+
+  // "Salir": cierra sesión (vuelve a anónimo) y descarta el modal.
+  const leaveSession = useCallback(() => {
+    expiredRef.current = null
+    setExpiredSession(null)
+    logout()
+  }, [logout])
+
   return (
     <AuthContext.Provider value={{ user, isLoading, login, loginAsMod, loginAsModWithToken, register, updateUsername, logout }}>
       {children}
+      {expiredSession && (
+        <SessionExpiredModal onStay={renewSession} onLeave={leaveSession} />
+      )}
     </AuthContext.Provider>
   )
 }

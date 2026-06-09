@@ -94,6 +94,18 @@ export async function login(username: string, password: string): Promise<AuthRes
   return adaptAuthResponse(r)
 }
 
+/** Renueva la sesión con el token recién caducado (ventana de gracia en el back).
+ *  El token ya no está en localStorage, así que se manda explícito en la cabecera
+ *  (apiFetch no lo sobreescribe porque no hay token en storage). Lanza si el back
+ *  rechaza la renovación (caducó hace demasiado, usuario anónimo, baneado...). */
+export async function refreshSession(expiredToken: string): Promise<AuthResponse> {
+  const r = await apiFetch<BackendAuthResponse>('/api/auth/refresh', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${expiredToken}` },
+  })
+  return adaptAuthResponse(r)
+}
+
 export async function register(username: string, password: string, anonToken: string | null): Promise<AuthResponse> {
   const r = await apiFetch<BackendAuthResponse>('/api/auth/register', {
     method: 'POST',
