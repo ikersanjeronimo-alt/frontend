@@ -6,6 +6,7 @@ import { BareLayout } from './components/layout/BareLayout'
 import { RequireRole } from './components/auth/RequireRole'
 import { PageState } from './components/ui/PageState'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
+import { NotificationToast } from './components/ui/NotificationToast'
 
 // Eager: pantallas frecuentes o ligeras
 import { LandingPage }       from './pages/LandingPage'
@@ -79,6 +80,7 @@ export default function App() {
 
           </Routes>
         </Suspense>
+        <NotificationToast />
       </AuthProvider>
     </BrowserRouter>
     </ErrorBoundary>

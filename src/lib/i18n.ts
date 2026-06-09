@@ -29,6 +29,10 @@ function getInitialLang(): Lang {
 const resources = {
   es: {
     translation: {
+      notifications: {
+        warned:  'Has recibido un aviso de moderación. Avisos acumulados: {{count}}.',
+        generic: 'Tienes una notificación nueva.',
+      },
       session: {
         title:    'Tu sesión ha caducado',
         message:  'Por seguridad, tu sesión ha expirado. Puedes renovarla y seguir conectado, o salir.',
@@ -434,6 +438,9 @@ const resources = {
         memberReportPl:'reportes',
         warnBtn:      'Avisar',
         banBtn:       'Banear',
+        actionErr:    'No se pudo completar la acción. Inténtalo de nuevo.',
+        memberWarnSg: 'aviso',
+        memberWarnPl: 'avisos',
         banned:       'Baneado',
         filterDescPre:'Lista de palabras filtradas. Cuando un usuario las escriba en chat, comentarios o cualquier mensaje, se mostrarán censuradas (ej.',
         filterDescPost:').',
@@ -593,6 +600,10 @@ const resources = {
   },
   en: {
     translation: {
+      notifications: {
+        warned:  'You have received a moderation warning. Total warnings: {{count}}.',
+        generic: 'You have a new notification.',
+      },
       session: {
         title:    'Your session has expired',
         message:  'For your security, your session has expired. You can renew it and stay signed in, or leave.',
@@ -864,6 +875,7 @@ const resources = {
         membersDesc: 'List of members from your moderated communities. You can ban or warn any user.',
         memberJoined: 'Joined', memberReportSg: 'report', memberReportPl: 'reports',
         warnBtn: 'Warn', banBtn: 'Ban', banned: 'Banned',
+        actionErr: 'Could not complete the action. Please try again.', memberWarnSg: 'warning', memberWarnPl: 'warnings',
         filterDescPre: 'List of filtered words. When a user writes them in chat, comments or any message, they will be shown censored (e.g.',
         filterDescPost: ').',
         filterPh: 'Add word...', filterAdd: 'Add',
@@ -973,6 +985,10 @@ const resources = {
   },
   eu: {
     translation: {
+      notifications: {
+        warned:  'Moderazio-ohartarazpen bat jaso duzu. Ohartarazpenak guztira: {{count}}.',
+        generic: 'Jakinarazpen berri bat duzu.',
+      },
       session: {
         title:    'Zure saioa iraungi da',
         message:  'Segurtasunagatik, zure saioa iraungi da. Berritu eta konektatuta jarrai dezakezu, edo irten.',
@@ -1257,6 +1273,7 @@ const resources = {
         membersDesc: 'Zuk moderatutako komunitateetako kideen zerrenda. Edozein erabiltzaile debekatu edo ohartarazi dezakezu.',
         memberJoined: 'Sartu zen:', memberReportSg: 'txosten', memberReportPl: 'txosten',
         warnBtn: 'Ohartarazi', banBtn: 'Debekatu', banned: 'Debekatuta',
+        actionErr: 'Ezin izan da ekintza burutu. Saiatu berriro.', memberWarnSg: 'ohartarazpen', memberWarnPl: 'ohartarazpen',
         filterDescPre: 'Iragazitako hitzen zerrenda. Erabiltzaile batek txat, iruzkin edo edozein mezutan idazten dituenean, zentsuratuta agertuko dira (adib.',
         filterDescPost: ').',
         filterPh: 'Hitza gehitu...', filterAdd: 'Gehitu',

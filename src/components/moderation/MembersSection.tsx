@@ -7,6 +7,7 @@ import { useRole } from '../../hooks/useRole'
 import { warnMember, banMember, deleteStaff } from '../../services/moderation'
 import { initials } from '../../lib/initials'
 import { IconDot, IconPencil, IconTrash } from '../ui/Icons'
+import { Feedback } from '../ui/Feedback'
 import { StaffEditModal } from './StaffEditModal'
 import type { ApiStaffMember } from '../../types/api'
 import styles from './MembersSection.module.css'
@@ -20,17 +21,20 @@ export function MembersSection() {
 
   const [editing, setEditing]       = useState<ApiStaffMember | null>(null)
   const [confirming, setConfirming] = useState<string | null>(null)
+  const [actionError, setActionError] = useState('')
 
   const handleWarn = (id: string) => {
+    setActionError('')
     warnMember(id)
       .then(updated => setMembers(all => all.map(m => m.id === id ? updated : m)))
-      .catch(() => {})
+      .catch(() => setActionError(t('moderation.actionErr')))
   }
 
   const handleBan = (id: string) => {
+    setActionError('')
     banMember(id)
       .then(updated => setMembers(all => all.map(m => m.id === id ? updated : m)))
-      .catch(() => {})
+      .catch(() => setActionError(t('moderation.actionErr')))
   }
 
   const handleDelete = (id: string) => {
@@ -130,6 +134,7 @@ export function MembersSection() {
 
       {/* Miembros de comunidades */}
       <p className={`${styles.desc} ${styles.membersTitle}`}>{t('moderation.membersDesc')}</p>
+      {actionError && <Feedback variant="error">{actionError}</Feedback>}
       <div className={styles.table}>
         {members.map(m => (
           <div key={m.id} className={styles.row}>
@@ -141,6 +146,11 @@ export function MembersSection() {
             {m.reports > 0 && (
               <span className={styles.reports}>
                 {m.reports} {m.reports > 1 ? t('moderation.memberReportPl') : t('moderation.memberReportSg')}
+              </span>
+            )}
+            {m.warnings > 0 && (
+              <span className={styles.warnings}>
+                {m.warnings} {m.warnings > 1 ? t('moderation.memberWarnPl') : t('moderation.memberWarnSg')}
               </span>
             )}
             <div className={styles.actions}>

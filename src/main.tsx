@@ -8,6 +8,7 @@ import { initStoriesWS } from './services/storiesWS.ts'
 import { initEventsWS } from './services/eventsWS.ts'
 import { initCommunitiesWS } from './services/communitiesWS.ts'
 import { initPrivateChatWS } from './services/privChatWS.ts'
+import { initNotificationsWS } from './services/notificationsWS.ts'
 
 // Registra los callbacks de suscripción STOMP (se ejecutan cuando el cliente
 // conecta). NO se llama initWS() aquí: la conexión la arranca AuthContext vía
@@ -17,6 +18,7 @@ initStoriesWS()
 initEventsWS()
 initCommunitiesWS()
 initPrivateChatWS()
+initNotificationsWS()
 
 // Aplicar tema antes del primer render para evitar parpadeo.
 applyTheme(getInitialTheme())

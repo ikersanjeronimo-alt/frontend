@@ -56,6 +56,7 @@ export interface ApiModerationMember {
   community: string
   joined: string
   reports: number
+  warnings: number
   banned: boolean
 }
 
