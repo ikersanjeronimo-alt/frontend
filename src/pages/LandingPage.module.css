@@ -26,6 +26,91 @@
   }
 }
 
+/* ── Controles rápidos (idioma + tema) ────────────────────── */
+
+.quickControls {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 6px;
+  box-shadow: var(--shadow-sm);
+}
+
+@media (min-width: 768px) {
+  .quickControls {
+    top: 16px;
+    right: 40px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .quickControls {
+    right: 100px;
+  }
+}
+
+.langGroup {
+  display: flex;
+  align-items: center;
+}
+
+.langBtn {
+  background: none;
+  border: none;
+  border-radius: 12px;
+  padding: 4px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font);
+  color: var(--mid);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1;
+}
+
+.langBtn:hover {
+  color: var(--dark);
+  background: var(--bg);
+}
+
+.langBtnActive {
+  color: var(--primary);
+  background: var(--primary-lt);
+}
+
+.qcDivider {
+  width: 1px;
+  height: 14px;
+  background: var(--border);
+  margin: 0 3px;
+  flex-shrink: 0;
+}
+
+.themeBtn {
+  background: none;
+  border: none;
+  border-radius: 50%;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mid);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.themeBtn:hover {
+  color: var(--dark);
+  background: var(--bg);
+}
+
 /* ── Blobs decorativos ────────────────────────────────────── */
 
 .blob1 {

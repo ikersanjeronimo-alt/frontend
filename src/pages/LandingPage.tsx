@@ -1,7 +1,11 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SleepingCat } from '../components/ui/SleepingCat'
 import { catFor } from '../components/ui/catPalette'
+import { IconSun, IconMoon } from '../components/ui/Icons'
+import { getLang, setLang, SUPPORTED_LANGS, type Lang } from '../lib/i18n'
+import { getInitialTheme, setTheme } from '../lib/theme'
 import styles from './LandingPage.module.css'
 
 const FEATURES = [
@@ -49,10 +53,54 @@ export function LandingPage() {
   )
 }
 
+const LANG_LABELS: Record<Lang, string> = { es: 'ES', en: 'EN', eu: 'EU' }
+
+function QuickControls() {
+  const [lang, setLangState] = useState<Lang>(() => getLang())
+  const [dark, setDark] = useState(() => getInitialTheme() === 'dark')
+
+  const handleLang = (l: Lang) => {
+    setLangState(l)
+    setLang(l)
+  }
+
+  const handleTheme = () => {
+    const next = !dark
+    setDark(next)
+    setTheme(next ? 'dark' : 'light')
+  }
+
+  return (
+    <div className={styles.quickControls}>
+      <div className={styles.langGroup}>
+        {SUPPORTED_LANGS.map(l => (
+          <button
+            key={l}
+            className={`${styles.langBtn} ${lang === l ? styles.langBtnActive : ''}`}
+            onClick={() => handleLang(l)}
+            aria-pressed={lang === l}
+          >
+            {LANG_LABELS[l]}
+          </button>
+        ))}
+      </div>
+      <div className={styles.qcDivider} aria-hidden="true" />
+      <button
+        className={styles.themeBtn}
+        onClick={handleTheme}
+        aria-label={dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+      >
+        {dark ? <IconSun size={13} /> : <IconMoon size={13} />}
+      </button>
+    </div>
+  )
+}
+
 function HeroSection({ onStart }: { onStart: () => void }) {
   const { t } = useTranslation()
   return (
     <section className={styles.hero}>
+      <QuickControls />
       <div className={`${styles.blob1} blob blob-float`} />
       <div className={`${styles.blob2} blob blob-float-slow`} />
 
