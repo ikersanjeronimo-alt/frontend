@@ -5,6 +5,7 @@ import { onNewReport } from '../../services/reportsWS'
 import { updateReport, type ReportAction } from '../../services/moderation'
 import type { ApiReport } from '../../types/api'
 import { PageState } from '../ui/PageState'
+import { Feedback } from '../ui/Feedback'
 import styles from './ReportsSection.module.css'
 
 export function ReportsSection() {
@@ -19,6 +20,7 @@ export function ReportsSection() {
   const { data: reports, setData: setReports, loading, error } = useModerationReports(reloadKey)
   const [filter, setFilter]     = useState('pending')
   const [selected, setSelected] = useState<string | null>(null)
+  const [actionError, setActionError] = useState('')
 
   // Reportes en tiempo real: al llegar el aviso WS de reporte nuevo, recarga la lista.
   useEffect(() => onNewReport(() => setReloadKey(k => k + 1)), [])
@@ -27,12 +29,16 @@ export function ReportsSection() {
   const pendingCount = reports.filter(r => r.status === 'pending').length
 
   const applyAction = (id: string, action: ReportAction) => {
+    setActionError('')
     const prev = reports.find(r => r.id === id)
     const newStatus: ApiReport['status'] = action === 'dismiss' ? 'dismissed' : 'resolved'
     setReports(all => all.map(r => r.id === id ? { ...r, status: newStatus } : r))
     setSelected(null)
     updateReport(id, action).catch(() => {
+      // Rollback al estado previo Y feedback visible (antes el fallo era silencioso:
+      // el reporte se revertía a "pendiente" sin explicar por qué).
       if (prev) setReports(all => all.map(r => r.id === id ? { ...r, status: prev.status } : r))
+      setActionError(t('moderation.actionErr'))
     })
   }
 
@@ -42,6 +48,7 @@ export function ReportsSection() {
 
   return (
     <div className={styles.body}>
+      {actionError && <Feedback variant="error">{actionError}</Feedback>}
       <div className={styles.reportList}>
         <div className={styles.filterTabs}>
           {FILTER_TABS.map(tab => (
