@@ -136,10 +136,23 @@ interface ChatMessagesProps {
 export function ChatMessages({ scrollDep, children }: ChatMessagesProps) {
   const messagesRef = useRef<HTMLDivElement>(null)
   const endRef      = useRef<HTMLDivElement>(null)
+  const didInitial  = useRef(false)
 
   useEffect(() => {
     const el = messagesRef.current
     if (!el) return
+
+    // Al ABRIR el chat (primer render con contenido): saltar al fondo al instante
+    // para mostrar de entrada el mensaje más reciente. Se reinicia por
+    // conversación porque la página padre pasa un `key` distinto a <ChatMessages>.
+    if (!didInitial.current) {
+      el.scrollTop = el.scrollHeight
+      if (el.scrollHeight > el.clientHeight) didInitial.current = true
+      return
+    }
+
+    // Mensajes nuevos en vivo: bajar (suave) solo si ya estabas cerca del fondo,
+    // para no arrastrarte hacia abajo mientras lees mensajes antiguos.
     const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120
     if (nearBottom) endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [scrollDep])

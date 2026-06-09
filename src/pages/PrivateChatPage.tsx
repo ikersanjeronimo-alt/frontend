@@ -205,7 +205,7 @@ export function PrivateChatPage() {
           infoTitle={t('privateChat.info')}
         />
 
-        <ChatMessages scrollDep={messages.length}>
+        <ChatMessages key={`${professionalId}:${userId}`} scrollDep={messages.length}>
           {messages.length === 0 && (
             <p className={styles.emptyMsg}>
               {isInboxMode ? t('privateChat.inboxEmpty') : t('privateChat.noMessages')}

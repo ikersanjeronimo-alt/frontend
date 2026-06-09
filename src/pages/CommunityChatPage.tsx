@@ -197,7 +197,7 @@ export function CommunityChatPage() {
           </div>
         )}
 
-        <ChatMessages scrollDep={messages.length}>
+        <ChatMessages key={comunidadId} scrollDep={messages.length}>
           {messages.map((m) => {
             const isOwn = m.own || m.username === user?.username
             const menuItems: BubbleMenuItem[] = []
