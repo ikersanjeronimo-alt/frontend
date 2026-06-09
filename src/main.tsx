@@ -4,13 +4,15 @@ import './index.css'
 import './lib/i18n'
 import App from './App.tsx'
 import { applyTheme, getInitialTheme } from './lib/theme'
-import { initWS } from './lib/wsClient'
 import { initStoriesWS } from './services/storiesWS.ts'
 import { initEventsWS } from './services/eventsWS.ts'
 import { initCommunitiesWS } from './services/communitiesWS.ts'
 import { initPrivateChatWS } from './services/privChatWS.ts'
 
-initWS()
+// Registra los callbacks de suscripción STOMP (se ejecutan cuando el cliente
+// conecta). NO se llama initWS() aquí: la conexión la arranca AuthContext vía
+// syncWSAuth() en cuanto hay token, para que el primer CONNECT ya lleve el JWT
+// y no lo rechace el backend (evita el error STOMP transitorio en la 1ª carga).
 initStoriesWS()
 initEventsWS()
 initCommunitiesWS()
