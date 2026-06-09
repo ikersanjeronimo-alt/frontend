@@ -1,7 +1,19 @@
 import { Client, type IFrame } from '@stomp/stompjs'
 import { tokenStorage } from '../services/storage'
 
-const WS_URL      = import.meta.env.VITE_WS_URL ?? 'http://localhost:8080/ws'
+const WS_URL_RAW  = import.meta.env.VITE_WS_URL ?? 'http://localhost:8080/ws'
+
+// Convierte la URL configurada a ws:// o wss://, aceptando tanto URLs absolutas
+// (http/https) como rutas relativas (/ws) que nginx proxía al backend.
+function resolveWsUrl(raw: string): string {
+  if (raw.startsWith('/')) {
+    const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
+    return `${proto}://${window.location.host}${raw}`
+  }
+  return raw.replace(/^http/, 'ws')
+}
+
+const WS_URL = resolveWsUrl(WS_URL_RAW)
 const onConnectCallbacks: ((client: Client) => void)[] = []
 const onDisconnectCallbacks: (() => void)[] = []
 
