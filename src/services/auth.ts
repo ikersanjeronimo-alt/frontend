@@ -75,6 +75,27 @@ export async function initAnonymous(): Promise<AuthResponse> {
   return adaptAuthResponse(r)
 }
 
+/** Igual que initAnonymous pero reintentando ante fallos transitorios (red
+ *  caída, 429 por rate-limit, hipo del backend) con backoff creciente. Sin
+ *  reintento, un único fallo dejaba al usuario sin identidad hasta recargar a
+ *  mano (era la causa del "a veces no carga el anónimo a la primera"). */
+export async function initAnonymousWithRetry(attempts = 3): Promise<AuthResponse> {
+  let lastErr: unknown
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await initAnonymous()
+    } catch (e) {
+      lastErr = e
+      if (i < attempts - 1) {
+        // 500ms, 1500ms... da margen a que el cubo de rate-limit se rellene y a
+        // que pase un corte de red puntual antes del siguiente intento.
+        await new Promise(res => setTimeout(res, 500 * Math.pow(3, i)))
+      }
+    }
+  }
+  throw lastErr
+}
+
 /** Restaura la sesión a partir del token guardado (cualquier rol). Un 401 aquí
  *  significa "no hay sesión válida", no "sesión expirada" — por eso suprime el bus. */
 export async function getMe(): Promise<ApiUser> {

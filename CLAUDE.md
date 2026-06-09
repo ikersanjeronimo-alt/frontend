@@ -131,7 +131,7 @@ workspace/
 - **`GlobalExceptionHandler`** (`config/`, `@RestControllerAdvice`): `BadCredentials/Authentication → 401`, `DataIntegrityViolation → 409`, `UsernameNotFound/NoSuchElement → 404`, `MethodArgumentNotValid → 400`. **Deliberadamente sin catch-all** para no pisar los status de Spring.
 - **`JWTService`** — HS256, subject = username; `AuthTokenFilter` captura firma inválida.
 - **`GoogleAuthService`** — lib `com.warrenstrange:googleauth` (genera secreto, valida TOTP, construye QR).
-- **Rate limiting** (`RateLimitFilter` + `RateLimitService`, bucket4j en memoria, por **IP** y además por **token** si hay `Bearer`; 429 JSON). Reglas (POST): `2fa` 5/min, `login` 10/min, `register`+`anonymous` 20/min, `mail` (timeMachine) 5/min, `content` (bottles, stories y cualquier `…/messages`) 30/min.
+- **Rate limiting** (`RateLimitFilter` + `RateLimitService`, bucket4j en memoria, por **IP** y además por **token** si hay `Bearer`; 429 JSON). Reglas (POST): `2fa` 5/min, `login` 10/min, `refresh` 20/min, `register` 20/min, **`anonymous` 60/min** (la app lo llama sola en cada carga sin token; un límite bajo provocaba 429 al recargar), `mail` (timeMachine) 5/min, `content` (bottles, stories y cualquier `…/messages`) 30/min.
 
 **Modelo de usuario (`domain/user/`)**
 - **`UserRole`** enum: **`ANON | USER | PROFESSIONAL | ADMINISTRATOR`** (el front mapea `PROFESSIONAL→MODERATOR`, `ADMINISTRATOR→ADMIN` en `services/auth.ts`).
@@ -181,6 +181,7 @@ workspace/
 ### Autenticación
 - `AuthContext` (`frontend/src/context/AuthContext.tsx`) es el núcleo.
 - Idea: **todo visitante recibe identidad anónima** desde el primer segundo vía `POST /api/auth/anonymous`. El JWT se guarda en `localStorage` con clave `sys_token`. Si el back no responde (network error), hay **fallback mock local** (`createMockAnonUser`).
+- **Arranque resiliente del anónimo:** el bootstrap usa `authService.initAnonymousWithRetry()` (reintenta con backoff ante red caída / 429 / hipo del backend). Antes era una sola llamada y cualquier fallo dejaba `user=null` hasta recargar a mano ("a veces no carga el anónimo a la primera"). Además, la re-anonimización por expiración **no pisa con `null`** un usuario que ya estaba bien (solo el `logout` explícito limpia en caso de fallo).
 - **Política de fallback (decidida en auditoría):** `try { real() } catch { mock() }` solo si el error es de red (status 0). Errores de servidor (401, 422, 500) se propagan a la UI para que el usuario los vea. Cuando el back funcione, el fallback deja de dispararse sin tocar código.
 - Roles en el front: `'ANON' | 'USER' | 'MODERATOR' | 'ADMIN'`. El back trabaja con `'PROFESSIONAL' | 'ADMINISTRATOR' | 'USER' | 'ANON'`. La **traducción vive en `services/auth.ts`** (helper `mapBackendRole`): `PROFESSIONAL → MODERATOR`, `ADMINISTRATOR → ADMIN`. Tipos `BackendUser`/`BackendAuthResponse` son privados de esa capa; el resto de la app solo conoce `UserRole`.
 - Hook `useAuth()` expone: `user`, `isLoading`, `login`, `register`, `logout`, `updateUsername`, `loginAsMod`, `verifyLoginAsMod`. **Para checks de rol usa `useRole()`** (`hooks/useRole.ts` → `{ user, isMod, isAdmin, isAnon, isLoggedIn }`), no rehagas el check inline.

@@ -81,11 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const anon = await authService.initAnonymous()
+        const anon = await authService.initAnonymousWithRetry()
         if (cancelled) return
         if (tokenStorage.get() !== initialToken) return
         applySession(anon)
       } catch {
+        // Tras agotar los reintentos: en el arranque aún no había usuario, así
+        // que queda null y el render sale del estado de carga (sin pantalla
+        // colgada). El usuario podrá reintentar navegando/recargando.
         if (!cancelled) {
           setUser(null)
         }
@@ -118,10 +121,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tokenStorage.clear()
       void (async () => {
         try {
-          const anon = await authService.initAnonymous()
+          const anon = await authService.initAnonymousWithRetry()
           applySession(anon)
         } catch {
-          setUser(null)
+          // Reintentos agotados: NO pisamos al usuario actual con null (evita
+          // que un fallo transitorio borre una sesión anónima que ya estaba
+          // bien). El próximo 401 reintentará la re-anonimización.
         }
       })()
     })
@@ -155,9 +160,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     tokenStorage.clear()
     void (async () => {
       try {
-        const anon = await authService.initAnonymous()
+        const anon = await authService.initAnonymousWithRetry()
         applySession(anon)
       } catch {
+        // Logout explícito: si ni con reintentos se obtiene anónimo, dejamos
+        // sin usuario (el usuario pidió salir).
         setUser(null)
       }
     })()
