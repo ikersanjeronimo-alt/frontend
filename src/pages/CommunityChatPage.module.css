@@ -49,6 +49,7 @@
   text-align: center;
   margin: 0;
   line-height: 1.3;
+  overflow-wrap: break-word;
 }
 
 .panelDesc {
@@ -100,6 +101,12 @@
   padding: 12px;
 }
 
+/* El bloque texto (label + nombre del mod) debe poder encoger para que un
+   nombre largo no desborde el panel. */
+.panelMod > div {
+  min-width: 0;
+}
+
 .panelModAvatar {
   width: 36px;
   height: 36px;
@@ -127,6 +134,7 @@
   font-weight: 600;
   color: var(--dark);
   display: block;
+  overflow-wrap: break-word;
 }
 
 .panelContactBtn {
@@ -251,6 +259,13 @@
   font-size: 13px;
   color: var(--dark);
   flex: 1;
+  /* min-width:0 permite que el flex item encoja; nowrap + ellipsis trunca los
+     nombres largos (los anónimos son `anon-<uuid>`) en vez de envolver a varias
+     líneas y empujar la fila hacia abajo. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .memberOnlineDot {
