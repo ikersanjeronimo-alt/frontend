@@ -6,8 +6,11 @@
   top: 0;
   z-index: 200;
   background: var(--white);
-  border-bottom: 1px solid var(--border);
-  box-shadow: 0 1px 12px rgba(100, 80, 180, 0.06);
+  /* La línea inferior va como box-shadow (no como border) para que NO sume al
+     alto del navbar: con `border-bottom` el header medía 65px (64 del .nav + 1)
+     y el chat (height: calc(100vh - 64px)) desbordaba la página 1px, dejando un
+     scroll mínimo a la derecha. El box-shadow se ve igual pero no ocupa layout. */
+  box-shadow: 0 1px 0 var(--border), 0 1px 12px rgba(100, 80, 180, 0.06);
 }
 
 .nav {
