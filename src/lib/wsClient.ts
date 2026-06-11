@@ -38,6 +38,19 @@ export function onDisconnect(callback: () => void): void{
   onDisconnectCallbacks.push(callback)
 }
 
+// Quitar callbacks registrados con onConnect/onDisconnect. Necesario para
+// suscripciones por-componente (p. ej. el cuestionario de un evento), que se
+// registran al montar y deben retirarse al desmontar para no acumularse.
+export function offConnect(callback: (client: Client) => void): void {
+  const i = onConnectCallbacks.indexOf(callback)
+  if (i !== -1) onConnectCallbacks.splice(i, 1)
+}
+
+export function offDisconnect(callback: () => void): void {
+  const i = onDisconnectCallbacks.indexOf(callback)
+  if (i !== -1) onDisconnectCallbacks.splice(i, 1)
+}
+
 export function initWS():void{
 
   if (client) return

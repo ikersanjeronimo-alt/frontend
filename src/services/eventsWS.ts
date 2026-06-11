@@ -1,9 +1,47 @@
-import type { Client } from '@stomp/stompjs'
-import { onConnect, onDisconnect } from '../lib/wsClient'
+import type { Client, StompSubscription } from '@stomp/stompjs'
+import { onConnect, onDisconnect, offConnect, getClient } from '../lib/wsClient'
 import { getEvents } from './events'
 import { useEventStore, type Event } from '../store/eventsStore'
+import type { ApiEventForm } from '../types/api'
 
 const TOPIC = '/topic/events'
+
+/**
+ * Suscribe a las actualizaciones en vivo del cuestionario de un evento
+ * (`/topic/events/{id}/form`). El handler recibe la vista PUBLICA del formulario
+ * (sin datos por-usuario) o `null` si se borro. Devuelve una funcion para
+ * desuscribirse; es segura ante (re)conexiones y no deja callbacks colgando.
+ */
+export function subscribeEventForm(
+  eventId: string,
+  handler: (form: ApiEventForm | null) => void,
+): () => void {
+  const topic = `/topic/events/${eventId}/form`
+  let sub: StompSubscription | null = null
+
+  const doSubscribe = (client: Client) => {
+    sub?.unsubscribe()
+    sub = client.subscribe(topic, (message) => {
+      try {
+        const payload = JSON.parse(message.body) as { form: ApiEventForm | null }
+        handler(payload.form ?? null)
+      } catch (err) {
+        console.error('[eventForm] Error parsing message:', err)
+      }
+    })
+  }
+
+  const client = getClient()
+  if (client?.connected) doSubscribe(client)
+  // Cubre la primera conexion (si aun no estaba) y las reconexiones posteriores.
+  onConnect(doSubscribe)
+
+  return () => {
+    offConnect(doSubscribe)
+    sub?.unsubscribe()
+    sub = null
+  }
+}
 
 interface EventMessage {
   action: 'CREATE' | 'UPDATE' | 'DELETE'

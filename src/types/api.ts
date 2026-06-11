@@ -110,6 +110,25 @@ export interface ApiEvent {
   interested?: boolean
 }
 
+/** Cuestionario embebido en un evento (opcion multiple o texto libre).
+ *  En la vista por-usuario (GET/POST propios) vienen `myVote`/`myResponded`;
+ *  en las actualizaciones por WebSocket esos campos son neutros (null/false). */
+export interface ApiEventForm {
+  kind: 'choice' | 'text'
+  question: string
+  /** Solo en `choice`. */
+  options: string[]
+  /** Recuento de votos por opcion (mismo orden que `options`). Solo en `choice`. */
+  counts: number[]
+  totalVotes: number
+  /** Indice de la opcion votada por el usuario actual, o null si no ha votado. */
+  myVote: number | null
+  /** Respuestas de texto. Solo se rellena para quien ya respondio. */
+  responses: string[]
+  responseCount: number
+  myResponded: boolean
+}
+
 export interface ApiStory {
   id: string
   latitude: number

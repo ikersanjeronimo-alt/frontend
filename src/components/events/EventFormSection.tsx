@@ -1,58 +1,85 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { ApiEventForm } from '../../types/api'
+import {
+  getEventForm,
+  createEventForm,
+  deleteEventForm,
+  voteEventForm,
+  respondEventForm,
+} from '../../services/events'
+import { subscribeEventForm } from '../../services/eventsWS'
 import styles from './EventFormSection.module.css'
 
 type FormKind = 'choice' | 'text'
 
-type ChoiceForm = {
-  kind: 'choice'
-  question: string
-  options: string[]
-}
-
-type TextForm = {
-  kind: 'text'
-  question: string
-}
-
-type EventForm = ChoiceForm | TextForm
-
 interface EventFormSectionProps {
+  eventId: string
   isMod: boolean
 }
 
 /**
- * Encapsula el formulario embebido en /eventos/:id:
+ * Formulario embebido en /eventos/:id, persistido en el backend:
  *   - Botón "+ Añadir formulario" (solo mod, cuando no hay form ni se está editando).
- *   - Editor de formulario (selección de tipo, pregunta, opciones).
- *   - Vista del formulario (votación o respuesta de texto + resultados).
+ *   - Editor de formulario (selección de tipo, pregunta, opciones) → POST /form.
+ *   - Vista del formulario: votación / respuesta de texto + resultados.
  *
- * Estado puramente local — sin persistencia. Cuando exista el backend,
- * sustituir los useState por useApi/useApiMutation con los endpoints:
- *   POST   /api/events/:id/form
- *   DELETE /api/events/:id/form
- *   POST   /api/events/:id/form/vote
- *   POST   /api/events/:id/form/response
+ * El estado vive en el backend y se refresca en vivo por WebSocket
+ * (/topic/events/:id/form): cuando otra persona vota o responde, el recuento se
+ * actualiza al momento. Los campos por-usuario (myVote/myResponded/responses) se
+ * conservan en local porque el broadcast es público (no los incluye).
  */
-export function EventFormSection({ isMod }: EventFormSectionProps) {
+export function EventFormSection({ eventId, isMod }: EventFormSectionProps) {
   const { t } = useTranslation()
-  const [form, setForm]               = useState<EventForm | null>(null)
-  const [editing, setEditing]         = useState(false)
-  const [draftKind, setDraftKind]     = useState<FormKind>('choice')
-  const [draftQuestion, setDraftQ]    = useState('')
-  const [draftOptions, setDraftOpts]  = useState<string[]>(['', ''])
 
-  const [votes, setVotes]             = useState<number[]>([])
-  const [myVote, setMyVote]           = useState<number | null>(null)
+  const [form, setForm]       = useState<ApiEventForm | null>(null)
+  const [loaded, setLoaded]   = useState(false)
+  const [busy, setBusy]       = useState(false)
+  const [error, setError]     = useState('')
+
+  // Editor (mod)
+  const [editing, setEditing]        = useState(false)
+  const [draftKind, setDraftKind]    = useState<FormKind>('choice')
+  const [draftQuestion, setDraftQ]   = useState('')
+  const [draftOptions, setDraftOpts] = useState<string[]>(['', ''])
+
+  // Borradores de participación
   const [pendingVote, setPendingVote] = useState<number | null>(null)
-  const [textResponses, setTextResps] = useState<string[]>([])
   const [pendingText, setPendingText] = useState('')
-  const [mySent, setMySent]           = useState(false)
+
+  // Carga inicial + suscripción en vivo.
+  useEffect(() => {
+    let active = true
+    getEventForm(eventId)
+      .then(f => { if (active) { setForm(f ?? null); setLoaded(true) } })
+      .catch(() => { if (active) setLoaded(true) })
+
+    const unsubscribe = subscribeEventForm(eventId, incoming => {
+      setForm(prev => {
+        if (incoming === null) return null
+        // Mismo formulario → conservar lo del usuario y actualizar recuentos.
+        const same = prev
+          && prev.kind === incoming.kind
+          && prev.question === incoming.question
+          && prev.options.length === incoming.options.length
+        if (!same || !prev) return incoming
+        return {
+          ...incoming,
+          myVote: prev.myVote,
+          myResponded: prev.myResponded,
+          responses: prev.myResponded ? prev.responses : incoming.responses,
+        }
+      })
+    })
+
+    return () => { active = false; unsubscribe() }
+  }, [eventId])
 
   const openEditor = () => {
     setDraftKind('choice')
     setDraftQ('')
     setDraftOpts(['', ''])
+    setError('')
     setEditing(true)
   }
 
@@ -65,55 +92,81 @@ export function EventFormSection({ isMod }: EventFormSectionProps) {
     return true
   })()
 
-  const saveForm = () => {
-    if (!canSaveForm) return
-    if (draftKind === 'choice') {
-      const cleaned = draftOptions.map(o => o.trim()).filter(Boolean)
-      setForm({ kind: 'choice', question: draftQuestion.trim(), options: cleaned })
-      setVotes(new Array(cleaned.length).fill(0))
-      setMyVote(null)
+  const saveForm = async () => {
+    if (!canSaveForm || busy) return
+    setBusy(true)
+    setError('')
+    try {
+      const payload = draftKind === 'choice'
+        ? { kind: 'choice' as const, question: draftQuestion.trim(), options: draftOptions.map(o => o.trim()).filter(Boolean) }
+        : { kind: 'text' as const, question: draftQuestion.trim() }
+      const saved = await createEventForm(eventId, payload)
+      setForm(saved)
+      setEditing(false)
       setPendingVote(null)
-    } else {
-      setForm({ kind: 'text', question: draftQuestion.trim() })
-      setTextResps([])
       setPendingText('')
-      setMySent(false)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('common.error'))
+    } finally {
+      setBusy(false)
     }
-    setEditing(false)
   }
 
-  const deleteForm = () => {
-    setForm(null)
-    setVotes([])
-    setMyVote(null)
-    setPendingVote(null)
-    setTextResps([])
-    setPendingText('')
-    setMySent(false)
+  const removeForm = async () => {
+    if (busy) return
+    setBusy(true)
+    setError('')
+    try {
+      await deleteEventForm(eventId)
+      setForm(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('common.error'))
+    } finally {
+      setBusy(false)
+    }
   }
 
-  const submitVote = () => {
-    if (pendingVote === null || myVote !== null) return
-    setVotes(prev => prev.map((v, i) => i === pendingVote ? v + 1 : v))
-    setMyVote(pendingVote)
+  const submitVote = async () => {
+    if (pendingVote === null || busy || !form || form.myVote !== null) return
+    setBusy(true)
+    setError('')
+    try {
+      const updated = await voteEventForm(eventId, pendingVote)
+      setForm(updated)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('common.error'))
+    } finally {
+      setBusy(false)
+    }
   }
 
-  const submitText = () => {
+  const submitText = async () => {
     const value = pendingText.trim()
-    if (!value || mySent) return
-    setTextResps(prev => [...prev, value])
-    setMySent(true)
+    if (!value || busy || !form || form.myResponded) return
+    setBusy(true)
+    setError('')
+    try {
+      const updated = await respondEventForm(eventId, value)
+      setForm(updated)
+      setPendingText('')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('common.error'))
+    } finally {
+      setBusy(false)
+    }
   }
 
-  const totalVotes = votes.reduce((a, b) => a + b, 0)
+  const totalVotes = form?.totalVotes ?? 0
 
   return (
     <>
-      {isMod && !form && !editing && (
+      {isMod && loaded && !form && !editing && (
         <button className={styles.addFormBtn} onClick={openEditor}>
           {t('events.addForm')}
         </button>
       )}
+
+      {error && <p className={styles.formError} role="alert">{error}</p>}
 
       {editing && (
         <div className={styles.section}>
@@ -198,7 +251,7 @@ export function EventFormSection({ isMod }: EventFormSectionProps) {
               type="button"
               className={styles.btnPrimary}
               onClick={saveForm}
-              disabled={!canSaveForm}
+              disabled={!canSaveForm || busy}
             >
               {t('events.formSave')}
             </button>
@@ -211,13 +264,13 @@ export function EventFormSection({ isMod }: EventFormSectionProps) {
           <div className={styles.formHeader}>
             <h2 className={styles.sectionTitle}>{form.question}</h2>
             {isMod && (
-              <button type="button" className={styles.deleteFormBtn} onClick={deleteForm}>
+              <button type="button" className={styles.deleteFormBtn} onClick={removeForm} disabled={busy}>
                 {t('events.formDelete')}
               </button>
             )}
           </div>
 
-          {form.kind === 'choice' && myVote === null && (
+          {form.kind === 'choice' && form.myVote === null && (
             <>
               <div className={styles.choiceList}>
                 {form.options.map((opt, i) => (
@@ -239,22 +292,22 @@ export function EventFormSection({ isMod }: EventFormSectionProps) {
                 type="button"
                 className={styles.btnPrimary}
                 onClick={submitVote}
-                disabled={pendingVote === null}
+                disabled={pendingVote === null || busy}
               >
                 {t('events.vote')}
               </button>
             </>
           )}
 
-          {form.kind === 'choice' && myVote !== null && (
+          {form.kind === 'choice' && form.myVote !== null && (
             <div className={styles.resultsList}>
               {form.options.map((opt, i) => {
-                const count = votes[i] ?? 0
+                const count = form.counts[i] ?? 0
                 const pct   = totalVotes === 0 ? 0 : Math.round((count / totalVotes) * 100)
                 return (
                   <div key={i} className={styles.resultRow}>
                     <div className={styles.resultLabel}>
-                      <span>{opt}{myVote === i ? ` · ${t('events.yourVote')}` : ''}</span>
+                      <span>{opt}{form.myVote === i ? ` · ${t('events.yourVote')}` : ''}</span>
                       <span className={styles.resultPct}>{pct}%</span>
                     </div>
                     <div className={styles.resultBar}>
@@ -269,7 +322,7 @@ export function EventFormSection({ isMod }: EventFormSectionProps) {
             </div>
           )}
 
-          {form.kind === 'text' && !mySent && (
+          {form.kind === 'text' && !form.myResponded && (
             <>
               <textarea
                 className={styles.textarea}
@@ -283,19 +336,19 @@ export function EventFormSection({ isMod }: EventFormSectionProps) {
                 type="button"
                 className={styles.btnPrimary}
                 onClick={submitText}
-                disabled={!pendingText.trim()}
+                disabled={!pendingText.trim() || busy}
               >
                 {t('events.sendResponse')}
               </button>
             </>
           )}
 
-          {form.kind === 'text' && mySent && (
+          {form.kind === 'text' && form.myResponded && (
             <div className={styles.resultsList}>
               <p className={styles.resultsMeta}>
-                {textResponses.length} {textResponses.length === 1 ? t('events.responseSg') : t('events.responsePl')}
+                {form.responseCount} {form.responseCount === 1 ? t('events.responseSg') : t('events.responsePl')}
               </p>
-              {textResponses.map((r, i) => (
+              {form.responses.map((r, i) => (
                 <div key={i} className={styles.responseRow}>{r}</div>
               ))}
             </div>

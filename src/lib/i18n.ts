@@ -43,6 +43,7 @@ const resources = {
       },
       common: {
         loading:      'Cargando...',
+        error:        'Algo ha ido mal. Inténtalo de nuevo.',
         saving:       'Guardando...',
         save:         'Guardar',
         saved:        '✓ Guardado',
@@ -614,6 +615,7 @@ const resources = {
       },
       common: {
         loading: 'Loading...', saving: 'Saving...', save: 'Save', saved: '✓ Saved',
+        error: 'Something went wrong. Please try again.',
         cancel: 'Cancel', back: 'Back', send: 'Send', sending: 'Sending...',
         edit: 'Edit', delete: 'Delete', confirm: 'Confirm', retry: 'Retry',
         messageActions: 'Message actions',
@@ -999,6 +1001,7 @@ const resources = {
       },
       common: {
         loading: 'Kargatzen...', saving: 'Gordetzen...', save: 'Gorde', saved: '✓ Gordeta',
+        error: 'Zerbait gaizki joan da. Saiatu berriro.',
         cancel: 'Utzi', back: 'Itzuli', send: 'Bidali', sending: 'Bidaltzen...',
         edit: 'Editatu', delete: 'Ezabatu', confirm: 'Berretsi', retry: 'Saiatu berriro',
         messageActions: 'Mezuaren ekintzak',

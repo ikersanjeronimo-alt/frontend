@@ -103,7 +103,7 @@ export function EventDetailPage() {
             <p className={styles.desc}>{event.desc}</p>
             <p className={styles.desc}>{t('events.aboutDesc')}</p>
 
-            <EventFormSection isMod={isMod} />
+            <EventFormSection eventId={event.id} isMod={isMod} />
           </div>
 
           {event.tags && event.tags.length > 0 && (
