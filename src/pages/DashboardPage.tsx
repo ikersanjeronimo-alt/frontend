@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
+import { useRole } from '../hooks/useRole'
 import { useCommunities } from '../hooks/useCommunities'
 import { useEvents } from '../hooks/useEvents'
 import { useDashboardMessages } from '../hooks/useDashboardMessages'
@@ -50,6 +51,7 @@ const MOOD_ICONS = {
 
 export function DashboardPage() {
   const { user } = useAuth()
+  const { isAnon } = useRole()
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { data: communities } = useCommunities()
@@ -100,6 +102,10 @@ export function DashboardPage() {
           size={110}
           className={styles.dashCat}
         />
+        {/* Las "caras" (selector de animo) solo para usuarios registrados; el
+            seguimiento de animo no aplica a anonimos. El gato decorativo se queda. */}
+        {!isAnon && (
+        <>
         <div className={styles.moodRow}>
           {MOOD_OPTIONS.map(m => {
             const Icon = MOOD_ICONS[m.value as keyof typeof MOOD_ICONS]
@@ -120,6 +126,8 @@ export function DashboardPage() {
         </div>
         {mood && !moodError && <p className={styles.moodConfirm}>{t('dashboard.moodConfirm')}</p>}
         {moodError && <p className={styles.moodError} role="alert">{moodError}</p>}
+        </>
+        )}
       </section>
 
       <div className={styles.grid}>
